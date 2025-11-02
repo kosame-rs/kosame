@@ -17,6 +17,8 @@ pub use update::*;
 
 use crate::{
     clause::{Fields, With},
+    data_type::InferredType,
+    expr::ColumnRef,
     keyword,
     quote_option::QuoteOption,
     scope_module::ScopeModule,

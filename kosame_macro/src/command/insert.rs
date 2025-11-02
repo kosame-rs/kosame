@@ -5,10 +5,7 @@ use syn::{
     parse::{Parse, ParseStream},
 };
 
-use crate::{
-    clause::*, keyword, path_ext::PathExt, quote_option::QuoteOption, scope_module::ScopeModule,
-    visitor::Visitor,
-};
+use crate::{clause::*, keyword, path_ext::PathExt, quote_option::QuoteOption, visitor::Visitor};
 
 pub struct Insert {
     pub _insert_keyword: keyword::insert,

@@ -3,7 +3,7 @@ use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
 use crate::{
-    clause::{self, From, GroupBy, Having, Limit, Offset, OrderBy, Where, With},
+    clause::{self, From, GroupBy, Having, Limit, Offset, OrderBy, Where},
     quote_option::QuoteOption,
     visitor::Visitor,
 };
