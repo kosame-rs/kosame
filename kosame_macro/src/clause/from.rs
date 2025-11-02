@@ -157,6 +157,24 @@ pub enum FromItem {
 }
 
 impl FromItem {
+    fn left(&self) -> Option<&FromItem> {
+        match self {
+            Self::Join { left, .. } => Some(left),
+            Self::NaturalJoin { left, .. } => Some(left),
+            Self::CrossJoin { left, .. } => Some(left),
+            _ => None,
+        }
+    }
+
+    fn right(&self) -> Option<&FromItem> {
+        match self {
+            Self::Join { right, .. } => Some(right),
+            Self::NaturalJoin { right, .. } => Some(right),
+            Self::CrossJoin { right, .. } => Some(right),
+            _ => None,
+        }
+    }
+
     fn parse_prefix(input: ParseStream) -> syn::Result<Self> {
         let lateral_keyword = input
             .peek(keyword::lateral)
@@ -314,5 +332,44 @@ impl ToTokens for FromItem {
             }
         }
         .to_tokens(tokens);
+    }
+}
+
+pub struct FromItemIter<'a> {
+    stack: Vec<&'a FromItem>,
+}
+
+impl<'a> std::convert::From<&'a FromItem> for FromItemIter<'a> {
+    fn from(value: &'a FromItem) -> Self {
+        let mut stack = Vec::<&'a FromItem>::new();
+        stack.push(value);
+        while let Some(left) = stack.last().unwrap().left() {
+            stack.push(left);
+        }
+        Self { stack }
+    }
+}
+
+impl<'a> Iterator for FromItemIter<'a> {
+    type Item = &'a FromItem;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let result = self.stack.pop()?;
+        if let Some(next) = self.stack.last().and_then(|next| next.right()) {
+            self.stack.push(next);
+            while let Some(left) = self.stack.last().unwrap().left() {
+                self.stack.push(left);
+            }
+        }
+        Some(result)
+    }
+}
+
+impl<'a> IntoIterator for &'a FromItem {
+    type IntoIter = FromItemIter<'a>;
+    type Item = &'a FromItem;
+
+    fn into_iter(self) -> Self::IntoIter {
+        FromItemIter::from(self)
     }
 }
