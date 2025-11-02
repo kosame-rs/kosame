@@ -1,6 +1,8 @@
 mod command_tree;
+mod parent_map;
 
 pub use command_tree::*;
+pub use parent_map::*;
 
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, quote};

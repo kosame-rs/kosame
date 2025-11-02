@@ -75,7 +75,9 @@ pub struct WithItem {
 
 impl WithItem {
     pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+        visitor.visit_with_item(self);
         self.command.accept(visitor);
+        visitor.end_with_item();
     }
 }
 
