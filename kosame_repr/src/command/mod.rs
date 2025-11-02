@@ -8,14 +8,40 @@ pub use insert::*;
 pub use select::*;
 pub use update::*;
 
-pub enum Command<'a> {
+use crate::clause::With;
+
+pub struct Command<'a> {
+    with: Option<With<'a>>,
+    command_type: CommandType<'a>,
+}
+
+impl<'a> Command<'a> {
+    #[inline]
+    pub const fn new(with: Option<With<'a>>, command_type: CommandType<'a>) -> Self {
+        Self { with, command_type }
+    }
+}
+
+impl kosame_sql::FmtSql for Command<'_> {
+    fn fmt_sql<D>(&self, formatter: &mut kosame_sql::Formatter<D>) -> kosame_sql::Result
+    where
+        D: kosame_sql::Dialect,
+    {
+        if let Some(with) = &self.with {
+            with.fmt_sql(formatter)?;
+        }
+        self.command_type.fmt_sql(formatter)
+    }
+}
+
+pub enum CommandType<'a> {
     Delete(Delete<'a>),
     Insert(Insert<'a>),
     Select(Select<'a>),
     Update(Update<'a>),
 }
 
-impl kosame_sql::FmtSql for Command<'_> {
+impl kosame_sql::FmtSql for CommandType<'_> {
     fn fmt_sql<D>(&self, formatter: &mut kosame_sql::Formatter<D>) -> kosame_sql::Result
     where
         D: kosame_sql::Dialect,

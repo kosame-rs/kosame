@@ -18,28 +18,76 @@ pub use update::*;
 use crate::{
     clause::{Fields, With},
     keyword,
+    quote_option::QuoteOption,
     visitor::Visitor,
 };
 
-pub enum Command {
+pub struct Command {
+    pub attrs: Vec<Attribute>,
+    pub with: Option<With>,
+    pub command_type: CommandType,
+}
+
+impl Command {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+        if let Some(inner) = &self.with {
+            inner.accept(visitor)
+        }
+        self.command_type.accept(visitor);
+    }
+
+    pub fn fields(&self) -> Option<&Fields> {
+        self.command_type.fields()
+    }
+
+    pub fn scoped(&self, f: impl FnOnce()) {
+        match &self.with {
+            Some(with) => with.scoped(f),
+            None => f(),
+        }
+    }
+}
+
+impl Parse for Command {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        Ok(Self {
+            attrs: input.call(Attribute::parse_outer)?,
+            with: input.call(With::parse_optional)?,
+            command_type: input.parse()?,
+        })
+    }
+}
+
+impl ToTokens for Command {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let with = QuoteOption::from(&self.with);
+        let command_type = &self.command_type;
+        if let Some(with) = &self.with {
+            with.scoped(|| {
+                quote! {
+                    ::kosame::repr::command::Command::new(#with, #command_type)
+                }
+                .to_tokens(tokens);
+            });
+        } else {
+            quote! {
+                ::kosame::repr::command::Command::new(#with, #command_type)
+            }
+            .to_tokens(tokens);
+        }
+    }
+}
+
+pub enum CommandType {
     Delete(Delete),
     Insert(Insert),
     Select(Box<Select>),
     Update(Update),
 }
 
-impl Command {
+impl CommandType {
     pub fn peek(input: ParseStream) -> bool {
         Delete::peek(input) || Insert::peek(input) || Select::peek(input) || Update::peek(input)
-    }
-
-    pub fn attrs(&self) -> &[Attribute] {
-        match self {
-            Self::Delete(inner) => &inner.attrs,
-            Self::Insert(inner) => &inner.attrs,
-            Self::Select(inner) => &inner.attrs,
-            Self::Update(inner) => &inner.attrs,
-        }
     }
 
     pub fn fields(&self) -> Option<&Fields> {
@@ -61,38 +109,36 @@ impl Command {
     }
 }
 
-impl Parse for Command {
+impl Parse for CommandType {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let attrs = input.call(Attribute::parse_outer)?;
-        let with = input.call(With::parse_optional)?;
         if Delete::peek(input) {
-            Ok(Self::Delete(Delete::parse(input, attrs, with)?))
+            Ok(Self::Delete(input.parse()?))
         } else if Insert::peek(input) {
-            Ok(Self::Insert(Insert::parse(input, attrs, with)?))
+            Ok(Self::Insert(input.parse()?))
         } else if Select::peek(input) {
-            Ok(Self::Select(Box::new(Select::parse(input, attrs, with)?)))
+            Ok(Self::Select(input.parse()?))
         } else if Update::peek(input) {
-            Ok(Self::Update(Update::parse(input, attrs, with)?))
+            Ok(Self::Update(input.parse()?))
         } else {
             keyword::group_command::error(input);
         }
     }
 }
 
-impl ToTokens for Command {
+impl ToTokens for CommandType {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
             Self::Delete(inner) => quote! {
-                ::kosame::repr::command::Command::Delete(#inner)
+                ::kosame::repr::command::CommandType::Delete(#inner)
             },
             Self::Insert(inner) => quote! {
-                ::kosame::repr::command::Command::Insert(#inner)
+                ::kosame::repr::command::CommandType::Insert(#inner)
             },
             Self::Select(inner) => quote! {
-                ::kosame::repr::command::Command::Select(#inner)
+                ::kosame::repr::command::CommandType::Select(#inner)
             },
             Self::Update(inner) => quote! {
-                ::kosame::repr::command::Command::Update(#inner)
+                ::kosame::repr::command::CommandType::Update(#inner)
             },
         }
         .to_tokens(tokens)

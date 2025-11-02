@@ -1,6 +1,9 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use syn::{Attribute, Path, parse::ParseStream};
+use syn::{
+    Path,
+    parse::{Parse, ParseStream},
+};
 
 use crate::{
     clause::*, keyword, path_ext::PathExt, quote_option::QuoteOption, scope::Scope,
@@ -8,8 +11,6 @@ use crate::{
 };
 
 pub struct Insert {
-    pub with: Option<With>,
-    pub attrs: Vec<Attribute>,
     pub _insert_keyword: keyword::insert,
     pub _into_keyword: keyword::into,
     pub table: Path,
@@ -23,24 +24,17 @@ impl Insert {
     }
 
     pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
-        if let Some(inner) = &self.with {
-            inner.accept(visitor)
-        }
         visitor.visit_table_ref(&self.table);
         self.values.accept(visitor);
         if let Some(inner) = &self.returning {
             inner.accept(visitor)
         }
     }
+}
 
-    pub fn parse(
-        input: ParseStream,
-        attrs: Vec<Attribute>,
-        with: Option<With>,
-    ) -> syn::Result<Self> {
+impl Parse for Insert {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            attrs,
-            with,
             _insert_keyword: input.parse()?,
             _into_keyword: input.parse()?,
             table: input.parse()?,
@@ -52,7 +46,6 @@ impl Insert {
 
 impl ToTokens for Insert {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let with = QuoteOption(self.with.as_ref());
         let table = &self.table.to_call_site(1);
         let values = &self.values;
         let returning = QuoteOption(self.returning.as_ref());
@@ -67,7 +60,6 @@ impl ToTokens for Insert {
                 #scope
 
                 ::kosame::repr::command::Insert::new(
-                    #with,
                     &#table::TABLE,
                     {
                         mod scope {}

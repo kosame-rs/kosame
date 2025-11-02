@@ -120,7 +120,7 @@ impl ToTokens for Statement {
         let row = match fields {
             Some(fields) => {
                 let row = Row::new(
-                    command.attrs().to_owned(),
+                    command.attrs.to_owned(),
                     Ident::new("Row", Span::call_site()),
                     fields.iter().map(|field| field.to_row_field()).collect(),
                 );

@@ -59,7 +59,7 @@ fn main() {
 
     let statement = kosame::pg_statement! {
         select
-            pip.id
+            pip.id: i32
         from schema::posts
         left join lateral (select id from schema::comments where comments.id > 5) as pip on true
     };

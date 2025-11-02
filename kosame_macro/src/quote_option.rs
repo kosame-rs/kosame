@@ -15,3 +15,9 @@ where
         .to_tokens(tokens);
     }
 }
+
+impl<'a, T> From<&'a Option<T>> for QuoteOption<&'a T> {
+    fn from(value: &'a Option<T>) -> Self {
+        QuoteOption(value.as_ref())
+    }
+}

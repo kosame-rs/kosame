@@ -3,7 +3,6 @@ use std::fmt::Write;
 use crate::{clause::*, schema::Table};
 
 pub struct Insert<'a> {
-    with: Option<With<'a>>,
     table: &'a Table<'a>,
     values: Values<'a>,
     returning: Option<Returning<'a>>,
@@ -12,22 +11,15 @@ pub struct Insert<'a> {
 impl<'a> Insert<'a> {
     #[inline]
     pub const fn new(
-        with: Option<With<'a>>,
         table: &'a Table<'a>,
         values: Values<'a>,
         returning: Option<Returning<'a>>,
     ) -> Self {
         Self {
-            with,
             table,
             values,
             returning,
         }
-    }
-
-    #[inline]
-    pub const fn with(&self) -> Option<&With<'a>> {
-        self.with.as_ref()
     }
 
     #[inline]

@@ -8,7 +8,12 @@ use syn::{
     punctuated::Punctuated,
 };
 
-use crate::{command::Command, keyword, part::TableAlias, visitor::Visitor};
+use crate::{
+    command::{Command, CommandType},
+    keyword,
+    part::TableAlias,
+    visitor::Visitor,
+};
 
 pub struct With {
     pub _with_keyword: keyword::with,
@@ -49,11 +54,11 @@ impl Parse for With {
             items: {
                 let mut punctuated = Punctuated::new();
                 while !input.is_empty() {
-                    if Command::peek(input) {
+                    if CommandType::peek(input) {
                         break;
                     }
                     punctuated.push(input.parse()?);
-                    if Command::peek(input) {
+                    if CommandType::peek(input) {
                         break;
                     }
                     punctuated.push_punct(input.parse()?);
