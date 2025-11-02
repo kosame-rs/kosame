@@ -115,74 +115,82 @@ impl ToTokens for Statement {
             self.command.accept(&mut builder);
             builder.build()
         };
+        let parent_map = {
+            let mut builder = ParentMapBuilder::new();
+            self.command.accept(&mut builder);
+            builder.build()
+        };
+
         command_tree.scope(|| {
-            let module_name = match &self.alias {
-                Some(alias) => &alias.ident,
-                None => &Ident::new("internal", Span::call_site()),
-            };
+            parent_map.scope(|| {
+                let module_name = match &self.alias {
+                    Some(alias) => &alias.ident,
+                    None => &Ident::new("internal", Span::call_site()),
+                };
 
-            let bind_params = {
-                let mut builder = BindParamsBuilder::new();
-                self.command.accept(&mut builder);
-                builder.build()
-            };
+                let bind_params = {
+                    let mut builder = BindParamsBuilder::new();
+                    self.command.accept(&mut builder);
+                    builder.build()
+                };
 
-            let command = &self.command;
-            let fields = command.fields();
-            let row = match fields {
-                Some(fields) => {
-                    let row = Row::new(
-                        command.attrs.to_owned(),
-                        Ident::new("Row", Span::call_site()),
-                        fields.iter().map(|field| field.to_row_field()).collect(),
-                    );
-                    quote! { #row }
-                }
-                None => quote! { pub enum Row {} },
-            };
-
-            let lifetime = (!bind_params.is_empty()).then_some(quote! { <'a> });
-
-            let module_tokens = quote! {
-                pub mod #module_name {
-
-                    pub struct Statement #lifetime {
-                        params: Params #lifetime,
+                let command = &self.command;
+                let fields = command.fields();
+                let row = match fields {
+                    Some(fields) => {
+                        let row = Row::new(
+                            command.attrs.to_owned(),
+                            Ident::new("Row", Span::call_site()),
+                            fields.iter().map(|field| field.to_row_field()).collect(),
+                        );
+                        quote! { #row }
                     }
+                    None => quote! { pub enum Row {} },
+                };
 
-                    impl #lifetime Statement #lifetime {
-                        pub fn new(params: Params #lifetime) -> Self { Self { params } }
+                let lifetime = (!bind_params.is_empty()).then_some(quote! { <'a> });
+
+                let module_tokens = quote! {
+                    pub mod #module_name {
+
+                        pub struct Statement #lifetime {
+                            params: Params #lifetime,
+                        }
+
+                        impl #lifetime Statement #lifetime {
+                            pub fn new(params: Params #lifetime) -> Self { Self { params } }
+                        }
+
+                        impl #lifetime ::kosame::statement::Statement for Statement #lifetime {
+                            type Params = Params #lifetime;
+                            type Row = Row;
+
+                            const REPR: ::kosame::repr::command::Command<'static> = #command;
+
+                            fn params(&self) -> &Self::Params {
+                                &self.params
+                            }
+                        }
+
+                        #row
+                        #bind_params
                     }
+                };
 
-                    impl #lifetime ::kosame::statement::Statement for Statement #lifetime {
-                        type Params = Params #lifetime;
-                        type Row = Row;
-
-                        const REPR: ::kosame::repr::command::Command<'static> = #command;
-
-                        fn params(&self) -> &Self::Params {
-                            &self.params
+                if self.alias.is_some() {
+                    module_tokens.to_tokens(tokens);
+                } else {
+                    let bind_params_closure = BindParamsClosure::new(module_name, &bind_params);
+                    quote! {
+                        {
+                            #bind_params_closure
+                            #module_tokens
+                            #module_name::Statement::new(closure)
                         }
                     }
-
-                    #row
-                    #bind_params
+                    .to_tokens(tokens);
                 }
-            };
-
-            if self.alias.is_some() {
-                module_tokens.to_tokens(tokens);
-            } else {
-                let bind_params_closure = BindParamsClosure::new(module_name, &bind_params);
-                quote! {
-                    {
-                        #bind_params_closure
-                        #module_tokens
-                        #module_name::Statement::new(closure)
-                    }
-                }
-                .to_tokens(tokens);
-            }
+            });
         });
     }
 }
