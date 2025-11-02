@@ -62,12 +62,6 @@ impl UnaryOp {
             Self::Not(_) => 3,
         }
     }
-
-    fn span(&self) -> Span {
-        match self {
-            Self::Not(inner) => inner.span,
-        }
-    }
 }
 
 impl Parse for UnaryOp {

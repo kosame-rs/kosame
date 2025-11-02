@@ -50,24 +50,15 @@ impl ToTokens for Insert {
         let values = &self.values;
         let returning = QuoteOption(self.returning.as_ref());
 
-        let scope = ScopeModule::new(std::iter::once(&FromItem::Table {
-            table: self.table.clone(),
-            alias: None,
-        }));
-
         quote! {
-            {
-                #scope
-
-                ::kosame::repr::command::Insert::new(
-                    &#table::TABLE,
-                    {
-                        mod scope {}
-                        #values
-                    },
-                    #returning,
-                )
-            }
+            ::kosame::repr::command::Insert::new(
+                &#table::TABLE,
+                {
+                    mod scope {}
+                    #values
+                },
+                #returning,
+            )
         }
         .to_tokens(tokens);
     }

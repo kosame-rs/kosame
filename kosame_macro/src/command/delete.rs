@@ -5,10 +5,7 @@ use syn::{
     parse::{Parse, ParseStream},
 };
 
-use crate::{
-    clause::*, keyword, path_ext::PathExt, quote_option::QuoteOption, scope_module::ScopeModule,
-    visitor::Visitor,
-};
+use crate::{clause::*, keyword, path_ext::PathExt, quote_option::QuoteOption, visitor::Visitor};
 
 pub struct Delete {
     pub _delete_keyword: keyword::delete,
@@ -58,33 +55,21 @@ impl ToTokens for Delete {
         let r#where = QuoteOption(self.r#where.as_ref());
         let returning = QuoteOption(self.returning.as_ref());
 
-        let scope = ScopeModule::new(
-            std::iter::once(&FromItem::Table {
-                table: self.table.clone(),
-                alias: None,
-            })
-            .chain(self.using.as_ref().map(|using| &using.item)),
-        );
-
         quote! {
-            {
-                #scope
-
-                ::kosame::repr::command::Delete::new(
-                    &#table::TABLE,
-                    #using,
-                    #r#where,
-                    #returning,
-                )
-            }
+            ::kosame::repr::command::Delete::new(
+                &#table::TABLE,
+                #using,
+                #r#where,
+                #returning,
+            )
         }
         .to_tokens(tokens);
     }
 }
 
 pub struct Using {
-    _using_keyword: keyword::using,
-    item: FromItem,
+    pub _using_keyword: keyword::using,
+    pub item: FromItem,
 }
 
 impl Using {

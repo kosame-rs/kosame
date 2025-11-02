@@ -16,7 +16,14 @@ pub struct CommandTree<'a> {
 }
 
 impl<'a> CommandTree<'a> {
-    fn find_node(&self, command: &Command) -> usize {
+    fn find_node(&self, command: &Command) -> &Node<'a> {
+        self.nodes
+            .iter()
+            .find(|node| std::ptr::eq(node.command, command))
+            .expect("start node not found")
+    }
+
+    fn find_node_index(&self, command: &Command) -> usize {
         self.nodes
             .iter()
             .position(|node| std::ptr::eq(node.command, command))
@@ -43,15 +50,32 @@ impl<'a> CommandTree<'a> {
     pub fn with<R>(f: impl FnOnce(&CommandTree<'_>) -> R) -> R {
         COMMAND_TREE.with_borrow(|command_tree| match command_tree {
             Some(command_tree) => f(command_tree),
-            None => panic!("used `CommandTree::with` outside command tree scope"),
+            None => panic!("called `CommandTree::with` outside command tree scope"),
         })
     }
 
     pub fn command_scope(&self, command: &Command, f: impl FnOnce()) {
-        let index = self.find_node(command);
+        let index = self.find_node_index(command);
         let previous = STACK.with_borrow_mut(|stack| stack.replace(index));
         f();
         STACK.with_borrow_mut(|stack| *stack = previous);
+    }
+
+    pub fn with_command<R>(f: impl FnOnce(&Command) -> R) -> R {
+        Self::with(|command_tree| {
+            let Some(command) = STACK.with_borrow(|command| command.clone()) else {
+                panic!("called `CommandTree::with_command` outside of a command scope")
+            };
+
+            let command = &command_tree.nodes[command];
+            f(command.command)
+        })
+    }
+
+    pub fn parent(&self, command: &Command) -> Option<&Command> {
+        self.find_node(command)
+            .parent
+            .map(|index| self.nodes[index].command)
     }
 
     // pub fn find_with_item(&self, start: &Command, alias: &Ident) -> Option<&'a WithItem> {
@@ -98,7 +122,7 @@ impl<'a> Visitor<'a> for CommandTreeBuilder<'a> {
             parent: self.stack.last().copied(),
             command,
         });
-        self.stack.push(self.tree.nodes.len());
+        self.stack.push(self.tree.nodes.len() - 1);
     }
 
     fn end_command(&mut self) {

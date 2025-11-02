@@ -57,26 +57,14 @@ impl ToTokens for Update {
         let r#where = QuoteOption(self.r#where.as_ref());
         let returning = QuoteOption(self.returning.as_ref());
 
-        let scope = ScopeModule::new(
-            std::iter::once(&FromItem::Table {
-                table: self.table.clone(),
-                alias: None,
-            })
-            .chain(self.from.as_ref().map(|from| &from.item)),
-        );
-
         quote! {
-            {
-                #scope
-
-                ::kosame::repr::command::Update::new(
-                    &#table::TABLE,
-                    #set,
-                    #from,
-                    #r#where,
-                    #returning,
-                )
-            }
+            ::kosame::repr::command::Update::new(
+                &#table::TABLE,
+                #set,
+                #from,
+                #r#where,
+                #returning,
+            )
         }
         .to_tokens(tokens);
     }

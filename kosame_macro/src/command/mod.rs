@@ -19,6 +19,7 @@ use crate::{
     clause::{Fields, With},
     keyword,
     quote_option::QuoteOption,
+    scope_module::ScopeModule,
     statement::CommandTree,
     visitor::Visitor,
 };
@@ -62,8 +63,19 @@ impl ToTokens for Command {
             command_tree.command_scope(self, || {
                 let with = QuoteOption::from(&self.with);
                 let command_type = &self.command_type;
-                quote! { ::kosame::repr::command::Command::new(#with, #command_type) }
-                    .to_tokens(tokens);
+
+                let scope_module = ScopeModule::from(self);
+
+                quote! {
+                    {
+                        const command: ::kosame::repr::command::Command<'static> = ::kosame::repr::command::Command::new(#with, #command_type);
+
+                        #scope_module
+
+                        command
+                    }
+                }
+                .to_tokens(tokens);
             });
         });
     }

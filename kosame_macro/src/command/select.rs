@@ -1,14 +1,10 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use syn::{
-    Attribute,
-    parse::{Parse, ParseStream},
-};
+use syn::parse::{Parse, ParseStream};
 
 use crate::{
     clause::{self, From, GroupBy, Having, Limit, Offset, OrderBy, Where, With},
     quote_option::QuoteOption,
-    scope_module::ScopeModule,
     visitor::Visitor,
 };
 
@@ -80,25 +76,17 @@ impl ToTokens for Select {
         let limit = QuoteOption(self.limit.as_ref());
         let offset = QuoteOption(self.offset.as_ref());
 
-        let scope = ScopeModule::new(self.from.as_ref().map(|from| &from.item));
-
         quote! {
-            {
-                const select: ::kosame::repr::command::Select<'static> = ::kosame::repr::command::Select::new(
-                    #select,
-                    #from,
-                    #r#where,
-                    #group_by,
-                    #having,
-                    #order_by,
-                    #limit,
-                    #offset,
-                );
-
-                #scope
-
-                select
-            }
+            ::kosame::repr::command::Select::new(
+                #select,
+                #from,
+                #r#where,
+                #group_by,
+                #having,
+                #order_by,
+                #limit,
+                #offset,
+            )
         }
         .to_tokens(tokens);
     }
