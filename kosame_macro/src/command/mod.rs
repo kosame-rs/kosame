@@ -6,7 +6,7 @@ mod update;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute,
+    Attribute, Path,
     parse::{Parse, ParseStream},
 };
 
@@ -16,10 +16,9 @@ pub use select::*;
 pub use update::*;
 
 use crate::{
-    clause::{Fields, With},
-    data_type::InferredType,
-    expr::ColumnRef,
+    clause::{Fields, FromItem, With},
     keyword,
+    part::TableAlias,
     quote_option::QuoteOption,
     scope_module::ScopeModule,
     statement::CommandTree,
@@ -66,7 +65,7 @@ impl ToTokens for Command {
                 let with = QuoteOption::from(&self.with);
                 let command_type = &self.command_type;
 
-                let scope_module = ScopeModule::from(self);
+                let scope_module = ScopeModule::new(self);
 
                 quote! {
                     {
@@ -97,10 +96,10 @@ impl CommandType {
 
     pub fn fields(&self) -> Option<&Fields> {
         match self {
-            Self::Delete(inner) => None,
-            Self::Insert(inner) => None,
+            Self::Delete(..) => None,
+            Self::Insert(..) => None,
             Self::Select(inner) => Some(&inner.select.fields),
-            Self::Update(inner) => None,
+            Self::Update(..) => None,
         }
     }
 
@@ -110,6 +109,24 @@ impl CommandType {
             Self::Insert(inner) => inner.accept(visitor),
             Self::Select(inner) => inner.accept(visitor),
             Self::Update(inner) => inner.accept(visitor),
+        }
+    }
+
+    pub fn table(&self) -> Option<(&Path, Option<&TableAlias>)> {
+        match self {
+            Self::Delete(delete) => Some((&delete.table, None)),
+            Self::Insert(insert) => Some((&insert.table, None)),
+            Self::Select(..) => None,
+            Self::Update(update) => Some((&update.table, None)),
+        }
+    }
+
+    pub fn from_item(&self) -> Option<&FromItem> {
+        match self {
+            Self::Delete(delete) => delete.using.as_ref().map(|using| &using.item),
+            Self::Insert(..) => None,
+            Self::Select(select) => select.from.as_ref().map(|from| &from.item),
+            Self::Update(update) => update.from.as_ref().map(|from| &from.item),
         }
     }
 }

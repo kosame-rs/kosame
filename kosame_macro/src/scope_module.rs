@@ -1,165 +1,133 @@
 use std::collections::HashMap;
 
-use proc_macro_error::OptionExt;
+use proc_macro_error::{OptionExt, abort};
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use syn::{Ident, Path};
+use syn::{Ident, Path, spanned::Spanned};
 
 use crate::{
-    clause::FromItem,
-    command::{Command, CommandType},
+    clause::{FromItem, FromItemIter},
+    command::Command,
     part::TableAlias,
     path_ext::PathExt,
-    statement::CommandTree,
+    statement::{Parent, ParentMap},
 };
 
-#[derive(Default, Clone)]
-pub struct ScopeModule {
-    parent: Option<Box<ScopeModule>>,
-    items: Vec<ScopeModuleItem>,
+pub struct ScopeIter<'a> {
+    command: &'a Command,
+    table: Option<(&'a Path, Option<&'a TableAlias>)>,
+    from_items: Option<FromItemIter<'a>>,
+    recursive: Option<&'a ParentMap<'a>>,
 }
 
-impl From<&Command> for ScopeModule {
-    fn from(value: &Command) -> Self {
-        let mut items = vec![];
-        fn collect_from_items(result: &mut Vec<ScopeModuleItem>, from_item: &FromItem) {
-            match from_item {
-                FromItem::Table { table, alias } => match alias {
-                    Some(TableAlias {
-                        name,
-                        columns: Some(columns),
-                        ..
-                    }) => {
-                        result.push(ScopeModuleItem::Custom {
-                            correlation: name.clone(),
-                            columns: columns.columns.iter().cloned().collect(),
-                        });
-                    }
-                    Some(TableAlias {
-                        name,
-                        columns: None,
-                        ..
-                    }) => {
-                        result.push(ScopeModuleItem::Aliased {
-                            table: table.clone(),
-                            alias: name.clone(),
-                        });
-                    }
-                    None => {
-                        result.push(ScopeModuleItem::Existing(table.clone()));
-                    }
-                },
-                FromItem::Subquery { command, alias, .. } => {
-                    if let Some(alias) = alias {
-                        if let Some(columns) = &alias.columns {
-                            result.push(ScopeModuleItem::Custom {
-                                correlation: alias.name.clone(),
-                                columns: columns.columns.iter().cloned().collect(),
-                            });
-                        } else {
-                            result.push(ScopeModuleItem::Custom {
-                                correlation: alias.name.clone(),
-                                columns: command
-                                    .fields()
-                                    .expect_or_abort("subquery must have return fields")
-                                    .iter()
-                                    .filter_map(|field| field.infer_name().cloned())
-                                    .collect(),
-                            });
-                        }
-                    }
-                }
-                FromItem::Join { left, right, .. } => {
-                    collect_from_items(result, left);
-                    collect_from_items(result, right);
-                }
-                FromItem::NaturalJoin { left, right, .. } => {
-                    collect_from_items(result, left);
-                    collect_from_items(result, right);
-                }
-                FromItem::CrossJoin { left, right, .. } => {
-                    collect_from_items(result, left);
-                    collect_from_items(result, right);
-                }
-            }
-        }
-
-        match &value.command_type {
-            CommandType::Delete(delete) => {
-                collect_from_items(
-                    &mut items,
-                    &FromItem::Table {
-                        table: delete.table.clone(),
-                        alias: None,
-                    },
-                );
-                if let Some(using) = &delete.using {
-                    collect_from_items(&mut items, &using.item);
-                }
-            }
-            CommandType::Select(select) => {
-                if let Some(from) = &select.from {
-                    collect_from_items(&mut items, &from.item);
-                }
-            }
-            CommandType::Insert(insert) => {
-                collect_from_items(
-                    &mut items,
-                    &FromItem::Table {
-                        table: insert.table.clone(),
-                        alias: None,
-                    },
-                );
-            }
-            CommandType::Update(update) => {
-                collect_from_items(
-                    &mut items,
-                    &FromItem::Table {
-                        table: update.table.clone(),
-                        alias: None,
-                    },
-                );
-                if let Some(from) = &update.from {
-                    collect_from_items(&mut items, &from.item);
-                }
-            }
-        }
-
+impl<'a> ScopeIter<'a> {
+    fn new(command: &'a Command, recursive: Option<&'a ParentMap<'a>>) -> Self {
         Self {
-            parent: CommandTree::with(|command_tree| {
-                command_tree
-                    .parent(value)
-                    .map(ScopeModule::from)
-                    .map(Box::new)
-            }),
-            items,
+            command,
+            table: command.command_type.table(),
+            from_items: command
+                .command_type
+                .from_item()
+                .map(|from_item| from_item.into_iter()),
+            recursive,
         }
     }
 }
 
-impl ToTokens for ScopeModule {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        let mut items = HashMap::new();
-        fn collect_items_recursive<'a>(
-            items: &mut HashMap<&'a Ident, &'a ScopeModuleItem>,
-            current: &'a ScopeModule,
-        ) {
-            for item in &current.items {
-                items.entry(item.name()).or_insert(item);
-            }
-            if let Some(parent) = &current.parent {
-                collect_items_recursive(items, parent);
+impl<'a> Iterator for ScopeIter<'a> {
+    type Item = ScopeIterItem<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some((table, alias)) = self.table.take() {
+            return Some(ScopeIterItem::Table { table, alias });
+        }
+        if let Some(next) = self
+            .from_items
+            .as_mut()
+            .and_then(|from_items| from_items.next())
+        {
+            return Some(ScopeIterItem::FromItem(next));
+        }
+        if let Some(parent_map) = &self.recursive {
+            let from_item = parent_map.seek_parent::<_, FromItem>(self.command)?;
+            self.command = parent_map.seek_parent::<_, Command>(self.command)?;
+            match from_item {
+                FromItem::Subquery {
+                    lateral_keyword, ..
+                } => {
+                    if lateral_keyword.is_none() {
+                        return None;
+                    }
+                    if let Some(Parent::FromItem(parent)) = parent_map.parent(from_item) {
+                        if let Some(right) = parent.right()
+                            && std::ptr::eq(right, from_item)
+                        {
+                            self.from_items = parent.left().map(|left| left.into_iter());
+                            return self.next();
+                        }
+                    }
+                }
+                _ => return None,
             }
         }
-        collect_items_recursive(&mut items, self);
-        let items = items.values();
+        None
+    }
+}
 
-        let columns = self.items.iter().map(|table| {
-            let name = table.name();
-            quote! {
-                pub use super::tables::#name::columns::*;
-            }
+pub enum ScopeIterItem<'a> {
+    Table {
+        table: &'a Path,
+        alias: Option<&'a TableAlias>,
+    },
+    FromItem(&'a FromItem),
+}
+
+pub struct ScopeModule<'a> {
+    command: &'a Command,
+}
+
+impl<'a> ScopeModule<'a> {
+    pub fn new(command: &'a Command) -> Self {
+        Self { command }
+    }
+}
+
+impl ToTokens for ScopeModule<'_> {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let items = ParentMap::with(|parent_map| {
+            ScopeIter::new(self.command, Some(parent_map))
+                .flat_map(|item| match item {
+                    ScopeIterItem::Table { table, alias } => {
+                        ScopeModuleItem::try_from(&FromItem::Table {
+                            table: table.clone(),
+                            alias: None,
+                        })
+                        .ok()
+                    }
+                    ScopeIterItem::FromItem(from_item) => ScopeModuleItem::try_from(from_item).ok(),
+                })
+                .map(|item| item.to_token_stream())
+                .collect::<Vec<_>>()
         });
+
+        let local_items = ScopeIter::new(self.command, None);
+        let columns = local_items
+            .flat_map(|item| match item {
+                ScopeIterItem::Table { table, alias } => {
+                    ScopeModuleItem::try_from(&FromItem::Table {
+                        table: table.clone(),
+                        alias: None,
+                    })
+                    .ok()
+                }
+                ScopeIterItem::FromItem(from_item) => ScopeModuleItem::try_from(from_item).ok(),
+            })
+            .map(|item| {
+                let name = item.name();
+                quote! {
+                    pub use super::tables::#name::columns::*;
+                }
+            });
 
         quote! {
             mod scope {
@@ -194,6 +162,55 @@ impl ScopeModuleItem {
             Self::Existing(table) => &table.segments.last().expect("paths cannot be empty").ident,
             Self::Aliased { alias, .. } => alias,
             Self::Custom { correlation, .. } => correlation,
+        }
+    }
+}
+
+impl TryFrom<&FromItem> for ScopeModuleItem {
+    type Error = ();
+    fn try_from(value: &FromItem) -> Result<Self, Self::Error> {
+        match value {
+            FromItem::Table { table, alias } => match alias {
+                Some(TableAlias {
+                    name,
+                    columns: Some(columns),
+                    ..
+                }) => Ok(ScopeModuleItem::Custom {
+                    correlation: name.clone(),
+                    columns: columns.columns.iter().cloned().collect(),
+                }),
+                Some(TableAlias {
+                    name,
+                    columns: None,
+                    ..
+                }) => Ok(ScopeModuleItem::Aliased {
+                    table: table.clone(),
+                    alias: name.clone(),
+                }),
+                None => Ok(ScopeModuleItem::Existing(table.clone())),
+            },
+            FromItem::Subquery { command, alias, .. } => match alias {
+                Some(alias) => {
+                    if let Some(columns) = &alias.columns {
+                        Ok(ScopeModuleItem::Custom {
+                            correlation: alias.name.clone(),
+                            columns: columns.columns.iter().cloned().collect(),
+                        })
+                    } else {
+                        Ok(ScopeModuleItem::Custom {
+                            correlation: alias.name.clone(),
+                            columns: command
+                                .fields()
+                                .expect_or_abort("subquery must have return fields")
+                                .iter()
+                                .filter_map(|field| field.infer_name().cloned())
+                                .collect(),
+                        })
+                    }
+                }
+                None => Err(()),
+            },
+            _ => Err(()),
         }
     }
 }

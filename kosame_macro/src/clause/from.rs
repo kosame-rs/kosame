@@ -132,7 +132,7 @@ pub enum FromItem {
     },
     Subquery {
         lateral_keyword: Option<keyword::lateral>,
-        _paren_token: syn::token::Paren,
+        paren_token: syn::token::Paren,
         command: Box<Command>,
         alias: Option<TableAlias>,
     },
@@ -157,7 +157,7 @@ pub enum FromItem {
 }
 
 impl FromItem {
-    fn left(&self) -> Option<&FromItem> {
+    pub fn left(&self) -> Option<&FromItem> {
         match self {
             Self::Join { left, .. } => Some(left),
             Self::NaturalJoin { left, .. } => Some(left),
@@ -166,7 +166,7 @@ impl FromItem {
         }
     }
 
-    fn right(&self) -> Option<&FromItem> {
+    pub fn right(&self) -> Option<&FromItem> {
         match self {
             Self::Join { right, .. } => Some(right),
             Self::NaturalJoin { right, .. } => Some(right),
@@ -185,7 +185,7 @@ impl FromItem {
             let content;
             Ok(Self::Subquery {
                 lateral_keyword,
-                _paren_token: parenthesized!(content in input),
+                paren_token: parenthesized!(content in input),
                 command: content.parse()?,
                 alias: input.call(TableAlias::parse_optional)?,
             })
@@ -355,7 +355,7 @@ impl<'a> Iterator for FromItemIter<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let result = self.stack.pop()?;
-        if let Some(next) = self.stack.last().and_then(|next| next.right()) {
+        if let Some(next) = result.right() {
             self.stack.push(next);
             while let Some(left) = self.stack.last().unwrap().left() {
                 self.stack.push(left);

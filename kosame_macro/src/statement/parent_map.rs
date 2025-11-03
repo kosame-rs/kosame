@@ -41,41 +41,46 @@ impl<'a> ParentMap<'a> {
         })
     }
 
-    pub fn with_parent<'b, N, R>(node: &'a N, f: impl FnOnce(Option<&Parent<'_>>) -> R) -> R
+    pub fn parent<N>(&self, node: &'a N) -> Option<&Parent<'a>>
     where
-        N: 'b,
-        Parent<'b>: From<&'b N>,
-    {
-        fn inner<R>(ptr: *const (), f: impl FnOnce(Option<&Parent<'_>>) -> R) -> R {
-            ParentMap::with(|parent_map| f(parent_map.map.get(&ptr)))
-        }
-        inner(node as *const N as *const (), f)
-    }
-
-    pub fn seek_parent<'b, N, P, R>(node: &'a N, f: impl FnOnce(Option<&P>) -> R) -> R
-    where
-        N: 'b,
-        Parent<'b>: From<&'b N>,
-        for<'c> &'c P: TryFrom<&'c Parent<'c>>,
+        Parent<'a>: From<&'a N>,
     {
         let ptr = node as *const N as *const ();
-        ParentMap::with(|parent_map| {
-            let mut current = parent_map.map.get(&ptr);
-            while let Some(parent) = current {
-                if let Ok(parent) = <&P>::try_from(parent) {
-                    return f(Some(parent));
-                }
-                current = Some(parent);
+        self.map.get(&ptr)
+    }
+
+    pub fn seek_parent<N, P>(&self, node: &'a N) -> Option<&'a P>
+    where
+        P: 'a,
+        Parent<'a>: From<&'a N>,
+        for<'b> &'a P: TryFrom<&'b Parent<'a>>,
+    {
+        let mut ptr = node as *const N as *const ();
+        while let Some(parent) = self.map.get(&ptr) {
+            if let Ok(parent) = <&'a P>::try_from(parent) {
+                return Some(parent);
             }
-            f(None)
-        })
+            ptr = parent.as_ptr();
+        }
+        None
     }
 }
 
+#[derive(Clone)]
 pub enum Parent<'a> {
     Command(&'a Command),
     FromItem(&'a FromItem),
     WithItem(&'a WithItem),
+}
+
+impl Parent<'_> {
+    fn as_ptr(&self) -> *const () {
+        match self {
+            Self::Command(inner) => *inner as *const Command as *const (),
+            Self::FromItem(inner) => *inner as *const FromItem as *const (),
+            Self::WithItem(inner) => *inner as *const WithItem as *const (),
+        }
+    }
 }
 
 impl<'a> From<&'a Command> for Parent<'a> {
@@ -126,20 +131,10 @@ impl<'a> TryFrom<&Parent<'a>> for &'a WithItem {
     }
 }
 
-impl<'a> Parent<'a> {
-    pub fn with_parent<R>(&self, f: impl FnOnce(Option<&Parent<'_>>) -> R) -> R {
-        match self {
-            Self::Command(inner) => ParentMap::with_parent(*inner, f),
-            Self::FromItem(inner) => ParentMap::with_parent(*inner, f),
-            Self::WithItem(inner) => ParentMap::with_parent(*inner, f),
-        }
-    }
-}
-
 #[derive(Default)]
 pub struct ParentMapBuilder<'a> {
     parent_map: ParentMap<'a>,
-    stack: Vec<*const ()>,
+    stack: Vec<Parent<'a>>,
 }
 
 impl<'a> ParentMapBuilder<'a> {
@@ -147,12 +142,13 @@ impl<'a> ParentMapBuilder<'a> {
         Default::default()
     }
 
-    fn push<T>(&mut self, ptr: &T, parent: Parent<'a>) {
-        let ptr = ptr as *const T as *const ();
-        if self.parent_map.map.insert(ptr, parent).is_some() {
-            panic!("node has multiple parents");
+    fn push(&mut self, new: Parent<'a>) {
+        if let Some(parent) = self.stack.last() {
+            if self.parent_map.map.insert(new.as_ptr(), parent.clone()).is_some() {
+                panic!("node has multiple parents");
+            }
         }
-        self.stack.push(ptr);
+        self.stack.push(new);
     }
 
     pub fn build(self) -> ParentMap<'a> {
@@ -162,7 +158,7 @@ impl<'a> ParentMapBuilder<'a> {
 
 impl<'a> Visitor<'a> for ParentMapBuilder<'a> {
     fn visit_command(&mut self, node: &'a Command) {
-        self.push(node, node.into());
+        self.push(node.into());
     }
 
     fn end_command(&mut self) {
@@ -170,7 +166,7 @@ impl<'a> Visitor<'a> for ParentMapBuilder<'a> {
     }
 
     fn visit_from_item(&mut self, node: &'a FromItem) {
-        self.push(node, node.into());
+        self.push(node.into());
     }
 
     fn end_from_item(&mut self) {
@@ -178,7 +174,7 @@ impl<'a> Visitor<'a> for ParentMapBuilder<'a> {
     }
 
     fn visit_with_item(&mut self, node: &'a WithItem) {
-        self.push(node, node.into());
+        self.push(node.into());
     }
 
     fn end_with_item(&mut self) {
