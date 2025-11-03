@@ -88,145 +88,33 @@ impl<'a> ScopeModule<'a> {
 
 impl ToTokens for ScopeModule<'_> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let items = ParentMap::with(|parent_map| {
-            ScopeIter::new(self.command, Some(parent_map))
-                .flat_map(|item| match item {
-                    ScopeIterItem::TargetTable(target_table) => {
-                        ScopeModuleItem::try_from(&FromItem::Table {
-                            table: target_table.table.clone(),
-                            alias: None,
-                        })
-                        .ok()
+        let mut tables = TokenStream::new();
+        ParentMap::with(|parent_map| {
+            fn table_tokens(path: &Path, alias: Option<&Ident>) -> TokenStream {
+                match alias {
+                    Some(alias) => {
+                        let path = path.to_call_site(4);
+                        let table_name = alias.to_string();
+                        quote! {
+                            pub mod #alias {
+                                pub const TABLE_NAME: &str = #table_name;
+                                pub use #path::columns;
+                            }
+                        }
                     }
-                    ScopeIterItem::FromItem(from_item) => ScopeModuleItem::try_from(from_item).ok(),
-                })
-                .map(|item| item.to_token_stream())
-                .collect::<Vec<_>>()
-        });
-
-        let columns = ScopeIter::new(self.command, None)
-            .flat_map(|item| match item {
-                ScopeIterItem::TargetTable(target_table) => Some(target_table.name()),
-                ScopeIterItem::FromItem(from_item) => from_item.name(),
-            })
-            .map(|name| {
-                quote! {
-                    pub use super::tables::#name::columns::*;
-                }
-            });
-
-        quote! {
-            mod scope {
-                pub mod tables {
-                    #(#items)*
-                }
-                pub mod columns {
-                    #(#columns)*
-                }
-            }
-        }
-        .to_tokens(tokens);
-    }
-}
-
-#[derive(Clone)]
-enum ScopeModuleItem {
-    Existing(Path),
-    Aliased {
-        table: Path,
-        alias: Ident,
-    },
-    Custom {
-        correlation: Ident,
-        columns: Vec<Ident>,
-    },
-}
-
-impl ScopeModuleItem {
-    fn name(&self) -> &Ident {
-        match self {
-            Self::Existing(table) => &table.segments.last().expect("paths cannot be empty").ident,
-            Self::Aliased { alias, .. } => alias,
-            Self::Custom { correlation, .. } => correlation,
-        }
-    }
-}
-
-impl TryFrom<&FromItem> for ScopeModuleItem {
-    type Error = ();
-    fn try_from(value: &FromItem) -> Result<Self, Self::Error> {
-        match value {
-            FromItem::Table { table, alias } => match alias {
-                Some(TableAlias {
-                    name,
-                    columns: Some(columns),
-                    ..
-                }) => Ok(ScopeModuleItem::Custom {
-                    correlation: name.clone(),
-                    columns: columns.columns.iter().cloned().collect(),
-                }),
-                Some(TableAlias {
-                    name,
-                    columns: None,
-                    ..
-                }) => Ok(ScopeModuleItem::Aliased {
-                    table: table.clone(),
-                    alias: name.clone(),
-                }),
-                None => Ok(ScopeModuleItem::Existing(table.clone())),
-            },
-            FromItem::Subquery { command, alias, .. } => match alias {
-                Some(
-                    alias @ TableAlias {
-                        columns: Some(columns),
-                        ..
-                    },
-                ) => Ok(ScopeModuleItem::Custom {
-                    correlation: alias.name.clone(),
-                    columns: columns.columns.iter().cloned().collect(),
-                }),
-                Some(alias) => Ok(ScopeModuleItem::Custom {
-                    correlation: alias.name.clone(),
-                    columns: command
-                        .fields()
-                        .expect_or_abort("subquery must have return fields")
-                        .iter()
-                        .filter_map(|field| field.infer_name().cloned())
-                        .collect(),
-                }),
-                None => Err(()),
-            },
-            _ => Err(()),
-        }
-    }
-}
-
-impl ToTokens for ScopeModuleItem {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        match self {
-            ScopeModuleItem::Existing(table) => {
-                let table = table.to_call_site(3);
-                quote! { pub use #table; }
-            }
-            ScopeModuleItem::Aliased { table, alias } => {
-                let table = table.to_call_site(4);
-                let table_name = alias.to_string();
-                quote! {
-                    pub mod #alias {
-                        pub const TABLE_NAME: &str = #table_name;
-                        pub use #table::columns;
+                    None => {
+                        let path = path.to_call_site(3);
+                        quote! { pub use #path; }
                     }
                 }
             }
-            ScopeModuleItem::Custom {
-                correlation,
-                columns,
-            } => {
-                let table_name = correlation.to_string();
+
+            fn custom_tokens(name: &Ident, columns: &[&Ident]) -> TokenStream {
+                let name_string = name.to_string();
                 let column_strings = columns.iter().map(|column| column.to_string());
                 quote! {
-                    pub mod #correlation {
-                        pub const TABLE_NAME: &str = #table_name;
+                    pub mod #name {
+                        pub const TABLE_NAME: &str = #name_string;
                         pub mod columns {
                             #(
                                 pub mod #columns {
@@ -236,6 +124,66 @@ impl ToTokens for ScopeModuleItem {
                         }
                     }
                 }
+            }
+
+            for item in ScopeIter::new(self.command, Some(parent_map)) {
+                match item {
+                    ScopeIterItem::TargetTable(target_table) => table_tokens(
+                        &target_table.table,
+                        target_table.alias.as_ref().map(|alias| &alias.ident),
+                    ),
+                    ScopeIterItem::FromItem(from_item) => match from_item {
+                        FromItem::Table { table, alias } => match alias {
+                            Some(TableAlias {
+                                name,
+                                columns: Some(columns),
+                                ..
+                            }) => custom_tokens(name, &columns.columns.iter().collect::<Vec<_>>()),
+                            _ => table_tokens(table, alias.as_ref().map(|alias| &alias.name)),
+                        },
+                        FromItem::Subquery { command, alias, .. } => match alias {
+                            Some(
+                                alias @ TableAlias {
+                                    columns: Some(columns),
+                                    ..
+                                },
+                            ) => custom_tokens(
+                                &alias.name,
+                                &columns.columns.iter().collect::<Vec<_>>(),
+                            ),
+                            Some(alias) => custom_tokens(
+                                &alias.name,
+                                &command
+                                    .fields()
+                                    .expect_or_abort("subquery must have return fields")
+                                    .iter()
+                                    .filter_map(|field| field.infer_name())
+                                    .collect::<Vec<_>>(),
+                            ),
+                            None => quote! {},
+                        },
+                        _ => quote! {},
+                    },
+                }
+                .to_tokens(&mut tables);
+            }
+        });
+
+        let mut local_columns = TokenStream::new();
+        for item in ScopeIter::new(self.command, None) {
+            let name = match item {
+                ScopeIterItem::TargetTable(target_table) => Some(target_table.name()),
+                ScopeIterItem::FromItem(from_item) => from_item.name(),
+            };
+            if let Some(name) = name {
+                quote! { pub use super::tables::#name::columns::*; }.to_tokens(&mut local_columns);
+            }
+        }
+
+        quote! {
+            mod scope {
+                pub mod tables { #tables }
+                pub mod columns { #local_columns }
             }
         }
         .to_tokens(tokens);
