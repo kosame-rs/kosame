@@ -9,6 +9,7 @@ use syn::{
 use crate::{
     command::{Command, CommandType},
     keyword,
+    parent_map::Id,
     part::TableAlias,
     visitor::Visitor,
 };
@@ -67,6 +68,7 @@ impl ToTokens for With {
 }
 
 pub struct WithItem {
+    pub id: Id,
     pub alias: TableAlias,
     pub _as_token: Token![as],
     pub _paren_token: syn::token::Paren,
@@ -85,6 +87,7 @@ impl Parse for WithItem {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let content;
         Ok(Self {
+            id: Id::new(),
             alias: input.parse()?,
             _as_token: input.parse()?,
             _paren_token: parenthesized!(content in input),

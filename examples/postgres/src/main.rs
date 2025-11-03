@@ -57,6 +57,9 @@ fn main() {
     let id = 7;
 
     let statement = kosame::pg_statement! {
+        with kek as (
+            select 5, 6
+        )
         select
             posts_2.id: i32,
             pip.id as comment_id: ::std::option::Option<i32>

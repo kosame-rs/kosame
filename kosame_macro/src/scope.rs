@@ -133,7 +133,7 @@ impl ToTokens for ScopeModule<'_> {
                         target_table.alias.as_ref().map(|alias| &alias.ident),
                     ),
                     ScopeIterItem::FromItem(from_item) => match from_item {
-                        FromItem::Table { table, alias } => match alias {
+                        FromItem::Table { table, alias, .. } => match alias {
                             Some(TableAlias {
                                 name,
                                 columns: Some(columns),

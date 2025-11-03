@@ -18,6 +18,7 @@ pub use update::*;
 use crate::{
     clause::{Fields, FromItem, With},
     keyword,
+    parent_map::Id,
     part::TargetTable,
     quote_option::QuoteOption,
     scope::ScopeModule,
@@ -25,6 +26,7 @@ use crate::{
 };
 
 pub struct Command {
+    pub id: Id,
     pub attrs: Vec<Attribute>,
     pub with: Option<With>,
     pub command_type: CommandType,
@@ -59,6 +61,7 @@ impl Command {
 impl Parse for Command {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
+            id: Id::new(),
             attrs: input.call(Attribute::parse_outer)?,
             with: input.call(With::parse_optional)?,
             command_type: input.parse()?,

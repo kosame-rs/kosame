@@ -6,8 +6,15 @@ use syn::{
 };
 
 use crate::{
-    clause::WithItem, command::Command, expr::Expr, keyword, parent_map::ParentMap,
-    part::TableAlias, path_ext::PathExt, quote_option::QuoteOption, visitor::Visitor,
+    clause::WithItem,
+    command::Command,
+    expr::Expr,
+    keyword,
+    parent_map::{Id, ParentMap},
+    part::TableAlias,
+    path_ext::PathExt,
+    quote_option::QuoteOption,
+    visitor::Visitor,
 };
 
 pub struct From {
@@ -127,28 +134,33 @@ impl Parse for On {
 
 pub enum FromItem {
     Table {
+        id: Id,
         table: Path,
         alias: Option<TableAlias>,
     },
     Subquery {
+        id: Id,
         lateral_keyword: Option<keyword::lateral>,
         paren_token: syn::token::Paren,
         command: Box<Command>,
         alias: Option<TableAlias>,
     },
     Join {
+        id: Id,
         left: Box<FromItem>,
         join_type: JoinType,
         right: Box<FromItem>,
         on: On,
     },
     NaturalJoin {
+        id: Id,
         _natural_keyword: keyword::natural,
         left: Box<FromItem>,
         join_type: JoinType,
         right: Box<FromItem>,
     },
     CrossJoin {
+        id: Id,
         left: Box<FromItem>,
         _cross_keyword: keyword::cross,
         _join_keyword: keyword::join,
@@ -166,6 +178,7 @@ impl FromItem {
         if lookahead.peek(syn::token::Paren) {
             let content;
             Ok(Self::Subquery {
+                id: Id::new(),
                 lateral_keyword,
                 paren_token: parenthesized!(content in input),
                 command: content.parse()?,
@@ -173,6 +186,7 @@ impl FromItem {
             })
         } else if lookahead.peek(Ident) {
             Ok(Self::Table {
+                id: Id::new(),
                 table: input.parse()?,
                 alias: input.call(TableAlias::parse_optional)?,
             })
@@ -211,7 +225,7 @@ impl FromItem {
 
     pub fn name(&self) -> Option<&Ident> {
         match self {
-            Self::Table { table, alias } => Some(
+            Self::Table { table, alias, .. } => Some(
                 alias
                     .as_ref()
                     .map(|alias| &alias.name)
@@ -244,6 +258,16 @@ impl FromItem {
         }
     }
 
+    pub fn id(&self) -> &Id {
+        match self {
+            Self::Table { id, .. } => id,
+            Self::Subquery { id, .. } => id,
+            Self::Join { id, .. } => id,
+            Self::NaturalJoin { id, .. } => id,
+            Self::CrossJoin { id, .. } => id,
+        }
+    }
+
     pub fn left(&self) -> Option<&FromItem> {
         match self {
             Self::Join { left, .. } => Some(left),
@@ -269,6 +293,7 @@ impl Parse for FromItem {
         loop {
             if JoinType::peek(input) {
                 item = FromItem::Join {
+                    id: Id::new(),
                     left: Box::new(item),
                     join_type: input.parse()?,
                     right: Box::new(Self::parse_prefix(input)?),
@@ -278,6 +303,7 @@ impl Parse for FromItem {
             }
             if input.peek(keyword::natural) {
                 item = FromItem::NaturalJoin {
+                    id: Id::new(),
                     _natural_keyword: input.call(keyword::natural::parse_autocomplete)?,
                     left: Box::new(item),
                     join_type: input.parse()?,
@@ -286,6 +312,7 @@ impl Parse for FromItem {
             }
             if input.peek(keyword::cross) {
                 item = FromItem::CrossJoin {
+                    id: Id::new(),
                     left: Box::new(item),
                     _cross_keyword: input.call(keyword::cross::parse_autocomplete)?,
                     _join_keyword: input.call(keyword::join::parse_autocomplete)?,
@@ -301,7 +328,7 @@ impl Parse for FromItem {
 impl ToTokens for FromItem {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
-            Self::Table { table, alias } => {
+            Self::Table { table, alias, .. } => {
                 let table = table.to_call_site(1);
                 let alias = QuoteOption::from(alias);
                 quote! {
@@ -332,6 +359,7 @@ impl ToTokens for FromItem {
                 join_type,
                 right,
                 on,
+                ..
             } => {
                 let on = &on.expr;
                 quote! {

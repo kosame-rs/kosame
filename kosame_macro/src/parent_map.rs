@@ -1,10 +1,27 @@
-use std::{cell::RefCell, collections::HashMap};
+use std::{cell::RefCell, collections::HashMap, sync::atomic::Ordering};
 
 use crate::{
     clause::{FromItem, WithItem},
     command::Command,
     visitor::Visitor,
 };
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy)]
+pub struct Id(u32);
+
+impl Id {
+    pub fn new() -> Self {
+        static AUTO_INCREMENT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        let increment = AUTO_INCREMENT.fetch_add(1, Ordering::Relaxed);
+        Self(increment)
+    }
+}
+
+impl Default for Id {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 thread_local! {
     /// Usage of this field is unsafe, see comment below.
@@ -13,7 +30,7 @@ thread_local! {
 
 #[derive(Default)]
 pub struct ParentMap<'a> {
-    map: HashMap<*const (), Parent<'a>>,
+    map: HashMap<Id, Parent<'a>>,
 }
 
 impl<'a> ParentMap<'a> {
@@ -45,8 +62,7 @@ impl<'a> ParentMap<'a> {
     where
         Parent<'a>: From<&'a N>,
     {
-        let ptr = node as *const N as *const ();
-        self.map.get(&ptr)
+        self.map.get(Parent::from(node).id())
     }
 
     pub fn seek_parent<N, P>(&self, node: &'a N) -> Option<&'a P>
@@ -55,12 +71,12 @@ impl<'a> ParentMap<'a> {
         Parent<'a>: From<&'a N>,
         for<'b> &'a P: TryFrom<&'b Parent<'a>>,
     {
-        let mut ptr = node as *const N as *const ();
-        while let Some(parent) = self.map.get(&ptr) {
+        let mut node = &Parent::from(node);
+        while let Some(parent) = self.map.get(node.id()) {
             if let Ok(parent) = <&'a P>::try_from(parent) {
                 return Some(parent);
             }
-            ptr = parent.as_ptr();
+            node = parent;
         }
         None
     }
@@ -74,11 +90,11 @@ pub enum Parent<'a> {
 }
 
 impl Parent<'_> {
-    fn as_ptr(&self) -> *const () {
+    fn id(&self) -> &Id {
         match self {
-            Self::Command(inner) => *inner as *const Command as *const (),
-            Self::FromItem(inner) => *inner as *const FromItem as *const (),
-            Self::WithItem(inner) => *inner as *const WithItem as *const (),
+            Self::Command(inner) => &inner.id,
+            Self::FromItem(inner) => inner.id(),
+            Self::WithItem(inner) => &inner.id,
         }
     }
 }
@@ -146,13 +162,17 @@ impl<'a> ParentMapBuilder<'a> {
     where
         &'a N: Into<Parent<'a>>,
     {
-        let ptr = node as *const N as *const ();
+        let node = node.into();
         if let Some(parent) = self.stack.last()
-            && self.parent_map.map.insert(ptr, parent.clone()).is_some()
+            && self
+                .parent_map
+                .map
+                .insert(*node.id(), parent.clone())
+                .is_some()
         {
             panic!("node has multiple parents");
         }
-        self.stack.push(node.into());
+        self.stack.push(node);
     }
 
     pub fn build(self) -> ParentMap<'a> {
