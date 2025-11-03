@@ -7,13 +7,13 @@ use crate::{
     clause::{FromItem, FromItemIter},
     command::Command,
     parent_map::{Parent, ParentMap},
-    part::TableAlias,
+    part::{TableAlias, TargetTable},
     path_ext::PathExt,
 };
 
 pub struct ScopeIter<'a> {
     command: &'a Command,
-    table: Option<(&'a Path, Option<&'a TableAlias>)>,
+    target_table: Option<&'a TargetTable>,
     from_items: Option<FromItemIter<'a>>,
     recursive: Option<&'a ParentMap<'a>>,
 }
@@ -22,7 +22,7 @@ impl<'a> ScopeIter<'a> {
     fn new(command: &'a Command, recursive: Option<&'a ParentMap<'a>>) -> Self {
         Self {
             command,
-            table: command.command_type.table(),
+            target_table: command.target_table(),
             from_items: command
                 .command_type
                 .from_item()
@@ -36,8 +36,8 @@ impl<'a> Iterator for ScopeIter<'a> {
     type Item = ScopeIterItem<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some((table, alias)) = self.table.take() {
-            return Some(ScopeIterItem::Table { table, alias });
+        if let Some(target_table) = self.target_table.take() {
+            return Some(ScopeIterItem::TargetTable(target_table));
         }
         if let Some(next) = self
             .from_items
@@ -72,10 +72,7 @@ impl<'a> Iterator for ScopeIter<'a> {
 }
 
 pub enum ScopeIterItem<'a> {
-    Table {
-        table: &'a Path,
-        alias: Option<&'a TableAlias>,
-    },
+    TargetTable(&'a TargetTable),
     FromItem(&'a FromItem),
 }
 
@@ -94,9 +91,9 @@ impl ToTokens for ScopeModule<'_> {
         let items = ParentMap::with(|parent_map| {
             ScopeIter::new(self.command, Some(parent_map))
                 .flat_map(|item| match item {
-                    ScopeIterItem::Table { table, .. } => {
+                    ScopeIterItem::TargetTable(target_table) => {
                         ScopeModuleItem::try_from(&FromItem::Table {
-                            table: table.clone(),
+                            table: target_table.table.clone(),
                             alias: None,
                         })
                         .ok()
@@ -110,11 +107,13 @@ impl ToTokens for ScopeModule<'_> {
         let local_items = ScopeIter::new(self.command, None);
         let columns = local_items
             .flat_map(|item| match item {
-                ScopeIterItem::Table { table, .. } => ScopeModuleItem::try_from(&FromItem::Table {
-                    table: table.clone(),
-                    alias: None,
-                })
-                .ok(),
+                ScopeIterItem::TargetTable(target_table) => {
+                    ScopeModuleItem::try_from(&FromItem::Table {
+                        table: target_table.table.clone(),
+                        alias: None,
+                    })
+                    .ok()
+                }
                 ScopeIterItem::FromItem(from_item) => ScopeModuleItem::try_from(from_item).ok(),
             })
             .map(|item| {

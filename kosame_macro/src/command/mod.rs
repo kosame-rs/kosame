@@ -6,7 +6,7 @@ mod update;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Path,
+    Attribute,
     parse::{Parse, ParseStream},
 };
 
@@ -18,7 +18,7 @@ pub use update::*;
 use crate::{
     clause::{Fields, FromItem, With},
     keyword,
-    part::TableAlias,
+    part::TargetTable,
     quote_option::QuoteOption,
     scope_module::ScopeModule,
     visitor::Visitor,
@@ -44,6 +44,15 @@ impl Command {
 
     pub fn fields(&self) -> Option<&Fields> {
         self.command_type.fields()
+    }
+
+    pub fn target_table(&self) -> Option<&TargetTable> {
+        self.command_type.target_table()
+    }
+
+    #[allow(clippy::wrong_self_convention)]
+    pub fn from_item(&self) -> Option<&FromItem> {
+        self.command_type.from_item()
     }
 }
 
@@ -88,15 +97,6 @@ impl CommandType {
         Delete::peek(input) || Insert::peek(input) || Select::peek(input) || Update::peek(input)
     }
 
-    pub fn fields(&self) -> Option<&Fields> {
-        match self {
-            Self::Delete(..) => None,
-            Self::Insert(..) => None,
-            Self::Select(inner) => Some(&inner.select.fields),
-            Self::Update(..) => None,
-        }
-    }
-
     pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
         match self {
             Self::Delete(inner) => inner.accept(visitor),
@@ -106,12 +106,21 @@ impl CommandType {
         }
     }
 
-    pub fn table(&self) -> Option<(&Path, Option<&TableAlias>)> {
+    pub fn fields(&self) -> Option<&Fields> {
         match self {
-            Self::Delete(delete) => Some((&delete.table, None)),
-            Self::Insert(insert) => Some((&insert.table, None)),
+            Self::Delete(..) => None,
+            Self::Insert(..) => None,
+            Self::Select(inner) => Some(&inner.select.fields),
+            Self::Update(..) => None,
+        }
+    }
+
+    pub fn target_table(&self) -> Option<&TargetTable> {
+        match self {
+            Self::Delete(delete) => Some(&delete.target_table),
+            Self::Insert(insert) => Some(&insert.target_table),
             Self::Select(..) => None,
-            Self::Update(update) => Some((&update.table, None)),
+            Self::Update(update) => Some(&update.target_table),
         }
     }
 

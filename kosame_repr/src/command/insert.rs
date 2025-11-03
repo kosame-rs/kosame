@@ -1,9 +1,9 @@
 use std::fmt::Write;
 
-use crate::{clause::*, schema::Table};
+use crate::{clause::*, part::TargetTable};
 
 pub struct Insert<'a> {
-    table: &'a Table<'a>,
+    target_table: TargetTable<'a>,
     values: Values<'a>,
     returning: Option<Returning<'a>>,
 }
@@ -11,20 +11,20 @@ pub struct Insert<'a> {
 impl<'a> Insert<'a> {
     #[inline]
     pub const fn new(
-        table: &'a Table<'a>,
+        target_table: TargetTable<'a>,
         values: Values<'a>,
         returning: Option<Returning<'a>>,
     ) -> Self {
         Self {
-            table,
+            target_table,
             values,
             returning,
         }
     }
 
     #[inline]
-    pub const fn table(&self) -> &'a Table<'a> {
-        self.table
+    pub const fn target_table(&self) -> &TargetTable<'a> {
+        &self.target_table
     }
 
     #[inline]
@@ -44,7 +44,7 @@ impl kosame_sql::FmtSql for Insert<'_> {
         D: kosame_sql::Dialect,
     {
         formatter.write_str("insert into ")?;
-        formatter.write_ident(self.table.name())?;
+        self.target_table.fmt_sql(formatter)?;
 
         self.values.fmt_sql(formatter)?;
 

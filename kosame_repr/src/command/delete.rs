@@ -1,9 +1,9 @@
 use std::fmt::Write;
 
-use crate::{clause::*, schema::Table};
+use crate::{clause::*, part::TargetTable};
 
 pub struct Delete<'a> {
-    table: &'a Table<'a>,
+    target_table: TargetTable<'a>,
     using: Option<FromItem<'a>>,
     r#where: Option<Where<'a>>,
     returning: Option<Returning<'a>>,
@@ -12,13 +12,13 @@ pub struct Delete<'a> {
 impl<'a> Delete<'a> {
     #[inline]
     pub const fn new(
-        table: &'a Table<'a>,
+        target_table: TargetTable<'a>,
         using: Option<FromItem<'a>>,
         r#where: Option<Where<'a>>,
         returning: Option<Returning<'a>>,
     ) -> Self {
         Self {
-            table,
+            target_table,
             using,
             r#where,
             returning,
@@ -26,8 +26,8 @@ impl<'a> Delete<'a> {
     }
 
     #[inline]
-    pub const fn table(&self) -> &'a Table<'a> {
-        self.table
+    pub const fn target_table(&self) -> &TargetTable<'a> {
+        &self.target_table
     }
 }
 
@@ -37,7 +37,7 @@ impl kosame_sql::FmtSql for Delete<'_> {
         D: kosame_sql::Dialect,
     {
         formatter.write_str("delete from ")?;
-        formatter.write_ident(self.table.name())?;
+        self.target_table.fmt_sql(formatter)?;
 
         if let Some(using) = &self.using {
             formatter.write_str(" using ")?;

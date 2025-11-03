@@ -1,9 +1,9 @@
 use std::fmt::Write;
 
-use crate::{clause::*, schema::Table};
+use crate::{clause::*, part::TargetTable};
 
 pub struct Update<'a> {
-    table: &'a Table<'a>,
+    target_table: TargetTable<'a>,
     set: Set<'a>,
     from: Option<From<'a>>,
     r#where: Option<Where<'a>>,
@@ -13,14 +13,14 @@ pub struct Update<'a> {
 impl<'a> Update<'a> {
     #[inline]
     pub const fn new(
-        table: &'a Table<'a>,
+        target_table: TargetTable<'a>,
         set: Set<'a>,
         from: Option<From<'a>>,
         r#where: Option<Where<'a>>,
         returning: Option<Returning<'a>>,
     ) -> Self {
         Self {
-            table,
+            target_table,
             set,
             from,
             r#where,
@@ -29,8 +29,8 @@ impl<'a> Update<'a> {
     }
 
     #[inline]
-    pub const fn table(&self) -> &'a Table<'a> {
-        self.table
+    pub const fn target_table(&self) -> &TargetTable<'a> {
+        &self.target_table
     }
 
     #[inline]
@@ -60,7 +60,7 @@ impl kosame_sql::FmtSql for Update<'_> {
         D: kosame_sql::Dialect,
     {
         formatter.write_str("update ")?;
-        formatter.write_ident(self.table.name())?;
+        self.target_table.fmt_sql(formatter)?;
         self.set.fmt_sql(formatter)?;
 
         if let Some(from) = &self.from {

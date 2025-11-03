@@ -1,15 +1,12 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use syn::{
-    Path,
-    parse::{Parse, ParseStream},
-};
+use syn::parse::{Parse, ParseStream};
 
-use crate::{clause::*, keyword, path_ext::PathExt, quote_option::QuoteOption, visitor::Visitor};
+use crate::{clause::*, keyword, part::TargetTable, quote_option::QuoteOption, visitor::Visitor};
 
 pub struct Update {
     pub _update_keyword: keyword::update,
-    pub table: Path,
+    pub target_table: TargetTable,
     pub set: Set,
     pub from: Option<From>,
     pub r#where: Option<Where>,
@@ -22,7 +19,7 @@ impl Update {
     }
 
     pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
-        visitor.visit_table_ref(&self.table);
+        self.target_table.accept(visitor);
         self.set.accept(visitor);
         if let Some(inner) = &self.r#where {
             inner.accept(visitor)
@@ -37,7 +34,7 @@ impl Parse for Update {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
             _update_keyword: input.call(keyword::update::parse_autocomplete)?,
-            table: input.parse()?,
+            target_table: input.parse()?,
             set: input.parse()?,
             from: input.call(From::parse_optional)?,
             r#where: input.call(Where::parse_optional)?,
@@ -48,7 +45,7 @@ impl Parse for Update {
 
 impl ToTokens for Update {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let table = &self.table.to_call_site(1);
+        let target_table = &self.target_table;
         let set = &self.set;
         let from = QuoteOption(self.from.as_ref());
         let r#where = QuoteOption(self.r#where.as_ref());
@@ -56,7 +53,7 @@ impl ToTokens for Update {
 
         quote! {
             ::kosame::repr::command::Update::new(
-                &#table::TABLE,
+                #target_table,
                 #set,
                 #from,
                 #r#where,

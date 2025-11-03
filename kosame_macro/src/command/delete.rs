@@ -1,16 +1,13 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use syn::{
-    Path,
-    parse::{Parse, ParseStream},
-};
+use syn::parse::{Parse, ParseStream};
 
-use crate::{clause::*, keyword, path_ext::PathExt, quote_option::QuoteOption, visitor::Visitor};
+use crate::{clause::*, keyword, part::TargetTable, quote_option::QuoteOption, visitor::Visitor};
 
 pub struct Delete {
     pub _delete_keyword: keyword::delete,
     pub _from_keyword: keyword::from,
-    pub table: Path,
+    pub target_table: TargetTable,
     pub using: Option<Using>,
     pub r#where: Option<Where>,
     pub returning: Option<Returning>,
@@ -22,7 +19,7 @@ impl Delete {
     }
 
     pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
-        visitor.visit_table_ref(&self.table);
+        self.target_table.accept(visitor);
         if let Some(inner) = &self.using {
             inner.accept(visitor)
         }
@@ -40,7 +37,7 @@ impl Parse for Delete {
         Ok(Self {
             _delete_keyword: input.parse()?,
             _from_keyword: input.parse()?,
-            table: input.parse()?,
+            target_table: input.parse()?,
             using: input.call(Using::parse_optional)?,
             r#where: input.call(Where::parse_optional)?,
             returning: input.call(Returning::parse_optional)?,
@@ -50,14 +47,14 @@ impl Parse for Delete {
 
 impl ToTokens for Delete {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let table = &self.table.to_call_site(1);
+        let target_table = &self.target_table;
         let using = QuoteOption(self.using.as_ref());
         let r#where = QuoteOption(self.r#where.as_ref());
         let returning = QuoteOption(self.returning.as_ref());
 
         quote! {
             ::kosame::repr::command::Delete::new(
-                &#table::TABLE,
+                #target_table,
                 #using,
                 #r#where,
                 #returning,
