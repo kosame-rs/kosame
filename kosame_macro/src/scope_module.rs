@@ -104,20 +104,12 @@ impl ToTokens for ScopeModule<'_> {
                 .collect::<Vec<_>>()
         });
 
-        let local_items = ScopeIter::new(self.command, None);
-        let columns = local_items
+        let columns = ScopeIter::new(self.command, None)
             .flat_map(|item| match item {
-                ScopeIterItem::TargetTable(target_table) => {
-                    ScopeModuleItem::try_from(&FromItem::Table {
-                        table: target_table.table.clone(),
-                        alias: None,
-                    })
-                    .ok()
-                }
-                ScopeIterItem::FromItem(from_item) => ScopeModuleItem::try_from(from_item).ok(),
+                ScopeIterItem::TargetTable(target_table) => Some(target_table.name()),
+                ScopeIterItem::FromItem(from_item) => from_item.name(),
             })
-            .map(|item| {
-                let name = item.name();
+            .map(|name| {
                 quote! {
                     pub use super::tables::#name::columns::*;
                 }

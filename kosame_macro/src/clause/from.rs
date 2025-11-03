@@ -157,24 +157,6 @@ pub enum FromItem {
 }
 
 impl FromItem {
-    pub fn left(&self) -> Option<&FromItem> {
-        match self {
-            Self::Join { left, .. } => Some(left),
-            Self::NaturalJoin { left, .. } => Some(left),
-            Self::CrossJoin { left, .. } => Some(left),
-            _ => None,
-        }
-    }
-
-    pub fn right(&self) -> Option<&FromItem> {
-        match self {
-            Self::Join { right, .. } => Some(right),
-            Self::NaturalJoin { right, .. } => Some(right),
-            Self::CrossJoin { right, .. } => Some(right),
-            _ => None,
-        }
-    }
-
     fn parse_prefix(input: ParseStream) -> syn::Result<Self> {
         let lateral_keyword = input
             .peek(keyword::lateral)
@@ -225,6 +207,39 @@ impl FromItem {
             }
         }
         visitor.end_from_item();
+    }
+
+    pub fn name(&self) -> Option<&Ident> {
+        match self {
+            Self::Table { table, alias } => Some(
+                alias
+                    .as_ref()
+                    .map(|alias| &alias.name)
+                    .unwrap_or_else(|| &table.segments.last().expect("path cannot be empty").ident),
+            ),
+            Self::Subquery { alias, .. } => alias.as_ref().map(|alias| &alias.name),
+            Self::Join { .. } => None,
+            Self::NaturalJoin { .. } => None,
+            Self::CrossJoin { .. } => None,
+        }
+    }
+
+    pub fn left(&self) -> Option<&FromItem> {
+        match self {
+            Self::Join { left, .. } => Some(left),
+            Self::NaturalJoin { left, .. } => Some(left),
+            Self::CrossJoin { left, .. } => Some(left),
+            _ => None,
+        }
+    }
+
+    pub fn right(&self) -> Option<&FromItem> {
+        match self {
+            Self::Join { right, .. } => Some(right),
+            Self::NaturalJoin { right, .. } => Some(right),
+            Self::CrossJoin { right, .. } => Some(right),
+            _ => None,
+        }
     }
 }
 
