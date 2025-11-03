@@ -21,7 +21,6 @@ use crate::{
     part::TableAlias,
     quote_option::QuoteOption,
     scope_module::ScopeModule,
-    statement::CommandTree,
     visitor::Visitor,
 };
 
@@ -60,25 +59,20 @@ impl Parse for Command {
 
 impl ToTokens for Command {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        CommandTree::with(|command_tree| {
-            command_tree.command_scope(self, || {
-                let with = QuoteOption::from(&self.with);
-                let command_type = &self.command_type;
+        let with = QuoteOption::from(&self.with);
+        let command_type = &self.command_type;
 
-                let scope_module = ScopeModule::new(self);
+        let scope_module = ScopeModule::new(self);
 
-                quote! {
-                    {
-                        const command: ::kosame::repr::command::Command<'static> = ::kosame::repr::command::Command::new(#with, #command_type);
+        quote! {
+            {
+                const command: ::kosame::repr::command::Command<'static> = ::kosame::repr::command::Command::new(#with, #command_type);
 
-                        #scope_module
+                #scope_module
 
-                        command
-                    }
-                }
-                .to_tokens(tokens);
-            });
-        });
+                command
+            }
+        }.to_tokens(tokens);
     }
 }
 

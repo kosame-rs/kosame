@@ -6,9 +6,9 @@ use syn::{Ident, Path};
 use crate::{
     clause::{FromItem, FromItemIter},
     command::Command,
+    parent_map::{Parent, ParentMap},
     part::TableAlias,
     path_ext::PathExt,
-    statement::{Parent, ParentMap},
 };
 
 pub struct ScopeIter<'a> {
