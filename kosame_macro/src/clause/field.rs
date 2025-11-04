@@ -14,6 +14,7 @@ use crate::{
     part::{Alias, TypeOverride},
     quote_option::QuoteOption,
     row::RowField,
+    scopes::ScopeId,
     visitor::Visitor,
 };
 
@@ -25,7 +26,7 @@ pub struct Field {
 }
 
 impl Field {
-    pub fn to_row_field(&self) -> RowField {
+    pub fn to_row_field(&self, scope_id: ScopeId) -> RowField {
         let Some(name) = self.infer_name() else {
             abort!(
                 self.expr.span(),
@@ -33,7 +34,7 @@ impl Field {
                 help = "consider adding an alias using `as my_alias`"
             );
         };
-        let Some(inferred_type) = self.infer_type() else {
+        let Some(inferred_type) = self.infer_type(scope_id) else {
             abort!(
                 self.expr.span(),
                 "field requires type override using `: RustType`"
@@ -57,11 +58,11 @@ impl Field {
             .or_else(|| self.expr.infer_name())
     }
 
-    pub fn infer_type(&self) -> Option<InferredType> {
+    pub fn infer_type(&self, scope_id: ScopeId) -> Option<InferredType> {
         self.type_override
             .as_ref()
             .map(|type_override| InferredType::RustType(type_override.type_path.clone()))
-            .or_else(|| self.expr.infer_type())
+            .or_else(|| self.expr.infer_type(scope_id))
     }
 }
 

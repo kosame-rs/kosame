@@ -1,4 +1,4 @@
-use crate::data_type::InferredType;
+use crate::{data_type::InferredType, scopes::ScopeId};
 
 use super::Visitor;
 use proc_macro2::{Span, TokenStream};
@@ -22,7 +22,7 @@ impl BindParam {
         Some(&self.name)
     }
 
-    pub fn infer_type(&self) -> Option<InferredType> {
+    pub fn infer_type(&self, scope_id: ScopeId) -> Option<InferredType> {
         None
     }
 

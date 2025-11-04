@@ -126,7 +126,7 @@ impl ToTokens for ScopeModule<'_> {
                 path,
                 alias: Some(alias),
             } => {
-                let path = path.to_call_site(4);
+                let path = path.to_call_site(5);
                 let table_name = alias.to_string();
                 quote! {
                     pub mod #alias {
@@ -136,7 +136,7 @@ impl ToTokens for ScopeModule<'_> {
                 }
             }
             Self::Table { path, .. } => {
-                let path = path.to_call_site(3);
+                let path = path.to_call_site(4);
                 quote! {
                     pub use #path;
                 }
@@ -155,7 +155,7 @@ impl ToTokens for ScopeModule<'_> {
             Self::Inherited { source_id, name } => {
                 let source_name = source_id.to_ident();
                 quote! {
-                    pub use super::super::#source_name::#name;
+                    pub use super::super::#source_name::tables::#name;
                 }
             }
         }

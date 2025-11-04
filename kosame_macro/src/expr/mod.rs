@@ -26,7 +26,7 @@ use syn::{
     spanned::Spanned,
 };
 
-use crate::{data_type::InferredType, visitor::Visitor};
+use crate::{data_type::InferredType, scopes::ScopeId, visitor::Visitor};
 
 pub enum Expr {
     Binary(Binary),
@@ -81,11 +81,11 @@ impl Expr {
         variants!(branches!())
     }
 
-    pub fn infer_type(&self) -> Option<InferredType> {
+    pub fn infer_type(&self, scope_id: ScopeId) -> Option<InferredType> {
         macro_rules! branches {
             ($($variant:ident)*) => {
                 match self {
-                    $(Self::$variant(inner) => inner.infer_type()),*
+                    $(Self::$variant(inner) => inner.infer_type(scope_id)),*
                 }
             };
         }

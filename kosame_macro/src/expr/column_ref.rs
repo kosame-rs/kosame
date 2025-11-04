@@ -2,6 +2,7 @@ use crate::{
     data_type::InferredType,
     parent_map::{Id, ParentMap},
     scope::{ScopeIter, ScopeIterItem},
+    scopes::ScopeId,
 };
 
 use super::Visitor;
@@ -29,7 +30,7 @@ impl ColumnRef {
         Some(&self.name)
     }
 
-    pub fn infer_type(&self) -> Option<InferredType> {
+    pub fn infer_type(&self, scope_id: ScopeId) -> Option<InferredType> {
         match &self.correlation {
             Some(correlation) => ParentMap::with(|parent_map| {
                 for item in ScopeIter::new(parent_map, self, true) {

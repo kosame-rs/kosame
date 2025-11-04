@@ -1,4 +1,4 @@
-use crate::{data_type::InferredType, keyword};
+use crate::{data_type::InferredType, keyword, scopes::ScopeId};
 
 use super::{Expr, Visitor};
 use proc_macro2::{Span, TokenStream};
@@ -32,7 +32,7 @@ impl Binary {
         None
     }
 
-    pub fn infer_type(&self) -> Option<InferredType> {
+    pub fn infer_type(&self, _scope_id: ScopeId) -> Option<InferredType> {
         None
     }
 

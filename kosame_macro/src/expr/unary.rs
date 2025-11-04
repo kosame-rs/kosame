@@ -5,7 +5,7 @@ use syn::{
     parse::{Parse, ParseStream},
 };
 
-use crate::{data_type::InferredType, keyword};
+use crate::{data_type::InferredType, keyword, scopes::ScopeId};
 
 use super::{Expr, Visitor};
 
@@ -30,7 +30,7 @@ impl Unary {
         None
     }
 
-    pub fn infer_type(&self) -> Option<InferredType> {
+    pub fn infer_type(&self, _scope_id: ScopeId) -> Option<InferredType> {
         None
     }
 }

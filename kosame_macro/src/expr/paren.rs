@@ -1,4 +1,5 @@
 use crate::data_type::InferredType;
+use crate::scopes::ScopeId;
 
 use super::Expr;
 use super::Visitor;
@@ -27,8 +28,8 @@ impl Paren {
         self.expr.infer_name()
     }
 
-    pub fn infer_type(&self) -> Option<InferredType> {
-        self.expr.infer_type()
+    pub fn infer_type(&self, scope_id: ScopeId) -> Option<InferredType> {
+        self.expr.infer_type(scope_id)
     }
 }
 
