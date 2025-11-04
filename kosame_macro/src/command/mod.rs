@@ -22,11 +22,13 @@ use crate::{
     part::TargetTable,
     quote_option::QuoteOption,
     scope::ScopeModule,
+    scopes::ScopeId,
     visitor::Visitor,
 };
 
 pub struct Command {
     pub id: Id,
+    pub scope_id: ScopeId,
     pub attrs: Vec<Attribute>,
     pub with: Option<With>,
     pub command_type: CommandType,
@@ -63,6 +65,7 @@ impl Parse for Command {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
             id: Id::new(),
+            scope_id: ScopeId::new(),
             attrs: input.call(Attribute::parse_outer)?,
             with: input.call(With::parse_optional)?,
             command_type: input.parse()?,

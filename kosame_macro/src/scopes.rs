@@ -11,6 +11,32 @@ use crate::{
     path_ext::PathExt,
 };
 
+static SCOPE_ID: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+pub struct ScopeId(u32);
+
+impl ScopeId {
+    pub fn new() -> Self {
+        let increment = SCOPE_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        Self(increment)
+    }
+
+    pub fn reset() {
+        SCOPE_ID.store(0, std::sync::atomic::Ordering::Relaxed);
+    }
+
+    pub fn to_ident(self) -> Ident {
+        format_ident!("scope_{}", self.0)
+    }
+}
+
+impl Default for ScopeId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct Scopes<'a> {
     scopes: Vec<Scope<'a>>,
 }
@@ -28,19 +54,19 @@ impl ToTokens for Scopes<'_> {
 }
 
 struct Scope<'a> {
-    index: usize,
+    id: ScopeId,
     modules: Vec<ScopeModule<'a>>,
 }
 
 impl<'a> Scope<'a> {
-    fn new(index: usize, modules: Vec<ScopeModule<'a>>) -> Self {
-        Self { index, modules }
+    fn new(id: ScopeId, modules: Vec<ScopeModule<'a>>) -> Self {
+        Self { id, modules }
     }
 }
 
 impl ToTokens for Scope<'_> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let name = format_ident!("scope_{}", self.index);
+        let name = self.id.to_ident();
         let tables = &self.modules;
         let columns = self
             .modules
@@ -71,7 +97,7 @@ enum ScopeModule<'a> {
         columns: Vec<CustomColumn<'a>>,
     },
     Inherited {
-        index: usize,
+        source_id: ScopeId,
         name: &'a Ident,
     },
 }
@@ -126,10 +152,10 @@ impl ToTokens for ScopeModule<'_> {
                     }
                 }
             }
-            Self::Inherited { index, name } => {
-                let scope_name = format_ident!("scope_{}", index);
+            Self::Inherited { source_id, name } => {
+                let source_name = source_id.to_ident();
                 quote! {
-                    pub use super::super::#scope_name::#name;
+                    pub use super::super::#source_name::#name;
                 }
             }
         }
@@ -157,21 +183,17 @@ impl ToTokens for CustomColumn<'_> {
 impl<'a> From<&'a Command> for Scopes<'a> {
     fn from(value: &'a Command) -> Self {
         fn inner<'a>(
-            global_index: &mut usize,
             scopes: &mut Vec<Scope<'a>>,
             command: &'a Command,
             inherited_with_items: &mut Vec<&'a WithItem>,
-            inherited_from_items: &mut Vec<(usize, &'a Ident)>,
+            inherited_from_items: &mut Vec<(ScopeId, &'a Ident)>,
         ) {
-            let index = *global_index;
-            *global_index += 1;
             let mut shadow = HashSet::new();
 
             let mut inherited_with_items_count = 0;
             if let Some(with) = &command.with {
                 for item in with.items.iter() {
                     inner(
-                        global_index,
                         scopes,
                         &item.command,
                         inherited_with_items,
@@ -259,7 +281,6 @@ impl<'a> From<&'a Command> for Scopes<'a> {
                             } => {
                                 let mut clean_from_items = Vec::new();
                                 inner(
-                                    global_index,
                                     scopes,
                                     command,
                                     inherited_with_items,
@@ -299,7 +320,7 @@ impl<'a> From<&'a Command> for Scopes<'a> {
                     };
                     if let Some(module) = module {
                         shadow.insert(module.name());
-                        inherited_from_items.push((index, module.name()));
+                        inherited_from_items.push((command.scope_id, module.name()));
                         inherited_from_items_count += 1;
 
                         modules.push(module);
@@ -307,10 +328,10 @@ impl<'a> From<&'a Command> for Scopes<'a> {
                 }
             }
 
-            for (source_index, name) in inherited_from_items.iter() {
+            for (source_id, name) in inherited_from_items.iter() {
                 if !shadow.contains(name) {
                     modules.push(ScopeModule::Inherited {
-                        index: *source_index,
+                        source_id: *source_id,
                         name,
                     });
                 }
@@ -319,12 +340,12 @@ impl<'a> From<&'a Command> for Scopes<'a> {
             inherited_with_items.truncate(inherited_with_items.len() - inherited_with_items_count);
             inherited_from_items.truncate(inherited_from_items.len() - inherited_from_items_count);
 
-            scopes.push(Scope::new(index, modules));
+            scopes.push(Scope::new(command.scope_id, modules));
         }
 
         let mut scopes = Vec::new();
-        inner(&mut 0, &mut scopes, value, &mut Vec::new(), &mut Vec::new());
-        scopes.reverse();
+        inner(&mut scopes, value, &mut Vec::new(), &mut Vec::new());
+        scopes.sort_by_key(|v| v.id);
         Scopes { scopes }
     }
 }
