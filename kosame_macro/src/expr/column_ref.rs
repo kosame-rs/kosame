@@ -74,13 +74,14 @@ impl Parse for ColumnRef {
 impl ToTokens for ColumnRef {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let name = &self.name;
+        let scope_id = ScopeId::of_scope();
         match &self.correlation {
             Some(correlation) => {
                 let correlation = &correlation.name;
                 quote! {
                     ::kosame::repr::expr::ColumnRef::new(
-                        Some(scope::tables::#correlation::TABLE_NAME),
-                        scope::tables::#correlation::columns::#name::COLUMN_NAME
+                        Some(scopes::#scope_id::tables::#correlation::TABLE_NAME),
+                        scopes::#scope_id::tables::#correlation::columns::#name::COLUMN_NAME
                     )
                 }
                 .to_tokens(tokens)
@@ -88,7 +89,7 @@ impl ToTokens for ColumnRef {
             None => quote! {
                 ::kosame::repr::expr::ColumnRef::new(
                     ::core::option::Option::None,
-                    scope::columns::#name::COLUMN_NAME
+                    scopes::#scope_id::columns::#name::COLUMN_NAME
                 )
             }
             .to_tokens(tokens),

@@ -21,7 +21,6 @@ use crate::{
     parent_map::Id,
     part::TargetTable,
     quote_option::QuoteOption,
-    scope::ScopeModule,
     scopes::ScopeId,
     visitor::Visitor,
 };
@@ -77,18 +76,10 @@ impl ToTokens for Command {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let with = QuoteOption::from(&self.with);
         let command_type = &self.command_type;
-
-        let scope_module = ScopeModule::new(self);
-
-        quote! {
-            {
-                const command: ::kosame::repr::command::Command<'static> = ::kosame::repr::command::Command::new(#with, #command_type);
-
-                #scope_module
-
-                command
-            }
-        }.to_tokens(tokens);
+        self.scope_id.scope(|| {
+            quote! { ::kosame::repr::command::Command::new(#with, #command_type) }
+                .to_tokens(tokens);
+        });
     }
 }
 

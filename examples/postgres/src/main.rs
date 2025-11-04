@@ -54,30 +54,28 @@ fn main() {
     // .unwrap();
     //
 
+    // use kosame::sql::FmtSql;
+    // let sql = statement
+    //     .repr()
+    //     .to_sql_string::<kosame::sql::postgres::Dialect>()
+    //     .unwrap();
+    // println!("{}", sql);
+
     let id = 7;
     let statement = kosame::pg_statement! {
-        with kek as (
-            select 5 as pip, 6 as lel
+        with cte as (
+            select 5 as pip: i32, 6 as lel
         )
         select
-            smep.id as id_2,
-            lelel.id,
-        from schema::posts as smep
-        left join kek on true
+            subquery.pip
+        from schema::posts
+        left join cte on true
         left join lateral (
-            select id from schema::comments
-        ) as lelel on true
-        left join schema::posts as lul on true
+            select pip from cte
+        ) as subquery on true
     };
-
-    use kosame::sql::FmtSql;
-    let sql = statement
-        .repr()
-        .to_sql_string::<kosame::sql::postgres::Dialect>()
-        .unwrap();
-    println!("{}", sql);
-
     let rows = statement.exec_vec_sync(&mut client).unwrap();
+    rows[0].pip;
 
     println!("{:#?}", rows);
 }

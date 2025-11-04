@@ -1,30 +1,49 @@
-use std::collections::HashSet;
+use std::{cell::Cell, collections::HashSet};
 
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 use syn::{Ident, Path};
 
 use crate::{
-    clause::{Field, Fields, FromItem, WithItem},
+    clause::{Field, FromItem, WithItem},
     command::Command,
     data_type::InferredType,
-    part::{ColumnList, TableAlias},
+    part::TableAlias,
     path_ext::PathExt,
 };
 
-static SCOPE_ID: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+thread_local! {
+    static SCOPE_ID_AUTO_INCREMENT: std::sync::atomic::AtomicU32 = const { std::sync::atomic::AtomicU32::new(0) };
+    static SCOPE_ID_CONTEXT: Cell<Option<ScopeId>> = const { Cell::new(None) };
+}
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub struct ScopeId(u32);
 
 impl ScopeId {
     pub fn new() -> Self {
-        let increment = SCOPE_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        Self(increment)
+        SCOPE_ID_AUTO_INCREMENT.with(|atomic| {
+            let increment = atomic.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            Self(increment)
+        })
+    }
+
+    pub fn scope(&self, f: impl FnOnce()) {
+        let previous = SCOPE_ID_CONTEXT.with(|cell| cell.replace(Some(*self)));
+        f();
+        SCOPE_ID_CONTEXT.with(|cell| cell.replace(previous));
+    }
+
+    pub fn of_scope() -> ScopeId {
+        SCOPE_ID_CONTEXT
+            .get()
+            .expect("`ScopeId::of_scope` was called outside of a ScopeId scope")
     }
 
     pub fn reset() {
-        SCOPE_ID.store(0, std::sync::atomic::Ordering::Relaxed);
+        SCOPE_ID_AUTO_INCREMENT.with(|atomic| {
+            atomic.store(0, std::sync::atomic::Ordering::Relaxed);
+        })
     }
 }
 
@@ -193,15 +212,28 @@ impl ToTokens for CustomColumn<'_> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let name = &self.name;
         let name_string = self.name.to_string();
-        let inferred_type = self
-            .inferred_type
-            .as_ref()
-            .map(|inferred_type| inferred_type.to_call_site(6))
-            .into_iter();
+        let inferred_type = match &self.inferred_type {
+            Some(inferred_type) => match inferred_type {
+                InferredType::Scope {
+                    scope_id,
+                    correlation,
+                    name,
+                } => match correlation {
+                    Some(correlation) => {
+                        quote! { super::super::super::super::super::#scope_id::tables::#correlation::columns::#name::Type }
+                    }
+                    None => {
+                        quote! { super::super::super::super::super::#scope_id::columns::#name::Type }
+                    }
+                },
+                _ => inferred_type.to_call_site(6).to_token_stream(),
+            },
+            None => quote! { () },
+        };
         quote! {
             pub mod #name {
                 pub const COLUMN_NAME: &str = #name_string;
-                #(pub type Type = #inferred_type;)*
+                pub type Type = #inferred_type;
             }
         }
         .to_tokens(tokens);
