@@ -34,6 +34,7 @@ pub struct Command {
 
 impl Command {
     pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+        visitor.visit_command(self);
         visitor.visit_parent_node(self.into());
         {
             if let Some(inner) = &self.with {

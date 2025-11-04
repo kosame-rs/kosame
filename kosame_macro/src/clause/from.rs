@@ -241,7 +241,7 @@ impl FromItem {
     pub fn with_item<'a>(&'a self, parent_map: &ParentMap<'a>) -> Option<&'a WithItem> {
         match self {
             Self::Table { table, .. } => {
-                let table = table.as_ident()?;
+                let table = table.get_ident()?;
                 let mut command = parent_map.seek_parent::<_, Command>(self)?;
                 loop {
                     if let Some(with) = &command.with {

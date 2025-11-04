@@ -6,7 +6,6 @@ pub trait PathExt {
     #[allow(unused)]
     fn is_relative(&self) -> bool;
     fn is_primitive_type(&self) -> bool;
-    fn as_ident(&self) -> Option<&Ident>;
     fn to_call_site(&self, nesting_levels: usize) -> Path;
 }
 
@@ -48,20 +47,6 @@ impl PathExt for Path {
                     | "bool",
             )
         }
-    }
-
-    fn as_ident(&self) -> Option<&Ident> {
-        if self.leading_colon.is_some() {
-            return None;
-        }
-        if self.segments.len() > 1 {
-            return None;
-        }
-        let segment = self.segments.last()?;
-        if !segment.arguments.is_none() {
-            return None;
-        }
-        Some(&segment.ident)
     }
 
     fn to_call_site(&self, nesting_levels: usize) -> Path {

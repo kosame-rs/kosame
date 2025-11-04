@@ -14,6 +14,7 @@ use crate::{
     parent_map::ParentMapBuilder,
     part::Alias,
     row::Row,
+    scopes::ScopesBuilder,
     visitor::Visitor,
 };
 
@@ -133,6 +134,11 @@ impl ToTokens for Statement {
                 self.command.accept(&mut builder);
                 builder.build()
             };
+            let scopes = {
+                let mut builder = ScopesBuilder::new();
+                self.command.accept(&mut builder);
+                builder.build()
+            };
 
             let command = &self.command;
             let fields = command.fields();
@@ -173,7 +179,9 @@ impl ToTokens for Statement {
                     }
 
                     #row
+
                     #bind_params
+                    #scopes
                 }
             };
 
