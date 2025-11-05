@@ -1,7 +1,7 @@
 <div align="center">
     <picture>
-        <source srcset="https://raw.githubusercontent.com/pikaju/kosame/refs/heads/main/misc/readme/logo-white.svg" media="(prefers-color-scheme: dark)">
-        <img width="256" src="https://raw.githubusercontent.com/pikaju/kosame/refs/heads/main/misc/readme/logo-black.svg" alt="Kosame Logo">
+        <source srcset="https://raw.githubusercontent.com/kosame-orm/kosame/refs/heads/main/misc/readme/logo-white.svg" media="(prefers-color-scheme: dark)">
+        <img width="256" src="https://raw.githubusercontent.com/kosame-orm/kosame/refs/heads/main/misc/readme/logo-black.svg" alt="Kosame Logo">
     </picture>
 </div>
 
@@ -10,7 +10,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/kosame.svg?style=flat-square)](https://crates.io/crates/kosame)
 [![Docs.rs](https://img.shields.io/badge/Docs-kosame-66c2a5?style=flat-square&labelColor=555&logo=rust&logoColor=white)](https://docs.rs/kosame)
-[![GitHub](https://img.shields.io/badge/GitHub-pikaju%2Fkosame-blue?style=flat-square&logo=github)](https://github.com/pikaju/kosame)
+[![GitHub](https://img.shields.io/badge/GitHub-kosame-orm%2Fkosame-blue?style=flat-square&logo=github)](https://github.com/kosame-orm/kosame)
 [![License](https://img.shields.io/crates/l/kosame.svg?style=flat-square)](https://crates.io/crates/kosame)
 
 </div>
