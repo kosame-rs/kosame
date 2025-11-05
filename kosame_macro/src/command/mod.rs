@@ -18,7 +18,6 @@ pub use update::*;
 use crate::{
     clause::{Fields, FromChain, With},
     keyword,
-    parent_map::Id,
     part::TargetTable,
     quote_option::QuoteOption,
     scopes::ScopeId,
@@ -26,24 +25,21 @@ use crate::{
 };
 
 pub struct Command {
-    pub id: Id,
-    pub scope_id: ScopeId,
     pub attrs: Vec<Attribute>,
     pub with: Option<With>,
     pub command_type: CommandType,
+    pub scope_id: ScopeId,
 }
 
 impl Command {
     pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
         visitor.visit_command(self);
-        visitor.visit_parent_node(self.into());
         {
             if let Some(inner) = &self.with {
                 inner.accept(visitor)
             }
             self.command_type.accept(visitor);
         }
-        visitor.end_parent_node();
     }
 
     pub fn fields(&self) -> Option<&Fields> {
@@ -54,6 +50,7 @@ impl Command {
         self.command_type.target_table()
     }
 
+    #[allow(clippy::wrong_self_convention)]
     pub fn from_chain(&self) -> Option<&FromChain> {
         self.command_type.from_chain()
     }
@@ -62,11 +59,10 @@ impl Command {
 impl Parse for Command {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            id: Id::new(),
-            scope_id: ScopeId::new(),
             attrs: input.call(Attribute::parse_outer)?,
             with: input.call(With::parse_optional)?,
             command_type: input.parse()?,
+            scope_id: ScopeId::new(),
         })
     }
 }
@@ -121,6 +117,7 @@ impl CommandType {
         }
     }
 
+    #[allow(clippy::wrong_self_convention)]
     pub fn from_chain(&self) -> Option<&FromChain> {
         match self {
             Self::Delete(delete) => delete.using.as_ref().map(|using| &using.chain),

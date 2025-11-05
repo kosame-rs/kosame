@@ -6,9 +6,8 @@ use syn::{
 };
 
 use crate::{
-    clause::WithItem, command::Command, expr::Expr, keyword, parent_map::ParentMap,
-    part::TableAlias, path_ext::PathExt, quote_option::QuoteOption, scopes::ScopeId,
-    visitor::Visitor,
+    command::Command, expr::Expr, keyword, part::TableAlias, quote_option::QuoteOption,
+    scopes::ScopeId, visitor::Visitor,
 };
 
 pub struct From {
@@ -114,26 +113,6 @@ impl FromItem {
                     .unwrap_or_else(|| &table.segments.last().expect("path cannot be empty").ident),
             ),
             Self::Subquery { alias, .. } => alias.as_ref().map(|alias| &alias.name),
-        }
-    }
-
-    pub fn with_item<'a>(&'a self, parent_map: &ParentMap<'a>) -> Option<&'a WithItem> {
-        match self {
-            // Self::Table { table, .. } => {
-            //     let table = table.get_ident()?;
-            //     let mut command = parent_map.seek_parent::<_, Command>(self)?;
-            //     loop {
-            //         if let Some(with) = &command.with {
-            //             for item in with.items.iter() {
-            //                 if item.alias.name == *table {
-            //                     return Some(item);
-            //                 }
-            //             }
-            //         }
-            //         command = parent_map.seek_parent::<_, Command>(command)?;
-            //     }
-            // }
-            _ => None,
         }
     }
 }

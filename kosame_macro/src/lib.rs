@@ -7,7 +7,6 @@ mod docs;
 mod driver;
 mod expr;
 mod keyword;
-mod parent_map;
 mod part;
 mod path_ext;
 mod query;

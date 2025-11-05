@@ -1,4 +1,4 @@
-use crate::{data_type::InferredType, parent_map::Id, scopes::ScopeId};
+use crate::{data_type::InferredType, scopes::ScopeId};
 
 use super::Visitor;
 use proc_macro2::{Span, TokenStream};
@@ -9,16 +9,12 @@ use syn::{
 };
 
 pub struct ColumnRef {
-    pub id: Id,
     pub correlation: Option<Correlation>,
     pub name: Ident,
 }
 
 impl ColumnRef {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
-        visitor.visit_parent_node(self.into());
-        visitor.end_parent_node();
-    }
+    pub fn accept<'a>(&'a self, _visitor: &mut impl Visitor<'a>) {}
 
     pub fn infer_name(&self) -> Option<&Ident> {
         Some(&self.name)
@@ -57,13 +53,11 @@ impl Parse for ColumnRef {
                 _period_token: input.parse()?,
             };
             Ok(Self {
-                id: Id::new(),
                 correlation: Some(correlation),
                 name: input.parse()?,
             })
         } else {
             Ok(Self {
-                id: Id::new(),
                 correlation: None,
                 name: ident1,
             })
