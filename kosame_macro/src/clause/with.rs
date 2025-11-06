@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
-    Token, parenthesized,
+    Ident, Token, parenthesized,
     parse::{Parse, ParseStream},
     punctuated::Punctuated,
 };
@@ -76,6 +76,19 @@ pub struct WithItem {
 impl WithItem {
     pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
         self.command.accept(visitor);
+    }
+
+    pub fn columns(&self) -> Vec<&Ident> {
+        match &self.alias.columns {
+            Some(columns) => columns.columns.iter().collect(),
+            None => match self.command.fields() {
+                Some(fields) => fields
+                    .iter()
+                    .filter_map(|field| field.infer_name())
+                    .collect(),
+                None => Vec::new(),
+            },
+        }
     }
 }
 

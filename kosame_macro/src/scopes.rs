@@ -5,10 +5,8 @@ use quote::{ToTokens, format_ident, quote};
 use syn::{Ident, Path};
 
 use crate::{
-    clause::{Field, FromItem, WithItem},
+    clause::{FromItem, WithItem},
     command::Command,
-    data_type::InferredType,
-    part::TableAlias,
     path_ext::PathExt,
 };
 
@@ -77,36 +75,107 @@ impl ToTokens for Scopes<'_> {
 
 struct Scope<'a> {
     id: ScopeId,
-    with_items: Vec<&'a WithItem>,
-    from_items: Vec<&'a FromItem>,
-    modules: Vec<ScopeModule<'a>>,
+    items: Vec<ScopeItem<'a>>,
 }
 
 impl<'a> Scope<'a> {
-    fn new(
-        id: ScopeId,
-        with_items: Vec<&'a WithItem>,
-        from_items: Vec<&'a FromItem>,
-        modules: Vec<ScopeModule<'a>>,
-    ) -> Self {
-        Self {
-            id,
-            with_items,
-            from_items,
-            modules,
-        }
+    fn new(id: ScopeId, items: Vec<ScopeItem<'a>>) -> Self {
+        Self { id, items }
     }
 }
 
 impl ToTokens for Scope<'_> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let name = &self.id;
-        let tables = &self.modules;
-        let columns = self
-            .modules
-            .iter()
-            .filter(|module| !module.is_inherited())
-            .map(|module| module.name());
+
+        fn table_tokens(path: &Path, alias: Option<&Ident>) -> TokenStream {
+            match alias {
+                Some(alias) => {
+                    let path = path.to_call_site(5);
+                    let table_name = alias.to_string();
+                    quote! {
+                        pub mod #alias {
+                            pub const TABLE_NAME: &str = #table_name;
+                            pub use #path::columns;
+                        }
+                    }
+                }
+                None => {
+                    let path = path.to_call_site(4);
+                    quote! { pub use #path; }
+                }
+            }
+        }
+
+        fn custom_tokens(name: &Ident, columns: &[&Ident]) -> TokenStream {
+            let name_string = name.to_string();
+            let column_strings = columns.iter().map(|column| column.to_string());
+            quote! {
+                pub mod #name {
+                    pub const TABLE_NAME: &str = #name_string;
+                    pub mod columns {
+                        #(
+                            pub mod #columns {
+                                pub const COLUMN_NAME: &str = #column_strings;
+                            }
+                        )*
+                    }
+                }
+            }
+        }
+
+        fn inherit_tokens(scope_id: ScopeId, name: &Ident) -> TokenStream {
+            quote! {
+                pub use super::super::#scope_id::tables::#name;
+            }
+        }
+
+        let tables = self.items.iter().filter_map(|item| match item {
+            ScopeItem::FromItem {
+                from_item,
+                inherited_from: Some(scope_id),
+                ..
+            } => from_item.name().map(|name| inherit_tokens(*scope_id, name)),
+            ScopeItem::FromItem {
+                from_item,
+                inherited_from: None,
+                resolved_with_item: Some(with_item),
+                ..
+            } => from_item
+                .name()
+                .map(|name| custom_tokens(name, &with_item.columns())),
+            ScopeItem::FromItem {
+                from_item: FromItem::Table { table, alias },
+                inherited_from: None,
+                resolved_with_item: None,
+                ..
+            } => Some(table_tokens(table, alias.as_ref().map(|alias| &alias.name))),
+            ScopeItem::FromItem {
+                from_item: FromItem::Subquery { command, alias, .. },
+                inherited_from: None,
+                resolved_with_item: None,
+                ..
+            } => alias.as_ref().map(|alias| {
+                custom_tokens(
+                    &alias.name,
+                    &command
+                        .fields()
+                        .iter()
+                        .flat_map(|fields| fields.iter().filter_map(|field| field.infer_name()))
+                        .collect::<Vec<_>>(),
+                )
+            }),
+        });
+
+        let columns = self.items.iter().filter_map(|item| match item {
+            ScopeItem::FromItem {
+                from_item,
+                inherited_from: None,
+                ..
+            } => from_item.name(),
+            _ => None,
+        });
+
         quote! {
             pub mod #name {
                 pub mod tables {
@@ -121,135 +190,14 @@ impl ToTokens for Scope<'_> {
     }
 }
 
-enum ScopeModule<'a> {
-    Table {
-        path: &'a Path,
-        alias: Option<&'a Ident>,
+#[derive(Clone)]
+pub enum ScopeItem<'a> {
+    FromItem {
+        from_item: &'a FromItem,
+        inherited_from: Option<ScopeId>,
+        resolved_with_item: Option<&'a WithItem>,
+        nullable: bool,
     },
-    Custom {
-        name: &'a Ident,
-        columns: Vec<CustomColumn<'a>>,
-    },
-    Inherited {
-        source_id: ScopeId,
-        name: &'a Ident,
-    },
-}
-
-impl<'a> ScopeModule<'a> {
-    fn name(&self) -> &'a Ident {
-        match self {
-            Self::Table {
-                alias: Some(alias), ..
-            } => alias,
-            Self::Table { path, .. } => &path.segments.last().expect("path cannot be empty").ident,
-            Self::Custom { name, .. } => name,
-            Self::Inherited { name, .. } => name,
-        }
-    }
-
-    fn is_inherited(&self) -> bool {
-        matches!(self, Self::Inherited { .. })
-    }
-}
-
-impl ToTokens for ScopeModule<'_> {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        match self {
-            Self::Table {
-                path,
-                alias: Some(alias),
-            } => {
-                let path = path.to_call_site(5);
-                let table_name = alias.to_string();
-                quote! {
-                    pub mod #alias {
-                        pub const TABLE_NAME: &str = #table_name;
-                        pub use #path::columns;
-                    }
-                }
-            }
-            Self::Table { path, .. } => {
-                let path = path.to_call_site(4);
-                quote! {
-                    pub use #path;
-                }
-            }
-            Self::Custom { name, columns } => {
-                let name_string = name.to_string();
-                quote! {
-                    pub mod #name {
-                        pub const TABLE_NAME: &str = #name_string;
-                        pub mod columns {
-                            #(#columns)*
-                        }
-                    }
-                }
-            }
-            Self::Inherited { source_id, name } => {
-                quote! {
-                    pub use super::super::#source_id::tables::#name;
-                }
-            }
-        }
-        .to_tokens(tokens);
-    }
-}
-
-struct CustomColumn<'a> {
-    name: &'a Ident,
-    inferred_type: Option<InferredType>,
-}
-
-impl<'a> CustomColumn<'a> {
-    fn from_field(field: &'a Field, scope_id: ScopeId) -> Option<CustomColumn<'a>> {
-        Some(CustomColumn {
-            name: field.infer_name()?,
-            inferred_type: field.infer_type(scope_id),
-        })
-    }
-
-    fn from_command(command: &'a Command) -> Vec<CustomColumn<'a>> {
-        match command.fields() {
-            Some(fields) => fields
-                .iter()
-                .flat_map(|field| CustomColumn::from_field(field, command.scope_id))
-                .collect(),
-            None => Vec::new(),
-        }
-    }
-}
-
-impl ToTokens for CustomColumn<'_> {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        let name = &self.name;
-        let name_string = self.name.to_string();
-        let inferred_type = match &self.inferred_type {
-            Some(inferred_type) => match inferred_type {
-                InferredType::Scope {
-                    scope_id,
-                    correlation,
-                    name,
-                } => match correlation {
-                    Some(correlation) => {
-                        quote! { super::super::super::super::super::#scope_id::tables::#correlation::columns::#name::Type }
-                    }
-                    None => {
-                        quote! { super::super::super::super::super::#scope_id::columns::#name::Type }
-                    }
-                },
-                _ => inferred_type.to_call_site(6).to_token_stream(),
-            },
-            None => quote! { () },
-        };
-        quote! {
-            pub mod #name {
-                pub const COLUMN_NAME: &str = #name_string;
-                pub type Type = #inferred_type;
-            }
-        }
-        .to_tokens(tokens);
-    }
 }
 
 impl<'a> From<&'a Command> for Scopes<'a> {
@@ -258,147 +206,80 @@ impl<'a> From<&'a Command> for Scopes<'a> {
             scopes: &mut Vec<Scope<'a>>,
             command: &'a Command,
             inherited_with_items: &mut Vec<&'a WithItem>,
-            inherited_from_items: &mut Vec<(ScopeId, &'a Ident)>,
+            inherited_from_items: &mut Vec<(ScopeId, &'a FromItem)>,
         ) {
+            let scope_id = command.scope_id;
             let with_items_truncate = inherited_with_items.len();
             let from_items_truncate = inherited_from_items.len();
 
-            let with_items = {
-                if let Some(with) = &command.with {
-                    for item in with.items.iter() {
-                        inner(
-                            scopes,
-                            &item.command,
-                            inherited_with_items,
-                            inherited_from_items,
-                        );
-
-                        inherited_with_items.push(item);
-                    }
-                }
-                let mut with_items = Vec::new();
-                let mut shadow = HashSet::new();
-                for item in inherited_with_items.iter().rev() {
-                    if shadow.insert(&item.alias.name) {
-                        with_items.push(*item);
-                    }
-                }
-                with_items
-            };
-
+            let mut items = Vec::new();
             let mut shadow = HashSet::new();
 
-            let mut modules = Vec::new();
             if let Some(target_table) = command.target_table() {
-                let module = ScopeModule::Table {
-                    path: &target_table.table,
-                    alias: target_table.alias.as_ref().map(|alias| &alias.ident),
-                };
-                shadow.insert(module.name());
-                modules.push(module);
+                shadow.insert(target_table.name());
             }
 
-            let from_items = {
-                let mut from_items = Vec::new();
+            if let Some(with) = &command.with {
+                for with_item in &with.items {
+                    inner(
+                        scopes,
+                        &with_item.command,
+                        inherited_with_items,
+                        inherited_from_items,
+                    );
+                    inherited_with_items.push(with_item);
+                }
+            }
 
-                if let Some(from_chain) = command.from_chain() {
-                    for from_item in from_chain {
-                        from_items.push(from_item);
-                        if let Some(name) = from_item.name() {
-                            shadow.insert(name);
-                        }
+            if let Some(from_chain) = command.from_chain() {
+                for from_item in from_chain {
+                    inherited_from_items.push((scope_id, from_item));
 
-                        let module = if let FromItem::Table { table, alias, .. } = from_item
-                            && let Some(table) = table.get_ident()
-                            && let Some(with_item) = with_items
+                    if let Some(name) = from_item.name() {
+                        shadow.insert(name);
+                    }
+
+                    if let FromItem::Subquery { command, .. } = from_item {
+                        inner(scopes, command, inherited_with_items, inherited_from_items);
+                    }
+
+                    let with_item = match from_item {
+                        FromItem::Table { table, .. } => match table.get_ident() {
+                            Some(table) => inherited_with_items
                                 .iter()
                                 .rev()
-                                .find(|with_item| with_item.alias.name == *table)
-                        {
-                            Some(ScopeModule::Custom {
-                                name: table,
-                                columns: CustomColumn::from_command(&with_item.command),
-                            })
-                        } else {
-                            match from_item {
-                                FromItem::Table {
-                                    table,
-                                    alias:
-                                        Some(TableAlias {
-                                            name,
-                                            columns: Some(columns),
-                                            ..
-                                        }),
-                                    ..
-                                } => Some(ScopeModule::Custom {
-                                    name,
-                                    columns: columns
-                                        .columns
-                                        .iter()
-                                        .map(|name| CustomColumn {
-                                            name,
-                                            inferred_type: Some(InferredType::Column {
-                                                table: table.clone(),
-                                                column: name.clone(),
-                                            }),
-                                        })
-                                        .collect(),
-                                }),
-                                FromItem::Table { table, alias, .. } => Some(ScopeModule::Table {
-                                    path: table,
-                                    alias: alias.as_ref().map(|alias| &alias.name),
-                                }),
-                                FromItem::Subquery {
-                                    lateral_keyword,
-                                    command,
-                                    alias,
-                                    ..
-                                } => {
-                                    let mut clean_from_items = Vec::new();
-                                    inner(
-                                        scopes,
-                                        command,
-                                        inherited_with_items,
-                                        match lateral_keyword {
-                                            Some(..) => inherited_from_items,
-                                            None => &mut clean_from_items,
-                                        },
-                                    );
-                                    alias.as_ref().map(|alias| ScopeModule::Custom {
-                                        name: &alias.name,
-                                        columns: CustomColumn::from_command(command),
-                                    })
-                                }
-                            }
-                        };
-                        if let Some(module) = module {
-                            inherited_from_items.push((command.scope_id, module.name()));
-                            modules.push(module);
-                        }
-                    }
+                                .find(|with_item| with_item.alias.name == *table),
+                            None => None,
+                        },
+                        _ => None,
+                    };
+
+                    items.push(ScopeItem::FromItem {
+                        from_item,
+                        inherited_from: None,
+                        resolved_with_item: with_item.copied(),
+                        nullable: false,
+                    });
                 }
-
-                for (source_id, name) in inherited_from_items.iter() {
-                    if !shadow.contains(name) {
-                        modules.push(ScopeModule::Inherited {
-                            source_id: *source_id,
-                            name,
-                        });
-                    }
-                }
-
-                from_items
-            };
-
-            scopes.push(Scope::new(
-                command.scope_id,
-                with_items,
-                from_items,
-                modules,
-            ));
+            }
 
             inherited_with_items.truncate(with_items_truncate);
             inherited_from_items.truncate(from_items_truncate);
+
+            for (inherited_from, from_item) in inherited_from_items.iter() {
+                if let Some(name) = from_item.name()
+                    && !shadow.contains(name)
+                {
+                    items.push(ScopeItem::FromItem {
+                        from_item,
+                        inherited_from: Some(*inherited_from),
+                        resolved_with_item: None,
+                        nullable: false,
+                    });
+                }
+            }
+
+            scopes.push(Scope::new(scope_id, items));
         }
 
         let mut scopes = Vec::new();
