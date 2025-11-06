@@ -81,13 +81,12 @@ impl WithItem {
     pub fn columns(&self) -> Vec<&Ident> {
         match &self.alias.columns {
             Some(columns) => columns.columns.iter().collect(),
-            None => match self.command.fields() {
-                Some(fields) => fields
-                    .iter()
-                    .filter_map(|field| field.infer_name())
-                    .collect(),
-                None => Vec::new(),
-            },
+            None => self
+                .command
+                .fields()
+                .into_iter()
+                .flat_map(|fields| fields.columns())
+                .collect(),
         }
     }
 }

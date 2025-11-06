@@ -100,6 +100,10 @@ impl Fields {
             field.accept(visitor);
         }
     }
+
+    pub fn columns(&self) -> Vec<&Ident> {
+        self.iter().flat_map(|field| field.infer_name()).collect()
+    }
 }
 
 impl Parse for Fields {

@@ -6,8 +6,8 @@ use syn::{
 };
 
 use crate::{
-    command::Command, expr::Expr, keyword, part::TableAlias, quote_option::QuoteOption,
-    scopes::ScopeId, visitor::Visitor,
+    clause::WithItem, command::Command, expr::Expr, keyword, part::TableAlias,
+    quote_option::QuoteOption, scopes::ScopeId, visitor::Visitor,
 };
 
 pub struct From {
@@ -113,6 +113,29 @@ impl FromItem {
                     .unwrap_or_else(|| &table.segments.last().expect("path cannot be empty").ident),
             ),
             Self::Subquery { alias, .. } => alias.as_ref().map(|alias| &alias.name),
+        }
+    }
+
+    pub fn columns<'a>(&'a self, with_item: Option<&'a WithItem>) -> Vec<&'a Ident> {
+        match self {
+            Self::Table { table, alias } => match with_item {
+                Some(with_item) => with_item.columns(),
+                None => match alias {
+                    Some(
+                        TableAlias {
+                            columns: Some(columns),
+                            ..
+                        },
+                        ..,
+                    ) => columns.columns.iter().collect(),
+                    _ => Vec::new(),
+                },
+            },
+            Self::Subquery { command, alias, .. } => command
+                .fields()
+                .into_iter()
+                .flat_map(|fields| fields.columns())
+                .collect(),
         }
     }
 }
