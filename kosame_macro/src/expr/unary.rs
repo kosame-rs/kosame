@@ -5,7 +5,7 @@ use syn::{
     parse::{Parse, ParseStream},
 };
 
-use crate::{data_type::InferredType, keyword, scopes::ScopeId};
+use crate::{inferred_type::InferredType, keyword, scopes::ScopeId};
 
 use super::{Expr, Visitor};
 

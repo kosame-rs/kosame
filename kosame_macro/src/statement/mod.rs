@@ -142,7 +142,9 @@ impl ToTokens for Statement {
                     Ident::new("Row", Span::call_site()),
                     fields
                         .iter()
-                        .map(|field| field.to_row_field(command.scope_id))
+                        .map(|field| {
+                            field.to_row_field(&correlations, &scopes, command.correlation_id)
+                        })
                         .collect(),
                 );
                 quote! { #row }

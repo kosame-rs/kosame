@@ -7,7 +7,7 @@ use syn::{
     parse_quote,
 };
 
-use crate::{path_ext::PathExt, scopes::ScopeId};
+use crate::{part::TablePath, path_ext::PathExt, scopes::ScopeId};
 
 #[derive(Clone)]
 pub struct DataType {
@@ -52,42 +52,5 @@ impl ToTokens for DataType {
             }
         }
         .to_tokens(tokens);
-    }
-}
-
-pub enum InferredType {
-    DataType(DataType),
-    RustType(Path),
-    Column {
-        table: Path,
-        column: Ident,
-    },
-    Scope {
-        scope_id: ScopeId,
-        correlation: Option<Ident>,
-        name: Ident,
-    },
-}
-
-impl InferredType {
-    pub fn to_call_site(&self, nesting_levels: usize) -> Path {
-        match self {
-            Self::DataType(data_type) => parse_quote! { #data_type },
-            Self::RustType(rust_type) => rust_type.to_call_site(nesting_levels),
-            Self::Column { table, column } => {
-                let table = table.to_call_site(nesting_levels);
-                parse_quote! { #table::columns::#column::Type }
-            }
-            Self::Scope {
-                scope_id,
-                correlation,
-                name,
-            } => match correlation {
-                Some(correlation) => {
-                    parse_quote! { scopes::#scope_id::tables::#correlation::columns::#name::Type }
-                }
-                None => parse_quote! { scopes::#scope_id::columns::#name::Type },
-            },
-        }
     }
 }

@@ -1,4 +1,4 @@
-use crate::data_type::InferredType;
+use crate::inferred_type::InferredType;
 use crate::scopes::ScopeId;
 
 use super::Expr;

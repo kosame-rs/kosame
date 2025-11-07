@@ -7,6 +7,7 @@ mod data_type;
 mod docs;
 mod driver;
 mod expr;
+mod inferred_type;
 mod keyword;
 mod part;
 mod path_ext;

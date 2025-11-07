@@ -1,4 +1,4 @@
-use crate::{data_type::InferredType, scopes::ScopeId};
+use crate::{inferred_type::InferredType, scopes::ScopeId};
 
 use super::Visitor;
 use proc_macro2::{Span, TokenStream};
@@ -23,11 +23,11 @@ impl ColumnRef {
     pub fn infer_type(&self, scope_id: ScopeId) -> Option<InferredType> {
         Some(InferredType::Scope {
             scope_id,
-            correlation: self
+            table: self
                 .correlation
                 .as_ref()
-                .map(|correlation| correlation.name.clone()),
-            name: self.name.clone(),
+                .map(|correlation| &correlation.name),
+            column: &self.name,
         })
     }
 

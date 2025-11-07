@@ -26,7 +26,7 @@ use syn::{
     spanned::Spanned,
 };
 
-use crate::{data_type::InferredType, scopes::ScopeId, visitor::Visitor};
+use crate::{inferred_type::InferredType, scopes::ScopeId, visitor::Visitor};
 
 pub enum Expr {
     Binary(Binary),

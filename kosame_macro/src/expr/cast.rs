@@ -7,11 +7,7 @@ use syn::{
     token::Paren,
 };
 
-use crate::{
-    data_type::{DataType, InferredType},
-    keyword,
-    scopes::ScopeId,
-};
+use crate::{data_type::DataType, inferred_type::InferredType, keyword, scopes::ScopeId};
 
 use super::{Expr, Visitor};
 

@@ -69,7 +69,7 @@ fn main() {
         )
         select
             subquery.pip,
-            title,
+            posts.title,
         from schema::posts
         left join cte on true
         left join lateral (

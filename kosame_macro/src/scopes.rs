@@ -2,11 +2,13 @@ use std::{cell::Cell, collections::HashSet};
 
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
+use syn::Ident;
 
 use crate::{
     clause::{FromItem, WithItem},
     command::Command,
     correlations::CorrelationId,
+    inferred_type::InferredType,
 };
 
 thread_local! {
@@ -14,7 +16,7 @@ thread_local! {
     static SCOPE_ID_CONTEXT: Cell<Option<ScopeId>> = const { Cell::new(None) };
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub struct ScopeId(u32);
 
 impl ScopeId {
@@ -57,6 +59,22 @@ pub struct Scopes<'a> {
     scopes: Vec<Scope<'a>>,
 }
 
+impl<'a> Scopes<'a> {
+    pub fn infer_type<'b>(
+        &self,
+        scope_id: ScopeId,
+        table: Option<&Ident>,
+        column: &'b Ident,
+    ) -> Option<InferredType<'b>> {
+        let scope = self
+            .scopes
+            .iter()
+            .find(|scope| scope.id == scope_id)
+            .expect("scope ID must be valid");
+        scope.infer_type(table, column)
+    }
+}
+
 impl ToTokens for Scopes<'_> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let scopes = &self.scopes;
@@ -77,6 +95,20 @@ struct Scope<'a> {
 impl<'a> Scope<'a> {
     fn new(id: ScopeId, items: Vec<ScopeItem<'a>>) -> Self {
         Self { id, items }
+    }
+
+    pub fn infer_type<'b>(
+        &self,
+        table: Option<&Ident>,
+        column: &'b Ident,
+    ) -> Option<InferredType<'b>> {
+        let table = table?;
+        let item = self.items.iter().find(|item| item.name() == Some(table))?;
+        Some(InferredType::Correlation {
+            correlation_id: item.correlation_id(),
+            column,
+            nullable: item.nullable(),
+        })
     }
 }
 
@@ -118,7 +150,6 @@ impl ToTokens for Scope<'_> {
     }
 }
 
-#[derive(Clone)]
 pub enum ScopeItem<'a> {
     FromItem {
         from_item: &'a FromItem,
@@ -132,6 +163,18 @@ impl<'a> ScopeItem<'a> {
     pub fn correlation_id(&self) -> CorrelationId {
         match self {
             Self::FromItem { from_item, .. } => from_item.correlation_id(),
+        }
+    }
+
+    pub fn name(&self) -> Option<&Ident> {
+        match self {
+            Self::FromItem { from_item, .. } => from_item.name(),
+        }
+    }
+
+    pub fn nullable(&self) -> bool {
+        match self {
+            Self::FromItem { nullable, .. } => *nullable,
         }
     }
 }

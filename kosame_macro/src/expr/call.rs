@@ -1,4 +1,4 @@
-use crate::{data_type::InferredType, scopes::ScopeId};
+use crate::{inferred_type::InferredType, scopes::ScopeId};
 
 use super::{Expr, Visitor};
 use proc_macro2::{Span, TokenStream};

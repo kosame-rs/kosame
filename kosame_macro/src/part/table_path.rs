@@ -5,6 +5,7 @@ use syn::{
 
 use crate::{correlations::CorrelationId, visitor::Visitor};
 
+#[derive(Debug)]
 pub struct TablePath {
     pub path: Path,
     pub correlation_id: CorrelationId,

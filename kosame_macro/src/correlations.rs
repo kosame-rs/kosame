@@ -2,12 +2,15 @@ use std::cell::Cell;
 
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
+use syn::{Ident, Path, parse_quote};
 
 use crate::{
     clause::{FromItem, WithItem},
     command::Command,
+    inferred_type::InferredType,
     part::{TableAlias, TablePath},
     path_ext::PathExt,
+    scopes::ScopeId,
 };
 
 thread_local! {
@@ -15,7 +18,7 @@ thread_local! {
     static CORRELATION_ID_CONTEXT: Cell<Option<CorrelationId>> = const { Cell::new(None) };
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub struct CorrelationId(u32);
 
 impl CorrelationId {
@@ -58,6 +61,21 @@ pub struct Correlations<'a> {
     correlations: Vec<Correlation<'a>>,
 }
 
+impl<'a> Correlations<'a> {
+    pub fn infer_type(
+        &'a self,
+        correlation_id: CorrelationId,
+        column: &'a Ident,
+    ) -> Option<InferredType<'a>> {
+        let correlation = self
+            .correlations
+            .iter()
+            .find(|correlation| correlation.id() == correlation_id)
+            .expect("scope ID must be valid");
+        correlation.infer_type(column)
+    }
+}
+
 impl ToTokens for Correlations<'_> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let correlations = &self.correlations;
@@ -97,6 +115,43 @@ impl<'a> Correlation<'a> {
             Self::FromItem(inner) => match inner {
                 FromItem::Table { table_path, .. } => Some(table_path.correlation_id),
                 FromItem::Subquery { command, .. } => Some(command.correlation_id),
+            },
+        }
+    }
+
+    pub fn infer_type(&'a self, column: &'a Ident) -> Option<InferredType<'a>> {
+        match self {
+            Self::Table(table_path, with_item) => match with_item {
+                Some(with_item) => Some(InferredType::Correlation {
+                    correlation_id: with_item.correlation_id,
+                    column,
+                    nullable: false,
+                }),
+                None => Some(InferredType::TableColumn { table_path, column }),
+            },
+            Self::Command(command) => {
+                let field = command
+                    .fields()?
+                    .iter()
+                    .find(|field| field.infer_name() == Some(column))?;
+                field.infer_type(command.scope_id)
+            }
+            Self::WithItem(with_item) => Some(InferredType::Correlation {
+                correlation_id: with_item.command.correlation_id,
+                column,
+                nullable: false,
+            }),
+            Self::FromItem(from_item) => match from_item {
+                FromItem::Table { table_path, .. } => Some(InferredType::Correlation {
+                    correlation_id: table_path.correlation_id,
+                    column,
+                    nullable: false,
+                }),
+                FromItem::Subquery { command, .. } => Some(InferredType::Correlation {
+                    correlation_id: command.correlation_id,
+                    column,
+                    nullable: false,
+                }),
             },
         }
     }

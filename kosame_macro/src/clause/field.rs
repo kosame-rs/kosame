@@ -9,12 +9,14 @@ use syn::{
 
 use crate::{
     clause::peek_clause,
-    data_type::InferredType,
+    correlations::{CorrelationId, Correlations},
     expr::Expr,
+    inferred_type::{InferredType, resolve_type},
     part::{Alias, TypeOverride},
+    path_ext::PathExt,
     quote_option::QuoteOption,
     row::RowField,
-    scopes::ScopeId,
+    scopes::{ScopeId, Scopes},
     visitor::Visitor,
 };
 
@@ -26,7 +28,12 @@ pub struct Field {
 }
 
 impl Field {
-    pub fn to_row_field(&self, scope_id: ScopeId) -> RowField {
+    pub fn to_row_field(
+        &self,
+        correlations: &Correlations<'_>,
+        scopes: &Scopes<'_>,
+        correlation_id: CorrelationId,
+    ) -> RowField {
         let Some(name) = self.infer_name() else {
             abort!(
                 self.expr.span(),
@@ -34,16 +41,17 @@ impl Field {
                 help = "consider adding an alias using `as my_alias`"
             );
         };
-        let Some(inferred_type) = self.infer_type(scope_id) else {
+        let Some(resolved_type) = resolve_type(correlations, scopes, correlation_id, name) else {
             abort!(
                 self.expr.span(),
-                "field requires type override using `: RustType`"
+                "field name cannot be inferred";
+                help = "consider adding an type override using `: RustType`"
             );
         };
         RowField::new(
             self.attrs.clone(),
             name.clone(),
-            inferred_type.to_call_site(1).to_token_stream(),
+            resolved_type.to_call_site(1).to_token_stream(),
         )
     }
 
@@ -61,7 +69,7 @@ impl Field {
     pub fn infer_type(&self, scope_id: ScopeId) -> Option<InferredType> {
         self.type_override
             .as_ref()
-            .map(|type_override| InferredType::RustType(type_override.type_path.clone()))
+            .map(|type_override| InferredType::RustType(&type_override.type_path))
             .or_else(|| self.expr.infer_type(scope_id))
     }
 }
