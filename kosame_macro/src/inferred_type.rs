@@ -3,6 +3,7 @@ use syn::{Ident, Path, parse_quote};
 use crate::{
     correlations::{CorrelationId, Correlations},
     part::TablePath,
+    path_ext::PathExt,
     scopes::{ScopeId, Scopes},
 };
 
@@ -52,9 +53,13 @@ pub fn resolve_type(
                 inferred_type = correlations.infer_type(correlation_id, column)?;
             }
             InferredType::TableColumn { table_path, column } => {
-                let table_path = table_path.as_path();
+                let table_path = table_path.as_path().to_call_site(1);
                 match combined_nullable {
-                    true => return Some(parse_quote!(#table_path::columns::#column::TypeNullable)),
+                    true => {
+                        return Some(
+                            parse_quote!(::core::option::Option<#table_path::columns::#column::TypeNotNull>),
+                        );
+                    }
                     false => return Some(parse_quote!(#table_path::columns::#column::Type)),
                 }
             }

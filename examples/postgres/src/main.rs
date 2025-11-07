@@ -65,19 +65,20 @@ fn main() {
 
     let rows = kosame::pg_statement! {
         with cte as (
-            select 5 as pip: ::core::primitive::i32, 6 as lel
+            select comments.post_id as pip from schema::comments
         )
         select
+            posts.id,
             subquery.pip,
-            posts.title,
         from schema::posts
         left join cte on true
         left join lateral (
             select cte.pip
         ) as subquery on true
+        where id = :id
     }
     .exec_vec_sync(&mut client)
     .unwrap();
 
-    println!("{:#?}", rows);
+    println!("{:#?}", rows[0].pip);
 }

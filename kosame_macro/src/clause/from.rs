@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
-    Ident, Path, parenthesized,
+    Ident, parenthesized,
     parse::{Parse, ParseStream},
 };
 
@@ -53,8 +53,8 @@ impl ToTokens for From {
 }
 
 pub struct FromChain {
-    start: FromItem,
-    combinators: Vec<FromCombinator>,
+    pub start: FromItem,
+    pub combinators: Vec<FromCombinator>,
 }
 
 impl FromChain {
@@ -63,6 +63,41 @@ impl FromChain {
         for combinator in &self.combinators {
             combinator.accept(visitor);
         }
+    }
+
+    pub fn len(&self) -> usize {
+        self.combinators.len() + 1
+    }
+
+    pub fn nullables(&self) -> Vec<bool> {
+        let mut nullables = vec![false; self.len()];
+        {
+            let mut nullable_join_found = false;
+            for (index, combinator) in self.combinators.iter().enumerate() {
+                if let FromCombinator::Join { join_type, .. } = combinator {
+                    match join_type {
+                        JoinType::Left(..) => nullable_join_found = true,
+                        JoinType::Full(..) => nullable_join_found = true,
+                        _ => {}
+                    }
+                }
+                nullables[index + 1] = nullables[index + 1] || nullable_join_found;
+            }
+        }
+        {
+            let mut nullable_join_found = false;
+            for (index, combinator) in self.combinators.iter().enumerate().rev() {
+                if let FromCombinator::Join { join_type, .. } = combinator {
+                    match join_type {
+                        JoinType::Right(..) => nullable_join_found = true,
+                        JoinType::Full(..) => nullable_join_found = true,
+                        _ => {}
+                    }
+                }
+                nullables[index] = nullables[index] || nullable_join_found;
+            }
+        }
+        nullables
     }
 }
 

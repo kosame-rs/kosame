@@ -5,7 +5,7 @@ use quote::{ToTokens, format_ident, quote};
 use syn::Ident;
 
 use crate::{
-    clause::{FromItem, WithItem},
+    clause::{FromCombinator, FromItem, JoinType, WithItem},
     command::Command,
     correlations::CorrelationId,
     inferred_type::InferredType,
@@ -211,7 +211,9 @@ impl<'a> From<&'a Command> for Scopes<'a> {
             }
 
             if let Some(from_chain) = command.from_chain() {
-                for from_item in from_chain {
+                let nullables = from_chain.nullables();
+
+                for (from_item, nullable) in from_chain.into_iter().zip(nullables.into_iter()) {
                     inherited_from_items.push((scope_id, from_item));
 
                     if let Some(name) = from_item.name() {
@@ -237,7 +239,7 @@ impl<'a> From<&'a Command> for Scopes<'a> {
                         from_item,
                         inherited_from: None,
                         with_item: with_item.copied(),
-                        nullable: false,
+                        nullable,
                     });
                 }
             }

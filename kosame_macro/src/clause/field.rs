@@ -53,7 +53,7 @@ impl Field {
         Some(RowField::new(
             self.attrs.clone(),
             name.clone(),
-            resolved_type.to_call_site(1).to_token_stream(),
+            resolved_type.to_token_stream(),
         ))
     }
 
