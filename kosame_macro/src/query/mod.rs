@@ -3,9 +3,10 @@ mod node;
 mod node_path;
 mod star;
 
-use field::Field;
-use node::Node;
-use node_path::QueryNodePath;
+pub use field::*;
+pub use node::*;
+pub use node_path::*;
+
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, quote};
 use syn::{
@@ -16,15 +17,16 @@ use syn::{
 use crate::{
     attribute::{CustomMeta, MetaLocation},
     bind_params::{BindParamsBuilder, BindParamsClosure},
-    part::Alias,
+    correlations::{CorrelationId, Correlations},
+    part::{Alias, TablePath},
     path_ext::PathExt,
-    scopes::ScopeId,
+    scopes::{ScopeId, Scopes},
 };
 
 pub struct Query {
     pub _inner_attrs: Vec<Attribute>,
     pub outer_attrs: Vec<Attribute>,
-    pub table: syn::Path,
+    pub table: TablePath,
     pub body: Node,
     pub alias: Option<Alias>,
 }
@@ -32,6 +34,7 @@ pub struct Query {
 impl Parse for Query {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         ScopeId::reset();
+        CorrelationId::reset();
         Ok(Self {
             _inner_attrs: {
                 let attrs = Attribute::parse_inner(input)?;
@@ -62,6 +65,8 @@ impl ToTokens for Query {
             self.body.accept(&mut builder);
             builder.build()
         };
+        let correlations = Correlations::from(self);
+        let scopes = Scopes::from(self);
 
         let node_tokens = {
             let mut tokens = proc_macro2::TokenStream::new();
@@ -81,9 +86,9 @@ impl ToTokens for Query {
 
         let module_tokens = quote! {
             pub mod #module_name {
-                #node_tokens
+                #correlations
 
-                #bind_params
+                #node_tokens
 
                 pub struct Query #lifetime {
                     params: Params #lifetime,
@@ -103,6 +108,10 @@ impl ToTokens for Query {
                         &self.params
                     }
                 }
+
+                #bind_params
+
+                #scopes
             }
         };
 

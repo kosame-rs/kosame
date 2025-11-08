@@ -17,6 +17,8 @@ use syn::{
 };
 
 pub struct Node {
+    pub correlation_id: CorrelationId,
+    pub scope_id: ScopeId,
     pub _brace: syn::token::Brace,
     pub star: Option<Star>,
     pub fields: Punctuated<Field, Token![,]>,
@@ -56,7 +58,7 @@ impl Node {
         query: &Query,
         node_path: &QueryNodePath,
     ) {
-        let table_path = node_path.resolve(&query.table);
+        let table_path = node_path.resolve(query.table.as_path());
         tokens.extend(self.to_autocomplete_module_tokens(
             node_path.to_module_name("autocomplete_row"),
             &table_path,
@@ -141,84 +143,69 @@ impl Node {
         query: &Query,
         node_path: QueryNodePath,
     ) {
-        let table_path = node_path.resolve(&query.table);
-        let table_path_call_site = table_path.to_call_site(1);
+        self.scope_id.scope(|| {
+            let table_path = node_path.resolve(query.table.as_path());
+            let table_path_call_site = table_path.to_call_site(1);
 
-        let scope_module = {
-            let table_path = node_path.resolve(&query.table);
-            let table_path_call_site = table_path.to_call_site(2);
-            quote! {
-                mod scope {
-                    pub(super) use super::params;
-                    pub(super) use #table_path_call_site::*;
-                }
-            }
-        };
+            let mut fields = vec![];
+            for field in &self.fields {
+                match field {
+                    Field::Column { name, alias, .. } => {
+                        let alias = QuoteOption::from(alias);
+                        fields.push(quote! {
+                            ::kosame::repr::query::Field::Column {
+                                column: &#table_path_call_site::columns::#name::COLUMN,
+                                alias: #alias
+                            }
+                        });
+                    }
+                    Field::Relation {
+                        name, node, alias, ..
+                    } => {
+                        let alias = QuoteOption::from(alias);
 
-        let mut fields = vec![];
-        for field in &self.fields {
-            match field {
-                Field::Column { name, alias, .. } => {
-                    let alias = QuoteOption::from(alias);
-                    fields.push(quote! {
-                        ::kosame::repr::query::Field::Column {
-                            column: &#table_path_call_site::columns::#name::COLUMN,
-                            alias: #alias
-                        }
-                    });
-                }
-                Field::Relation {
-                    name, node, alias, ..
-                } => {
-                    let alias = QuoteOption::from(alias);
+                        let node_path = node_path.clone().appended(name.clone());
 
-                    let node_path = node_path.clone().appended(name.clone());
+                        let mut relation_path = table_path.clone();
+                        relation_path
+                            .segments
+                            .push(Ident::new("relations", Span::call_site()).into());
+                        relation_path.segments.push(PathSegment::from(name.clone()));
 
-                    let mut relation_path = table_path.clone();
-                    relation_path
-                        .segments
-                        .push(Ident::new("relations", Span::call_site()).into());
-                    relation_path.segments.push(PathSegment::from(name.clone()));
+                        let mut tokens = TokenStream::new();
+                        node.to_query_node_tokens(&mut tokens, query, node_path);
 
-                    let mut tokens = TokenStream::new();
-                    node.to_query_node_tokens(&mut tokens, query, node_path);
+                        let relation_path = relation_path.to_call_site(1);
 
-                    let relation_path = relation_path.to_call_site(1);
+                        fields.push(quote! {
+                            ::kosame::repr::query::Field::Relation {
+                                relation: &#relation_path::RELATION,
+                                node: #tokens,
+                                alias: #alias
+                            }
+                        });
+                    }
+                    Field::Expr { expr, alias, .. } => {
+                        let alias = alias.ident.to_string();
 
-                    fields.push(quote! {
-                        ::kosame::repr::query::Field::Relation {
-                            relation: &#relation_path::RELATION,
-                            node: #tokens,
-                            alias: #alias
-                        }
-                    });
-                }
-                Field::Expr { expr, alias, .. } => {
-                    let alias = alias.ident.to_string();
-
-                    fields.push(quote! {
-                        {
-                            #scope_module
+                        fields.push(quote! {
                             ::kosame::repr::query::Field::Expr {
                                 expr: #expr,
                                 alias: #alias
                             }
-                        }
-                    });
+                        });
+                    }
                 }
             }
-        }
 
-        let star = self.star.is_some();
+            let star = self.star.is_some();
 
-        let r#where = QuoteOption::from(&self.r#where);
-        let order_by = QuoteOption::from(&self.order_by);
-        let limit = QuoteOption::from(&self.limit);
-        let offset = QuoteOption::from(&self.offset);
+            let r#where = QuoteOption::from(&self.r#where);
+            let order_by = QuoteOption::from(&self.order_by);
+            let limit = QuoteOption::from(&self.limit);
+            let offset = QuoteOption::from(&self.offset);
 
-        quote! {
-            {
-                #scope_module
+            quote! {
                 ::kosame::repr::query::Node::new(
                     &#table_path_call_site::TABLE,
                     #star,
@@ -229,8 +216,8 @@ impl Node {
                     #offset,
                 )
             }
-        }
-        .to_tokens(tokens);
+            .to_tokens(tokens);
+        });
     }
 }
 
@@ -289,6 +276,8 @@ impl Parse for Node {
         }
 
         Ok(Self {
+            correlation_id: CorrelationId::new(),
+            scope_id: ScopeId::new(),
             _brace,
             star,
             fields,

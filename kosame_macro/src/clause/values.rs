@@ -6,7 +6,7 @@ use syn::{
     punctuated::Punctuated,
 };
 
-use crate::{clause::peek_clause, expr::Expr, keyword, visitor::Visitor};
+use crate::{expr::Expr, keyword, visitor::Visitor};
 
 pub struct Values {
     pub _values_keyword: keyword::values,
@@ -31,10 +31,7 @@ impl Parse for Values {
             _values_keyword: input.parse()?,
             rows: {
                 let mut punctuated = Punctuated::new();
-                while !input.is_empty() {
-                    if peek_clause(input) {
-                        break;
-                    }
+                while input.peek(syn::token::Paren) {
                     punctuated.push(input.parse()?);
                     if !input.peek(Token![,]) {
                         break;
@@ -116,10 +113,10 @@ impl ToTokens for ValuesItem {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
             Self::Default(..) => quote! {
-                ::kosame::repr::clause::ValuesItem::Default,
+                ::kosame::repr::clause::ValuesItem::Default
             },
             Self::Expr(expr) => quote! {
-                ::kosame::repr::clause::ValuesItem::Expr(#expr),
+                ::kosame::repr::clause::ValuesItem::Expr(#expr)
             },
         }
         .to_tokens(tokens);

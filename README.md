@@ -137,9 +137,9 @@ If the `serde` feature is enabled, the row structs implement `serde::Serialize`,
 Kosame is an early prototype. There are many features and performance optimizations left to implement, including but not limited to:
 
 * Support for other database management systems. Currently, only PostgreSQL (using [`tokio_postgres`](https://docs.rs/tokio-postgres/latest/tokio_postgres/)) is supported.
-* A CLI for generating database migrations based on changes in the Kosame schema.
-* A CLI for generating a Kosame schema by introspecting a database.
-* Database mutations (i.e., `insert`, `update`, and `delete`). Currently, Kosame only supports read queries.
+* CLI for generating database migrations based on changes in the Kosame schema.
+* CLI for generating a Kosame schema by introspecting a database.
+* Formatter for table, query and statement macros
 * Support for more SQL expression syntax.
 * Alternative query runners, similar to the [`relationLoadStrategy` that Prisma offers](https://www.prisma.io/blog/prisma-orm-now-lets-you-choose-the-best-join-strategy-preview).
 * Type inference for bind parameters.

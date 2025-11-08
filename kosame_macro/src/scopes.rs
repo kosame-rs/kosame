@@ -5,10 +5,11 @@ use quote::{ToTokens, format_ident, quote};
 use syn::Ident;
 
 use crate::{
-    clause::{FromCombinator, FromItem, JoinType, WithItem},
+    clause::{FromItem, WithItem},
     command::Command,
     correlations::CorrelationId,
     inferred_type::InferredType,
+    query::{self, Query},
 };
 
 thread_local! {
@@ -125,6 +126,12 @@ impl ToTokens for Scope<'_> {
                     }
                 })
             }
+            ScopeItem::QueryNode { node, name, .. } => {
+                let correlation_id = node.correlation_id;
+                Some(quote! {
+                    pub use super::super::super::correlations::#correlation_id as #name;
+                })
+            }
         });
 
         let columns = self.items.iter().filter_map(|item| match item {
@@ -133,6 +140,7 @@ impl ToTokens for Scope<'_> {
                 inherited_from: None,
                 ..
             } => from_item.name(),
+            ScopeItem::QueryNode { name, .. } => Some(name),
             _ => None,
         });
 
@@ -157,24 +165,31 @@ pub enum ScopeItem<'a> {
         inherited_from: Option<ScopeId>,
         nullable: bool,
     },
+    QueryNode {
+        node: &'a query::Node,
+        name: &'a Ident,
+    },
 }
 
 impl<'a> ScopeItem<'a> {
     pub fn correlation_id(&self) -> CorrelationId {
         match self {
             Self::FromItem { from_item, .. } => from_item.correlation_id(),
+            Self::QueryNode { node, .. } => node.correlation_id,
         }
     }
 
     pub fn name(&self) -> Option<&Ident> {
         match self {
             Self::FromItem { from_item, .. } => from_item.name(),
+            Self::QueryNode { name, .. } => Some(name),
         }
     }
 
     pub fn nullable(&self) -> bool {
         match self {
             Self::FromItem { nullable, .. } => *nullable,
+            Self::QueryNode { .. } => false,
         }
     }
 }
@@ -265,6 +280,38 @@ impl<'a> From<&'a Command> for Scopes<'a> {
 
         let mut scopes = Vec::new();
         inner(&mut scopes, value, &mut Vec::new(), &mut Vec::new());
+        scopes.sort_by_key(|v| v.id);
+        Scopes { scopes }
+    }
+}
+
+impl<'a> From<&'a Query> for Scopes<'a> {
+    fn from(value: &'a Query) -> Self {
+        fn inner<'a>(scopes: &mut Vec<Scope<'a>>, node: &'a query::Node, name: &'a Ident) {
+            let scope_id = node.scope_id;
+            let items = vec![ScopeItem::QueryNode { node, name }];
+
+            for field in node.fields.iter() {
+                if let query::Field::Relation { node, name, .. } = field {
+                    inner(scopes, node, name);
+                }
+            }
+
+            scopes.push(Scope::new(scope_id, items));
+        }
+
+        let mut scopes = Vec::new();
+        inner(
+            &mut scopes,
+            &value.body,
+            &value
+                .table
+                .as_path()
+                .segments
+                .last()
+                .expect("path cannot be empty")
+                .ident,
+        );
         scopes.sort_by_key(|v| v.id);
         Scopes { scopes }
     }

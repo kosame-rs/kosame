@@ -2,15 +2,15 @@ use std::cell::Cell;
 
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
-use syn::{Ident, Path, parse_quote};
+use syn::Ident;
 
 use crate::{
     clause::{FromItem, WithItem},
     command::Command,
     inferred_type::InferredType,
-    part::{TableAlias, TablePath},
+    part::TablePath,
     path_ext::PathExt,
-    scopes::ScopeId,
+    query::{self, Query, QueryNodePath},
 };
 
 thread_local! {
@@ -93,6 +93,11 @@ enum Correlation<'a> {
     Command(&'a Command),
     WithItem(&'a WithItem),
     FromItem(&'a FromItem),
+    QueryNodePath {
+        node: &'a query::Node,
+        table_path: &'a TablePath,
+        node_path: QueryNodePath,
+    },
 }
 
 impl<'a> Correlation<'a> {
@@ -102,6 +107,7 @@ impl<'a> Correlation<'a> {
             Self::Command(inner) => inner.correlation_id,
             Self::WithItem(inner) => inner.correlation_id,
             Self::FromItem(inner) => inner.correlation_id(),
+            Self::QueryNodePath { node, .. } => node.correlation_id,
         }
     }
 
@@ -116,6 +122,7 @@ impl<'a> Correlation<'a> {
                 FromItem::Table { table_path, .. } => Some(table_path.correlation_id),
                 FromItem::Subquery { command, .. } => Some(command.correlation_id),
             },
+            Self::QueryNodePath { .. } => None,
         }
     }
 
@@ -153,6 +160,9 @@ impl<'a> Correlation<'a> {
                     nullable: false,
                 }),
             },
+            Self::QueryNodePath { table_path, .. } => {
+                Some(InferredType::TableColumn { table_path, column })
+            }
         }
     }
 }
@@ -241,6 +251,16 @@ impl ToTokens for Correlation<'_> {
                     }
                 }
             },
+            Self::QueryNodePath {
+                table_path,
+                node_path,
+                ..
+            } => {
+                let table_path = table_path.as_path().to_call_site(2);
+                quote! {
+                    pub use #table_path as #id;
+                }
+            }
         }
         .to_tokens(tokens);
     }
@@ -297,6 +317,38 @@ impl<'a> From<&'a Command> for Correlations<'a> {
 
         let mut correlations = Vec::new();
         inner(&mut correlations, value, &mut Vec::new());
+        Correlations { correlations }
+    }
+}
+
+impl<'a> From<&'a Query> for Correlations<'a> {
+    fn from(value: &'a Query) -> Self {
+        fn inner<'a>(
+            correlations: &mut Vec<Correlation<'a>>,
+            query: &'a Query,
+            node: &'a query::Node,
+            node_path: QueryNodePath,
+        ) {
+            for field in node.fields.iter() {
+                if let query::Field::Relation { node, name, .. } = field {
+                    inner(
+                        correlations,
+                        query,
+                        node,
+                        node_path.clone().appended(name.clone()),
+                    );
+                }
+            }
+
+            correlations.push(Correlation::QueryNodePath {
+                node,
+                table_path: &query.table,
+                node_path,
+            });
+        }
+
+        let mut correlations = Vec::new();
+        inner(&mut correlations, &value, &value.body, QueryNodePath::new());
         Correlations { correlations }
     }
 }
