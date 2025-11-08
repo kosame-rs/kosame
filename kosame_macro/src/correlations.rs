@@ -256,7 +256,7 @@ impl ToTokens for Correlation<'_> {
                 node_path,
                 ..
             } => {
-                let table_path = table_path.as_path().to_call_site(2);
+                let table_path = node_path.resolve(&table_path.as_path().to_call_site(2));
                 quote! {
                     pub use #table_path as #id;
                 }

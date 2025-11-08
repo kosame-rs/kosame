@@ -238,7 +238,7 @@ impl Parse for Node {
 
         let mut fields = Punctuated::<Field, _>::new();
         while !content.is_empty() {
-            if peek_clause(input) {
+            if peek_clause(&content) {
                 break;
             }
 
