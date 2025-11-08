@@ -3,6 +3,7 @@ use quote::{ToTokens, quote};
 use syn::{
     Ident, Token,
     parse::{Parse, ParseStream},
+    spanned::Spanned,
 };
 
 use crate::{clause::peek_clause, keyword, part::ColumnList, quote_option::QuoteOption};
@@ -43,10 +44,20 @@ impl Parse for TableAlias {
         Ok(Self {
             _as_token: input.peek(Token![as]).then(|| input.parse()).transpose()?,
             name: input.parse()?,
-            columns: input
-                .peek(syn::token::Paren)
-                .then(|| input.parse())
-                .transpose()?,
+            columns: {
+                let columns = input
+                    .peek(syn::token::Paren)
+                    .then(|| input.parse::<ColumnList>())
+                    .transpose()?;
+                if let Some(columns) = columns {
+                    return Err(syn::Error::new(
+                        columns._paren_token.span.span(),
+                        "column aliases are currently unsupported",
+                    ));
+                }
+
+                columns
+            },
         })
     }
 }

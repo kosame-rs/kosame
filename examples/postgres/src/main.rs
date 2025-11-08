@@ -50,7 +50,7 @@ fn main() {
             }
         }
     }
-    .query_sync(&mut client, &mut RecordArrayRunner {})
+    .query_vec_sync(&mut client)
     .unwrap();
 
     println!("{:#?}", rows);
