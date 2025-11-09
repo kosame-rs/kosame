@@ -5,7 +5,7 @@ use quote::{ToTokens, format_ident, quote};
 use syn::Ident;
 
 use crate::{
-    clause::{FromItem, WithItem},
+    clause::FromItem,
     command::Command,
     correlations::CorrelationId,
     inferred_type::InferredType,
@@ -153,7 +153,6 @@ pub enum ScopeItem<'a> {
     },
     FromItem {
         from_item: &'a FromItem,
-        with_item: Option<&'a WithItem>,
         inherited_from: Option<ScopeId>,
         nullable: bool,
     },
@@ -202,11 +201,9 @@ impl<'a> From<&'a Command> for Scopes<'a> {
         fn inner<'a>(
             scopes: &mut Vec<Scope<'a>>,
             command: &'a Command,
-            inherited_with_items: &mut Vec<&'a WithItem>,
             inherited_from_items: &mut Vec<(ScopeId, &'a FromItem)>,
         ) {
             let scope_id = command.scope_id;
-            let with_items_truncate = inherited_with_items.len();
             let from_items_truncate = inherited_from_items.len();
 
             let mut items = Vec::new();
@@ -214,13 +211,7 @@ impl<'a> From<&'a Command> for Scopes<'a> {
 
             if let Some(with) = &command.with {
                 for with_item in &with.items {
-                    inner(
-                        scopes,
-                        &with_item.command,
-                        inherited_with_items,
-                        inherited_from_items,
-                    );
-                    inherited_with_items.push(with_item);
+                    inner(scopes, &with_item.command, inherited_from_items);
                 }
             }
 
@@ -240,30 +231,17 @@ impl<'a> From<&'a Command> for Scopes<'a> {
                     }
 
                     if let FromItem::Subquery { command, .. } = from_item {
-                        inner(scopes, command, inherited_with_items, inherited_from_items);
+                        inner(scopes, command, inherited_from_items);
                     }
-
-                    let with_item = match from_item {
-                        FromItem::Table { table_path, .. } => match table_path.get_ident() {
-                            Some(table) => inherited_with_items
-                                .iter()
-                                .rev()
-                                .find(|with_item| with_item.alias.name == *table),
-                            None => None,
-                        },
-                        _ => None,
-                    };
 
                     items.push(ScopeItem::FromItem {
                         from_item,
                         inherited_from: None,
-                        with_item: with_item.copied(),
                         nullable,
                     });
                 }
             }
 
-            inherited_with_items.truncate(with_items_truncate);
             inherited_from_items.truncate(from_items_truncate);
 
             for (inherited_from, from_item) in inherited_from_items.iter() {
@@ -273,7 +251,6 @@ impl<'a> From<&'a Command> for Scopes<'a> {
                     items.push(ScopeItem::FromItem {
                         from_item,
                         inherited_from: Some(*inherited_from),
-                        with_item: None,
                         nullable: false,
                     });
                 }
@@ -283,7 +260,7 @@ impl<'a> From<&'a Command> for Scopes<'a> {
         }
 
         let mut scopes = Vec::new();
-        inner(&mut scopes, value, &mut Vec::new(), &mut Vec::new());
+        inner(&mut scopes, value, &mut Vec::new());
         scopes.sort_by_key(|v| v.id);
         Scopes { scopes }
     }

@@ -17,17 +17,15 @@ use crate::{
 };
 
 pub struct Statement {
-    token_stream: TokenStream,
-
-    pub inner_attrs: Vec<Attribute>,
+    pub _inner_attrs: Vec<Attribute>,
     pub _paren_token: Option<syn::token::Paren>,
     pub command: Command,
     pub alias: Option<Alias>,
 }
 
 impl Statement {
-    pub fn custom_meta(&self) -> CustomMeta {
-        CustomMeta::parse_attrs(&self.inner_attrs, MetaLocation::StatementInner)
+    pub fn _custom_meta(&self) -> CustomMeta {
+        CustomMeta::parse_attrs(&self._inner_attrs, MetaLocation::StatementInner)
             .expect("custom meta should be checked during parsing")
     }
 
@@ -41,7 +39,6 @@ impl Parse for Statement {
         CorrelationId::reset();
         ScopeId::reset();
 
-        let token_stream = input.fork().parse()?;
         let inner_attrs = {
             let attrs = input.call(Attribute::parse_inner)?;
             CustomMeta::parse_attrs(&attrs, MetaLocation::StatementInner)?;
@@ -50,16 +47,14 @@ impl Parse for Statement {
         if input.peek(syn::token::Paren) {
             let content;
             Ok(Self {
-                token_stream,
-                inner_attrs,
+                _inner_attrs: inner_attrs,
                 _paren_token: Some(parenthesized!(content in input)),
                 command: content.parse()?,
                 alias: input.call(Alias::parse_optional)?,
             })
         } else {
             Ok(Self {
-                token_stream,
-                inner_attrs,
+                _inner_attrs: inner_attrs,
                 _paren_token: None,
                 command: input.parse()?,
                 alias: input.call(Alias::parse_optional)?,
@@ -71,7 +66,7 @@ impl Parse for Statement {
 impl ToTokens for Statement {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         // Prepass to get table schemas
-        let custom_meta = self.custom_meta();
+        // let custom_meta = self.custom_meta();
 
         // fn collect_table_refs<'a>(statement: &'a Statement) -> HashSet<&'a Path> {
         //     let mut table_refs = HashSet::<&'a Path>::new();
@@ -125,7 +120,7 @@ impl ToTokens for Statement {
 
         let bind_params = {
             let mut builder = BindParamsBuilder::new();
-            self.command.accept(&mut builder);
+            self.accept(&mut builder);
             builder.build()
         };
         let correlations = Correlations::from(&self.command);

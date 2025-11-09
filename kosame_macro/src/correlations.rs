@@ -111,7 +111,7 @@ impl<'a> Correlation<'a> {
         }
     }
 
-    fn source_id(&self) -> Option<CorrelationId> {
+    fn _source_id(&self) -> Option<CorrelationId> {
         match self {
             Self::Table(_, with_item) => {
                 with_item.as_ref().map(|with_item| with_item.correlation_id)
@@ -203,7 +203,7 @@ impl ToTokens for Correlation<'_> {
                 None => quote! { pub mod #id {} },
             },
             Self::WithItem(with_item) => match &with_item.alias.columns {
-                Some(columns) => {
+                Some(_) => {
                     unimplemented!();
                 }
                 None => {
@@ -352,7 +352,7 @@ impl<'a> From<&'a Query> for Correlations<'a> {
         }
 
         let mut correlations = Vec::new();
-        inner(&mut correlations, &value, &value.body, QueryNodePath::new());
+        inner(&mut correlations, value, &value.body, QueryNodePath::new());
         Correlations { correlations }
     }
 }

@@ -27,7 +27,6 @@ pub enum MetaLocation {
     QueryInner,
     QueryOuter,
     StatementInner,
-    StatementOuter,
 }
 
 impl CustomMeta {
