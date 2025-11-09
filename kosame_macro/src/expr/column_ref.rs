@@ -37,7 +37,7 @@ impl ColumnRef {
                 .name
                 .span()
                 .join(self.name.span())
-                .expect("same file")
+                .unwrap_or(self.name.span())
         } else {
             self.name.span()
         }

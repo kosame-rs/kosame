@@ -43,7 +43,7 @@ impl Cast {
         self.cast
             .span
             .join(self.paren.span.span())
-            .expect("same file")
+            .unwrap_or(self.cast.span)
     }
 }
 

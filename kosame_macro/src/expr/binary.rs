@@ -37,7 +37,10 @@ impl Binary {
     }
 
     pub fn span(&self) -> Span {
-        self.lhs.span().join(self.rhs.span()).expect("same file")
+        self.lhs
+            .span()
+            .join(self.rhs.span())
+            .unwrap_or(self.lhs.span())
     }
 }
 

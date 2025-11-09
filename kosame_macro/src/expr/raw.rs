@@ -32,7 +32,7 @@ impl Raw {
         self.dollar_token
             .span
             .join(self.string.span())
-            .expect("same file")
+            .unwrap_or(self.string.span())
     }
 }
 

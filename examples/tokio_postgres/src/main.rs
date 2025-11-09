@@ -10,12 +10,12 @@ mod schema {
             id int primary key,
 
             // Kosame converts database identifiers to snake_case automatically and
-            // has a default for most well known database types. You can rename them
-            // or specify a different type if you prefer.
+            // has a default Rust type for most well known database types. You can
+            // rename them or specify a different type if you prefer.
             #[kosame(rename = renamed_title, ty = ::std::string::String)]
             title text not null,
 
-            content text,
+            content text, // Trailing commas are allowed.
         );
 
         // Define a relation to another table. This enables relational queries.
@@ -86,7 +86,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             // to be `struct Row { new_upvotes: i32 }` without a database connection.
             comments.upvotes as new_upvotes
     }
-    // With the `RETURNING` clause we can use `query` instead of `exec`.
+    // With the `RETURNING` clause we can now use `query` instead of `exec` and retrieve data.
     .query_one(&mut client)
     .await?
     .new_upvotes;
@@ -175,7 +175,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         select
             posts_with_content.id,
-            sum(comments.upvotes),
+            sum(comments.upvotes) as total_upvotes,
         from
             posts_with_content
             left join schema::comments on posts_with_content.id = comments.post_id

@@ -39,7 +39,7 @@ impl Call {
         self.function
             .span()
             .join(self.paren.span.span())
-            .expect("same file")
+            .unwrap_or(self.function.span())
     }
 }
 

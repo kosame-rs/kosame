@@ -31,7 +31,10 @@ impl BindParam {
     }
 
     pub fn span(&self) -> Span {
-        self.colon.span.join(self.name.span()).expect("same file")
+        self.colon
+            .span
+            .join(self.name.span())
+            .unwrap_or(self.name.span())
     }
 }
 
