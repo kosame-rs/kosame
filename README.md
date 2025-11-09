@@ -760,7 +760,7 @@ let rows = kosame::pg_statement! {
 ### `INSERT`
 
 ```rust
-kosame::pg_statement! {
+let new_post_ids = kosame::pg_statement! {
     insert into schema::posts
     values
         (0, "my post", "hi, this is a post"),
@@ -769,6 +769,7 @@ kosame::pg_statement! {
     returning
         posts.id
 }
+// With the `RETURNING` clause we can now use `query` instead of `exec` and retrieve data.
 .query_vec(&mut client)
 .await?;
 ```
@@ -782,14 +783,10 @@ let new_upvotes = kosame::pg_statement! {
     set
         upvotes = upvotes + 1
     where
-        // The `comment_id` variable above is used as a bind parameter in this expression.
         id = 5
     returning
-        // We can return the updated value. Kosame infers the result type of this statement
-        // to be `struct Row { new_upvotes: i32 }` without a database connection.
         comments.upvotes as new_upvotes
 }
-// With the `RETURNING` clause we can now use `query` instead of `exec` and retrieve data.
 .query_one(&mut client)
 .await?;
 ```
