@@ -5,12 +5,17 @@ use super::Expr;
 pub struct Call<'a> {
     function: &'a str,
     params: &'a [&'a Expr<'a>],
+    keyword: bool,
 }
 
 impl<'a> Call<'a> {
     #[inline]
-    pub const fn new(function: &'a str, params: &'a [&'a Expr]) -> Self {
-        Self { function, params }
+    pub const fn new(function: &'a str, params: &'a [&'a Expr], keyword: bool) -> Self {
+        Self {
+            function,
+            params,
+            keyword,
+        }
     }
 }
 
@@ -20,7 +25,11 @@ impl kosame_sql::FmtSql for Call<'_> {
         &self,
         formatter: &mut kosame_sql::Formatter<D>,
     ) -> kosame_sql::Result {
-        formatter.write_ident(self.function)?;
+        if self.keyword {
+            formatter.write_str(self.function)?;
+        } else {
+            formatter.write_ident(self.function)?;
+        }
         formatter.write_str("(")?;
         for (index, param) in self.params.iter().enumerate() {
             param.fmt_sql(formatter)?;

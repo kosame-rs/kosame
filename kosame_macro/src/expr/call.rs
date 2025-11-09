@@ -58,10 +58,15 @@ impl ToTokens for Call {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let function_name = &self.function.to_string();
         let params = self.params.iter();
+        let keyword = matches!(
+            function_name.as_ref(),
+            "coalesce" | "greatest" | "least" | "nullif"
+        );
         quote! {
             ::kosame::repr::expr::Call::new(
                 #function_name,
-                &[#(&#params),*]
+                &[#(&#params),*],
+                #keyword,
             )
         }
         .to_tokens(tokens)

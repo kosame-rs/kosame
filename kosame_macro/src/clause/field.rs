@@ -45,7 +45,8 @@ impl Field {
             emit_error!(
                 self.expr.span(),
                 "field type cannot be inferred";
-                help = "consider adding an type override using `: RustType`"
+                help = "consider adding a type override using `: RustType`";
+                note = "Kosame can only infer the type of a column when it is qualified with its table, e.g. `posts.id` instead of `id`"
             );
             return None;
         };

@@ -164,6 +164,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // flexibility out of your database, you may want to write SQL `SELECT` statements directly.
     // Kosame supports an SQL-like syntax with type inference for this scenario.
 
+    use kosame::sql::FmtSql;
+    println!(
+        "{}",
+        kosame::pg_statement! {
+            with posts_with_content as (
+                select
+                    posts.id
+                from
+                    schema::posts
+                where
+                    content is not null
+            )
+            select
+                // The type of this field is inferred as `i32`.
+                posts_with_content.id,
+
+                // Kosame cannot currently infer the name and type of this expressions, so we must
+                // declare it manually.
+                coalesce(sum(comments.upvotes), 0) as total_upvotes: i32,
+            from
+                posts_with_content
+                left join schema::comments on posts_with_content.id = comments.post_id
+            group by
+                posts_with_content.id
+        }
+        .repr()
+        .to_sql_string::<kosame::sql::postgres::Dialect>()
+        .unwrap(),
+    );
+
     let rows = kosame::pg_statement! {
         with posts_with_content as (
             select
@@ -174,8 +204,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 content is not null
         )
         select
+            // The type of this field is inferred as `i32`.
             posts_with_content.id,
-            sum(comments.upvotes) as total_upvotes,
+
+            // Kosame cannot currently infer the name and type of this expressions, so we must
+            // declare it manually.
+            coalesce(sum(comments.upvotes), 0) as total_upvotes: i32,
         from
             posts_with_content
             left join schema::comments on posts_with_content.id = comments.post_id
