@@ -11,7 +11,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "Macro-based Rust ORM focused on developer ergonomics"
 repository = "https://github.com/pikaju/kosame"
@@ -28,8 +28,8 @@ publish = [
 ]
 
 [workspace.dependencies]
-kosame = { path = "kosame", version = "0.1.0" }
-kosame_macro = { path = "kosame_macro", version = "0.1.0" }
-kosame_repr = { path = "kosame_repr", version = "0.1.0" }
-kosame_sql = { path = "kosame_sql", version = "0.1.0" }
+kosame = { path = "kosame", version = "0.2.0" }
+kosame_macro = { path = "kosame_macro", version = "0.2.0" }
+kosame_repr = { path = "kosame_repr", version = "0.2.0" }
+kosame_sql = { path = "kosame_sql", version = "0.2.0" }
 
