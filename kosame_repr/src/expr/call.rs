@@ -25,11 +25,14 @@ impl kosame_sql::FmtSql for Call<'_> {
         &self,
         formatter: &mut kosame_sql::Formatter<D>,
     ) -> kosame_sql::Result {
+        // Some functions like `coalesce` must not be quoted like an identifier, whereas others,
+        // like `sum`, can be. User defined functions should be treated as identifiers.
         if self.keyword {
             formatter.write_str(self.function)?;
         } else {
             formatter.write_ident(self.function)?;
         }
+
         formatter.write_str("(")?;
         for (index, param) in self.params.iter().enumerate() {
             param.fmt_sql(formatter)?;
