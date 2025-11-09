@@ -28,7 +28,7 @@ impl Paren {
         self.expr.infer_name()
     }
 
-    pub fn infer_type(&self, scope_id: ScopeId) -> Option<InferredType> {
+    pub fn infer_type(&self, scope_id: ScopeId) -> Option<InferredType<'_>> {
         self.expr.infer_type(scope_id)
     }
 }

@@ -14,7 +14,7 @@ mod schema {
             // Kosame converts database identifiers to snake_case automatically and
             // has a default for most well known database types. You can rename them
             // or specify a different type if you prefer.
-            #[kosame(rename = title, ty = ::std::string::String)]
+            #[kosame(rename = renamed_title, ty = ::std::string::String)]
             title text not null,
 
             content text,

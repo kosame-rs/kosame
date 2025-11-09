@@ -1,4 +1,4 @@
-use proc_macro_error::{abort, emit_error};
+use proc_macro_error::emit_error;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
@@ -13,7 +13,6 @@ use crate::{
     expr::Expr,
     inferred_type::{InferredType, resolve_type},
     part::{Alias, TypeOverride},
-    path_ext::PathExt,
     quote_option::QuoteOption,
     row::RowField,
     scopes::{ScopeId, Scopes},

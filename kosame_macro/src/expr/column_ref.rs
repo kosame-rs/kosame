@@ -20,7 +20,7 @@ impl ColumnRef {
         Some(&self.name)
     }
 
-    pub fn infer_type(&self, scope_id: ScopeId) -> Option<InferredType> {
+    pub fn infer_type(&self, scope_id: ScopeId) -> Option<InferredType<'_>> {
         Some(InferredType::Scope {
             scope_id,
             table: self

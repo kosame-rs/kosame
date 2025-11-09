@@ -173,9 +173,7 @@ impl FromItem {
 
     pub fn columns<'a>(&'a self, with_item: Option<&'a WithItem>) -> Vec<&'a Ident> {
         match self {
-            Self::Table {
-                table_path, alias, ..
-            } => match with_item {
+            Self::Table { alias, .. } => match with_item {
                 Some(with_item) => with_item.columns(),
                 None => match alias {
                     Some(
@@ -188,7 +186,7 @@ impl FromItem {
                     _ => Vec::new(),
                 },
             },
-            Self::Subquery { command, alias, .. } => command
+            Self::Subquery { command, .. } => command
                 .fields()
                 .into_iter()
                 .flat_map(|fields| fields.columns())

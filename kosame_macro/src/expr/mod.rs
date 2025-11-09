@@ -81,7 +81,7 @@ impl Expr {
         variants!(branches!())
     }
 
-    pub fn infer_type(&self, scope_id: ScopeId) -> Option<InferredType> {
+    pub fn infer_type(&self, scope_id: ScopeId) -> Option<InferredType<'_>> {
         macro_rules! branches {
             ($($variant:ident)*) => {
                 match self {

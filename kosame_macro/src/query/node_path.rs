@@ -2,7 +2,7 @@ use convert_case::Casing;
 use proc_macro2::Span;
 use syn::{Ident, Path, PathSegment};
 
-#[derive(Clone)]
+#[derive(Default, Clone)]
 pub struct QueryNodePath {
     pub segments: Vec<Ident>,
 }

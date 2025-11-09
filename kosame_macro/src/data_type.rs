@@ -1,13 +1,9 @@
 use proc_macro_error::abort;
-use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
-    Ident, Path,
+    Ident,
     parse::{Parse, ParseStream},
-    parse_quote,
 };
-
-use crate::{part::TablePath, path_ext::PathExt, scopes::ScopeId};
 
 #[derive(Clone)]
 pub struct DataType {

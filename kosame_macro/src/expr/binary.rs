@@ -32,7 +32,7 @@ impl Binary {
         None
     }
 
-    pub fn infer_type(&self, _scope_id: ScopeId) -> Option<InferredType> {
+    pub fn infer_type(&self, _scope_id: ScopeId) -> Option<InferredType<'_>> {
         None
     }
 

@@ -32,7 +32,7 @@ impl Cast {
         self.value.infer_name()
     }
 
-    pub fn infer_type(&self, _scope_id: ScopeId) -> Option<InferredType> {
+    pub fn infer_type(&self, _scope_id: ScopeId) -> Option<InferredType<'_>> {
         // Difficulty detecting nullability
         // Some(InferredType::DataType(self.data_type.clone()))
 
