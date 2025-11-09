@@ -162,7 +162,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Relational queries are not well suited to every use case. To squeeze maximum performance and
     // flexibility out of your database, you may want to write SQL `SELECT` statements directly.
-    // Kosame supports an SQL-like syntax with type inference for this scenario.
+    // Kosame supports an SQL-like syntax with basic type inference for this scenario.
     let rows = kosame::pg_statement! {
         // A common table expression of all posts with non-null content.
         with posts_with_content as (
