@@ -10,9 +10,14 @@ readme.workspace = true
 license.workspace = true
 keywords.workspace = true
 
+[[bin]]
+name = "cargo-kosame"
+path = "src/main.rs"
+
 [features]
 default = []
 
 [dependencies]
 clap = { version = "4.5.50", features = ["derive"] }
+regex = "1.12.2"
 tokio-postgres = "0.7.14"

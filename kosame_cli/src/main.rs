@@ -1,4 +1,7 @@
+mod fmt;
+
 use clap::{Args, Parser};
+use fmt::Fmt;
 
 #[derive(Parser)]
 #[command(
@@ -8,14 +11,7 @@ use clap::{Args, Parser};
 )]
 enum Root {
     Fmt(Fmt),
-    Introspect(Introspect),
-}
-
-#[derive(Args)]
-#[command(version, about = "Format the content of Kosame macro invocations in Rust source files", long_about = None)]
-struct Fmt {
-    #[arg(short, long)]
-    file: Option<std::path::PathBuf>,
+    // Introspect(Introspect),
 }
 
 #[derive(Args)]
@@ -23,6 +19,8 @@ struct Fmt {
 struct Introspect {}
 
 fn main() {
-    Root::parse();
-    println!("kek :>");
+    let root = Root::parse_from(std::env::args().skip(1));
+    match root {
+        Root::Fmt(inner) => inner.run(),
+    }
 }
