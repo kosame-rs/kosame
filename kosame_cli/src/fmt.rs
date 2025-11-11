@@ -20,51 +20,59 @@ impl Fmt {
             }
         };
 
-        let regex = regex::Regex::new(concat!(
-            "(",
+        let macro_patterns: Vec<String> = [
             "table",
-            "|",
-            "statement",
-            "|",
-            "query",
-            "|",
             "pg_table",
-            "|",
+            "statement",
             "pg_statement",
-            "|",
+            "query",
             "pg_query",
-            r")!\s*[\{\(\[]"
-        ))
-        .unwrap();
+        ]
+        .iter()
+        .map(|k| format!(r"({}!\s*[\[({{])", regex::escape(k))) // Wrap each in a capture group
+        .collect();
 
-        let mut buffer = &input[..];
+        let pattern = format!("{}|([(){{}}\\[\\]])", macro_patterns.join("|"));
+        let regex = regex::Regex::new(&pattern).unwrap();
+
         let mut output = String::new();
-        while let Some(r#match) = regex.find(buffer) {
-            let start = r#match.end();
-            output.push_str(&buffer[0..start]);
-            let mut stack = 0;
-            let mut end = buffer.len();
-            for (i, c) in buffer[start..buffer.len()].char_indices() {
-                match c {
-                    '(' | '[' | '{' => stack += 1,
-                    ')' | ']' | '}' => {
-                        stack -= 1;
-                        if stack < 0 {
-                            end = i + start;
-                            break;
-                        }
-                    }
-                    _ => {}
-                }
-            }
-            let formatting_input = &buffer[start..end];
-            println!("{formatting_input}");
-            output.push_str(formatting_input);
 
-            buffer = &buffer[end..];
+        struct Start {
+            index: usize,
+            indent: usize,
         }
 
-        output.push_str(buffer);
+        let mut indent = 0;
+        let mut macro_start: Option<Start> = None;
+        let mut last_end = 0;
+        for r#match in regex.find_iter(&input) {
+            match r#match.as_str() {
+                "(" | "[" | "{" => indent += 1,
+                ")" | "]" | "}" => {
+                    indent -= 1;
+                    if let Some(start) = macro_start.as_ref()
+                        && start.indent >= indent
+                    {
+                        output.push_str(&input[last_end..start.index]);
+                        let format_input = &input[start.index..r#match.start()];
+                        println!("{}:{format_input}", start.indent);
+                        output.push_str(format_input);
+                        last_end = r#match.start();
+                        macro_start = None;
+                    }
+                }
+                _ => {
+                    if macro_start.is_none() {
+                        macro_start = Some(Start {
+                            index: r#match.end(),
+                            indent,
+                        });
+                    }
+                    indent += 1;
+                }
+            }
+        }
+        output.push_str(&input[last_end..(input.len())]);
 
         match &self.file {
             Some(file) => std::fs::write(file, output).unwrap(),
