@@ -400,10 +400,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "kosame_macro"
+name = "kosame_dsl"
 version = "0.2.0"
 dependencies = [
  "convert_case",
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.106",
+]
+
+[[package]]
+name = "kosame_macro"
+version = "0.2.0"
+dependencies = [
+ "kosame_dsl",
  "proc-macro-error",
  "proc-macro2",
  "quote",

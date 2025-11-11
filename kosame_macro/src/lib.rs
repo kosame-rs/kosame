@@ -1,24 +1,3 @@
-mod attribute;
-mod bind_params;
-mod clause;
-mod command;
-mod correlations;
-mod data_type;
-mod driver;
-mod expr;
-mod inferred_type;
-mod keyword;
-mod part;
-mod path_ext;
-mod query;
-mod quote_option;
-mod row;
-mod schema;
-mod scopes;
-mod statement;
-mod unique_macro;
-mod visitor;
-
 use proc_macro_error::proc_macro_error;
 use quote::{ToTokens, quote};
 use syn::{DeriveInput, parse_macro_input};
@@ -26,21 +5,21 @@ use syn::{DeriveInput, parse_macro_input};
 #[proc_macro_error]
 #[proc_macro]
 pub fn table(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let input = parse_macro_input!(tokens as schema::Table);
+    let input = parse_macro_input!(tokens as kosame_dsl::schema::Table);
     quote! { #input }.into()
 }
 
 #[proc_macro_error]
 #[proc_macro]
 pub fn statement(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let input = parse_macro_input!(tokens as statement::Statement);
+    let input = parse_macro_input!(tokens as kosame_dsl::statement::Statement);
     quote! { #input }.into()
 }
 
 #[proc_macro_error]
 #[proc_macro]
 pub fn query(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let input = parse_macro_input!(tokens as query::Query);
+    let input = parse_macro_input!(tokens as kosame_dsl::query::Query);
     quote! { #input }.into()
 }
 

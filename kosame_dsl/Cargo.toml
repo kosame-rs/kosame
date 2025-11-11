@@ -1,5 +1,5 @@
 [package]
-name = "kosame_macro"
+name = "kosame_dsl"
 
 version.workspace = true
 edition.workspace = true
@@ -10,20 +10,17 @@ readme.workspace = true
 license.workspace = true
 keywords.workspace = true
 
-[lib]
-proc-macro = true
-
 [features]
 default = []
 
-postgres = ["kosame_dsl/postgres"]
-tokio-postgres = ["kosame_dsl/tokio-postgres"]
+postgres = []
+tokio-postgres = []
 
-serde = ["kosame_dsl/serde"]
-serde-full = ["kosame_dsl/serde-full"]
+serde = []
+serde-full = []
 
 [dependencies]
-kosame_dsl.workspace = true
+convert_case = "0.8.0"
 proc-macro-error = "1.0.4"
 proc-macro2 = { version = "1.0.101", features = ["span-locations"] }
 quote = "1.0.40"
