@@ -106,7 +106,6 @@ impl PrettyPrint for Column {
         printer.print_text(self.name.to_string());
         printer.print_break(" ");
         printer.print_text(self.data_type.name.to_string());
-        printer.print_break(",");
         printer.print_end();
     }
 }

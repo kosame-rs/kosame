@@ -196,9 +196,10 @@ impl PrettyPrint for Table {
         printer.print_break("");
         for column in self.columns.iter() {
             column.pretty_print(printer);
+            printer.print_text(",");
             printer.print_break(" ");
         }
         printer.print_end();
-        printer.print_text(")");
+        printer.print_text(");");
     }
 }

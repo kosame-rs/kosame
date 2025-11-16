@@ -4,7 +4,7 @@ const MARGIN: usize = 89;
 const INDENT: usize = 4;
 const MIN_SPACE: usize = 60;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub enum BreakMode {
     Consistent,
     Inconsistent,
@@ -41,6 +41,7 @@ pub struct Printer {
     tokens: VecDeque<Token>,
     last_break: Option<usize>,
     begin_stack: Vec<usize>,
+    force_break_stack: Vec<bool>,
 }
 
 impl Printer {
@@ -52,6 +53,7 @@ impl Printer {
             tokens: VecDeque::new(),
             last_break: None,
             begin_stack: Vec::new(),
+            force_break_stack: Vec::new(),
         }
     }
 
@@ -113,26 +115,32 @@ impl Printer {
         }
 
         self.last_break = None;
+        self.tokens.push_back(Token::End);
     }
 
     fn emit_first(&mut self) {
         let token = self.tokens.pop_front().expect("no tokens to emit");
         match &token {
             Token::Text(text) => {
-                self.output.push_str(&text);
+                self.output.push_str(text);
             }
             Token::Break { text, len } => {
-                if *len as isize >= self.space {
+                let force_break = self.force_break_stack.last().copied().unwrap_or(false);
+                if force_break || *len as isize >= self.space {
                     self.output.push('\n');
                     self.output.push_str(&" ".repeat(self.indent * INDENT));
                     self.space = (MARGIN - self.indent * INDENT).max(MIN_SPACE) as isize;
+                } else {
+                    self.output.push_str(text);
                 }
-                self.output.push_str(&text);
             }
-            Token::Begin { mode, .. } => {
+            Token::Begin { mode, len, .. } => {
+                self.force_break_stack
+                    .push(*len as isize >= self.space && *mode == BreakMode::Consistent);
                 self.indent += 1;
             }
             Token::End => {
+                self.force_break_stack.pop();
                 self.indent -= 1;
             }
         };
