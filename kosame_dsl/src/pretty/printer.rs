@@ -4,23 +4,39 @@ const MARGIN: usize = 89;
 const INDENT: usize = 4;
 const MIN_SPACE: usize = 60;
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum TextMode {
+    Always,
+    NoBreak,
+    Break,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum BreakMode {
     Consistent,
     Inconsistent,
 }
 
 enum Token {
-    Text(Cow<'static, str>),
-    Break { text: Cow<'static, str>, len: usize },
-    Begin { mode: BreakMode, len: usize },
-    End {},
+    Text {
+        text: Cow<'static, str>,
+        mode: TextMode,
+    },
+    Break {
+        text: Cow<'static, str>,
+        len: usize,
+    },
+    Begin {
+        mode: BreakMode,
+        len: usize,
+    },
+    End,
 }
 
 impl Token {
     fn len(&self) -> usize {
         match self {
-            Self::Text(inner) => inner.len(),
+            Self::Text { text, .. } => text.len(),
             Self::Break { len, .. } => *len,
             Self::Begin { len, .. } => *len,
             Self::End => 0,
@@ -28,6 +44,7 @@ impl Token {
     }
 }
 
+#[derive(Debug)]
 struct PrintFrame {
     group_break: bool,
     content_break: bool,
@@ -66,9 +83,13 @@ impl Printer {
     }
 
     pub fn scan_text(&mut self, text: impl Into<Cow<'static, str>>) {
+        self.scan_text_with_mode(text, TextMode::Always);
+    }
+
+    pub fn scan_text_with_mode(&mut self, text: impl Into<Cow<'static, str>>, mode: TextMode) {
         let text = text.into();
         let text_len = text.len();
-        self.tokens.push_back(Token::Text(text));
+        self.tokens.push_back(Token::Text { text, mode });
 
         // Track the length that the previous break token has to have available to not break.
         if let Some(break_index) = self.last_break {
@@ -125,17 +146,24 @@ impl Printer {
     }
 
     fn print_first(&mut self) {
-        let token = self.tokens.pop_front().expect("no tokens to emit");
+        let token = self.tokens.pop_front().expect("no tokens to print");
+        let content_break = self
+            .print_frames
+            .last()
+            .map(|frame| frame.content_break)
+            .unwrap_or(false);
+
         match &token {
-            Token::Text(text) => {
-                self.output.push_str(text);
+            Token::Text { text, mode } => {
+                let should_print = matches!(
+                    (mode, content_break),
+                    (TextMode::Always, _) | (TextMode::Break, true) | (TextMode::NoBreak, false)
+                );
+                if should_print {
+                    self.output.push_str(text);
+                }
             }
             Token::Break { text, len } => {
-                let content_break = self
-                    .print_frames
-                    .last()
-                    .map(|frame| frame.content_break)
-                    .unwrap_or(false);
                 if content_break || *len as isize >= self.space {
                     self.print_break();
                 } else {
@@ -146,7 +174,7 @@ impl Printer {
                 let group_break = *len as isize >= self.space;
                 self.print_frames.push(PrintFrame {
                     group_break,
-                    content_break: *mode == BreakMode::Consistent,
+                    content_break: group_break && *mode == BreakMode::Consistent,
                 });
                 self.indent += 1;
                 if group_break {

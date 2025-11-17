@@ -1,10 +1,7 @@
 use std::io::Read;
 
 use clap::Args;
-use kosame_dsl::{
-    pretty::Printer,
-    pretty::{BreakMode, PrettyPrint},
-};
+use kosame_dsl::pretty::{BreakMode, PrettyPrint, Printer, TextMode};
 use syn::spanned::Spanned;
 
 #[derive(Args)]
@@ -78,9 +75,9 @@ impl Fmt {
 
                         let mut printer = Printer::new(0, self.indent);
                         printer.scan_begin(BreakMode::Consistent);
-                        printer.scan_text(" ");
+                        printer.scan_text_with_mode(" ", TextMode::NoBreak);
                         table.pretty_print(&mut printer);
-                        printer.scan_text(" ");
+                        printer.scan_text_with_mode(" ", TextMode::NoBreak);
                         printer.scan_end();
 
                         self.replacements.push(Replace {

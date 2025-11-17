@@ -6,6 +6,19 @@ mod schema {
 
     pg_table! {
         // Kosame uses the familiar SQL syntax to declare tables.
+        create table pip (
+        );
+    }
+
+    pg_table! {
+        // Kosame uses the familiar SQL syntax to declare tables.
+        create table kek (
+            id int primary key,
+        );
+    }
+
+    pg_table! {
+        // Kosame uses the familiar SQL syntax to declare tables.
         create table posts (
             id int primary key,
 
