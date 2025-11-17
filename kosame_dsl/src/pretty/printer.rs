@@ -163,6 +163,8 @@ impl Printer {
                 );
                 if should_print {
                     self.output.push_str(text);
+                    self.space -= text.len() as isize;
+                    println!("{}", text);
                 }
             }
             Token::Break { text, len } => {
@@ -170,6 +172,7 @@ impl Printer {
                     self.print_break();
                 } else {
                     self.output.push_str(text);
+                    self.space -= text.len() as isize;
                 }
             }
             Token::Begin { mode, len, .. } => {
@@ -179,6 +182,7 @@ impl Printer {
                     content_break: group_break && *mode == BreakMode::Consistent,
                 });
                 self.indent += 1;
+                println!("group len {} -> {group_break} >= {}", len, self.space);
                 if group_break {
                     self.print_break();
                 }
@@ -189,12 +193,12 @@ impl Printer {
                     .pop()
                     .expect("emitted end token without begin");
                 self.indent -= 1;
+
                 if print_frame.group_break {
                     self.print_break();
                 }
             }
         };
-        self.space -= token.len() as isize;
     }
 
     pub fn eof(mut self) -> String {

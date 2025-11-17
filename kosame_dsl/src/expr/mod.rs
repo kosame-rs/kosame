@@ -105,8 +105,8 @@ impl Expr {
             Ok(Expr::BindParam(input.parse()?))
         } else if Raw::peek(input) {
             Ok(Expr::Raw(input.parse()?))
-        } else if UnaryOp::peek(input) {
-            let op = input.parse::<UnaryOp>()?;
+        } else if UnOp::peek(input) {
+            let op = input.parse::<UnOp>()?;
             let precedence = op.precedence();
             Ok(Expr::Unary(Unary::new(
                 op,
