@@ -2,9 +2,9 @@ use std::{borrow::Cow, collections::VecDeque};
 
 use super::Text;
 
-const MARGIN: usize = 89;
-const INDENT: usize = 4;
-const MIN_SPACE: usize = 60;
+pub const MARGIN: usize = 89;
+pub const INDENT: usize = 4;
+pub const MIN_SPACE: usize = 60;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum TextMode {
@@ -67,7 +67,7 @@ impl Printer {
     pub fn new(initial_space: usize, initial_indent: usize) -> Self {
         Self {
             output: String::new(),
-            space: initial_space as isize,
+            space: initial_space.max(MIN_SPACE) as isize,
             indent: initial_indent,
             tokens: VecDeque::new(),
             last_break: None,
@@ -176,10 +176,10 @@ impl Printer {
                 }
             }
             Token::Begin { mode, len, .. } => {
-                let group_break = *len as isize >= self.space;
+                let group_break = *len as isize >= self.space && *mode == BreakMode::Consistent;
                 self.print_frames.push(PrintFrame {
                     group_break,
-                    content_break: group_break && *mode == BreakMode::Consistent,
+                    content_break: group_break,
                 });
                 self.indent += 1;
                 println!("group len {} -> {group_break} >= {}", len, self.space);
