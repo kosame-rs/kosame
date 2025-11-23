@@ -23,12 +23,13 @@ pub enum BreakMode {
     Inconsistent,
 }
 
-enum Token {
+enum Token<'a> {
     Text {
         text: Cow<'static, str>,
         span: Option<Span>,
         mode: TextMode,
     },
+    Trivia(&'a Trivia<'a>),
     Break {
         text: Cow<'static, str>,
         len: usize,
@@ -40,10 +41,11 @@ enum Token {
     End,
 }
 
-impl Token {
+impl<'a> Token<'a> {
     fn len(&self) -> usize {
         match self {
             Self::Text { text, .. } => text.len(),
+            Self::Trivia(trivia) => trivia.content.len(),
             Self::Break { len, .. } => *len,
             Self::Begin { len, .. } => *len,
             Self::End => 0,
@@ -62,7 +64,7 @@ pub struct Printer<'a> {
     output: String,
     space: isize,
     indent: usize,
-    tokens: VecDeque<Token>,
+    tokens: VecDeque<Token<'a>>,
     last_break: Option<usize>,
     begin_stack: Vec<usize>,
     print_frames: Vec<PrintFrame>,
@@ -82,11 +84,11 @@ impl<'a> Printer<'a> {
         }
     }
 
-    fn token(&self, index: usize) -> &Token {
+    fn token(&self, index: usize) -> &Token<'a> {
         &self.tokens[index]
     }
 
-    fn token_mut(&mut self, index: usize) -> &mut Token {
+    fn token_mut(&mut self, index: usize) -> &mut Token<'a> {
         &mut self.tokens[index]
     }
 
@@ -96,6 +98,12 @@ impl<'a> Printer<'a> {
 
     pub fn scan_text_with_mode(&mut self, text: impl Text, mode: TextMode) {
         let span = text.span();
+
+        // Scan any trivia that appears before this token
+        if let Some(token_span) = span {
+            self.scan_trivia_before(token_span);
+        }
+
         let text = text.into_cow_str();
         let text_len = text.len();
         self.tokens.push_back(Token::Text { text, span, mode });
@@ -165,11 +173,6 @@ impl<'a> Printer<'a> {
 
         match &token {
             Token::Text { text, mode, span } => {
-                // Print any trivia that appears before this token
-                if let Some(token_span) = span {
-                    self.print_trivia_before(*token_span);
-                }
-
                 let should_print = matches!(
                     (mode, content_break),
                     (TextMode::Always, _) | (TextMode::Break, true) | (TextMode::NoBreak, false)
@@ -178,6 +181,22 @@ impl<'a> Printer<'a> {
                     self.output.push_str(text);
                     self.space -= text.len() as isize;
                     println!("{}", text);
+                }
+            }
+            Token::Trivia(trivia) => {
+                match trivia.kind {
+                    TriviaKind::LineComment | TriviaKind::BlockComment => {
+                        self.output.push_str(trivia.content);
+                        self.space -= trivia.content.len() as isize;
+                    }
+                    TriviaKind::Whitespace => {
+                        // For whitespace, we generally let the pretty printer control spacing
+                        // But we should preserve newlines that appear in the original source
+                        if trivia.content.contains('\n') {
+                            // If there are newlines, we might want to preserve them
+                            // For now, let the printer handle breaks
+                        }
+                    }
                 }
             }
             Token::Break { text, len } => {
@@ -214,39 +233,8 @@ impl<'a> Printer<'a> {
         };
     }
 
-    /// Print the first trivia element and advance the slice
-    fn print_first_trivia(&mut self) {
-        if self.trivia.is_empty() {
-            return;
-        }
-
-        let trivia = &self.trivia[0];
-
-        match trivia.kind {
-            TriviaKind::LineComment => {
-                self.output.push_str(trivia.content);
-                self.space -= trivia.content.len() as isize;
-            }
-            TriviaKind::BlockComment => {
-                self.output.push_str(trivia.content);
-                self.space -= trivia.content.len() as isize;
-            }
-            TriviaKind::Whitespace => {
-                // For whitespace, we generally let the pretty printer control spacing
-                // But we should preserve newlines that appear in the original source
-                if trivia.content.contains('\n') {
-                    // If there are newlines, we might want to preserve them
-                    // For now, let the printer handle breaks
-                }
-            }
-        }
-
-        // Move to next trivia
-        self.trivia = &self.trivia[1..];
-    }
-
-    /// Print trivia that appears before the given token span
-    fn print_trivia_before(&mut self, token_span: Span) {
+    /// Scan trivia that appears before the given token span
+    fn scan_trivia_before(&mut self, token_span: Span) {
         let token_start = token_span.start();
 
         while !self.trivia.is_empty() {
@@ -270,19 +258,66 @@ impl<'a> Printer<'a> {
                 break;
             }
 
-            // Print this trivia
-            self.print_first_trivia();
+            // Scan this trivia as a token
+            let trivia_len = trivia.content.len();
+            self.tokens.push_back(Token::Trivia(trivia));
+
+            // Track the length for break calculations
+            if let Some(break_index) = self.last_break {
+                match self.token_mut(break_index) {
+                    Token::Break { len, .. } => *len += trivia_len,
+                    _ => unreachable!(),
+                }
+            }
+
+            // Track the length of the entire begin/end block
+            if let Some(begin_index) = self.begin_stack.last() {
+                match self.token_mut(*begin_index) {
+                    Token::Begin { len, .. } => *len += trivia_len,
+                    _ => unreachable!(),
+                }
+            }
+
+            // Move to next trivia
+            self.trivia = &self.trivia[1..];
+        }
+    }
+
+    /// Scan all remaining trivia at the end
+    fn scan_remaining_trivia(&mut self) {
+        while !self.trivia.is_empty() {
+            let trivia = &self.trivia[0];
+            let trivia_len = trivia.content.len();
+            self.tokens.push_back(Token::Trivia(trivia));
+
+            // Track the length for break calculations
+            if let Some(break_index) = self.last_break {
+                match self.token_mut(break_index) {
+                    Token::Break { len, .. } => *len += trivia_len,
+                    _ => unreachable!(),
+                }
+            }
+
+            // Track the length of the entire begin/end block
+            if let Some(begin_index) = self.begin_stack.last() {
+                match self.token_mut(*begin_index) {
+                    Token::Begin { len, .. } => *len += trivia_len,
+                    _ => unreachable!(),
+                }
+            }
+
+            // Move to next trivia
+            self.trivia = &self.trivia[1..];
         }
     }
 
     pub fn eof(mut self) -> String {
+        // Scan any remaining trivia
+        self.scan_remaining_trivia();
+
+        // Print all tokens (including scanned trivia)
         while !self.tokens.is_empty() {
             self.print_first();
-        }
-
-        // Print any remaining trivia at the end
-        while !self.trivia.is_empty() {
-            self.print_first_trivia();
         }
 
         self.output
