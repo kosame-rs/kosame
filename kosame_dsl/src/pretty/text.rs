@@ -58,6 +58,16 @@ impl Text for &'static str {
     }
 }
 
+impl Text for String {
+    fn into_cow_str(self) -> Cow<'static, str> {
+        self.into()
+    }
+
+    fn span(&self) -> Option<Span> {
+        None
+    }
+}
+
 impl Text for &Ident {
     fn into_cow_str(self) -> Cow<'static, str> {
         self.to_string().into()

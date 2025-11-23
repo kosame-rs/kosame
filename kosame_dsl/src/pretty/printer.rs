@@ -23,7 +23,7 @@ pub enum BreakMode {
     Inconsistent,
 }
 
-enum Token<'a> {
+enum Token {
     Text {
         text: Cow<'static, str>,
         mode: TextMode,
@@ -38,10 +38,9 @@ enum Token<'a> {
         len: usize,
     },
     End,
-    Trivia(&'a Trivia<'a>),
 }
 
-impl<'a> Token<'a> {
+impl Token {
     fn len(&self) -> usize {
         match self {
             Self::Text { text, .. } => text.len(),
@@ -49,7 +48,6 @@ impl<'a> Token<'a> {
             Self::Break { len, .. } => *len,
             Self::Begin { len, .. } => *len,
             Self::End => 0,
-            Self::Trivia(trivia) => trivia.content.len(),
         }
     }
 }
@@ -65,7 +63,7 @@ pub struct Printer<'a> {
     output: String,
     space: isize,
     indent: usize,
-    tokens: VecDeque<Token<'a>>,
+    tokens: VecDeque<Token>,
     last_break: Option<usize>,
     begin_stack: Vec<usize>,
     print_frames: Vec<PrintFrame>,
@@ -85,11 +83,11 @@ impl<'a> Printer<'a> {
         }
     }
 
-    fn token(&self, index: usize) -> &Token<'a> {
+    fn token(&self, index: usize) -> &Token {
         &self.tokens[index]
     }
 
-    fn token_mut(&mut self, index: usize) -> &mut Token<'a> {
+    fn token_mut(&mut self, index: usize) -> &mut Token {
         &mut self.tokens[index]
     }
 
@@ -199,20 +197,6 @@ impl<'a> Printer<'a> {
                 }
             }
             Token::Space => {}
-            Token::Trivia(trivia) => match trivia.kind {
-                TriviaKind::LineComment => {
-                    self.output.push_str(trivia.content);
-                    self.print_break();
-                }
-                TriviaKind::BlockComment => {
-                    self.output.push_str(trivia.content);
-                }
-                TriviaKind::Whitespace => {
-                    if trivia.content.chars().filter(|item| *item == '\n').count() >= 2 {
-                        self.print_break();
-                    }
-                }
-            },
             Token::Break { text, len } => {
                 if content_break || *len as isize >= self.space {
                     self.print_break();
@@ -264,41 +248,30 @@ impl<'a> Printer<'a> {
         }
     }
 
-    /// Scans the first trivia element and add it to the token queue.
+    /// Scans the first trivia element and convert it to tokens.
     fn scan_first_trivia(&mut self) {
         if self.trivia.is_empty() {
             return;
         }
 
         let trivia = &self.trivia[0];
-        let trivia_len = trivia.content.len();
-        let is_comment = matches!(
-            trivia.kind,
-            TriviaKind::LineComment | TriviaKind::BlockComment
-        );
-        self.tokens.push_back(Token::Trivia(trivia));
-
-        if is_comment {
-            self.scan_force_break();
-        } else {
-            // Track the length for break calculations
-            if let Some(break_index) = self.last_break {
-                match self.token_mut(break_index) {
-                    Token::Break { len, .. } => *len += trivia_len,
-                    _ => unreachable!(),
-                }
+        match trivia.kind {
+            TriviaKind::LineComment => {
+                self.scan_force_break();
+                self.scan_text(trivia.content.to_string());
+                self.scan_break("");
             }
-
-            // Track the length of the entire begin/end block
-            if let Some(begin_index) = self.begin_stack.last() {
-                match self.token_mut(*begin_index) {
-                    Token::Begin { len, .. } => *len += trivia_len,
-                    _ => unreachable!(),
+            TriviaKind::BlockComment => {
+                self.scan_text(trivia.content.to_string());
+                self.scan_break(" ");
+            }
+            TriviaKind::Whitespace => {
+                if trivia.content.chars().filter(|item| *item == '\n').count() >= 2 {
+                    self.scan_break("");
                 }
             }
         }
 
-        // Move to next trivia
         self.trivia = &self.trivia[1..];
     }
 
