@@ -21,9 +21,9 @@ where
     T: Parse + PrettyPrint,
 {
     let ast: T = syn::parse_str(source_text)?;
-    let secondary_tokens = TriviaLexer::new(source_text).collect::<Vec<_>>();
+    let trivia = TriviaLexer::new(source_text).collect::<Vec<_>>();
 
-    let mut printer = Printer::new(&secondary_tokens, initial_space, initial_indent);
+    let mut printer = Printer::new(&trivia, initial_space, initial_indent);
     printer.scan_begin(BreakMode::Consistent);
     printer.scan_text_with_mode(" ", TextMode::NoBreak);
     ast.pretty_print(&mut printer);

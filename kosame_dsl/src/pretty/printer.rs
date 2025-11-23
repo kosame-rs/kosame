@@ -2,9 +2,9 @@ use std::{borrow::Cow, collections::VecDeque};
 
 use proc_macro2::Span;
 
-use crate::pretty::Trivia;
+use crate::pretty::{Trivia, TriviaKind};
 
-use super::{Text, TriviaLexer};
+use super::Text;
 
 pub const MARGIN: usize = 89;
 pub const INDENT: usize = 4;
@@ -58,7 +58,7 @@ struct PrintFrame {
 }
 
 pub struct Printer<'a> {
-    secondary_tokens: &'a [Trivia<'a>],
+    trivia: &'a [Trivia<'a>],
     output: String,
     space: isize,
     indent: usize,
@@ -69,13 +69,9 @@ pub struct Printer<'a> {
 }
 
 impl<'a> Printer<'a> {
-    pub fn new(
-        secondary_tokens: &'a [Trivia<'a>],
-        initial_space: usize,
-        initial_indent: usize,
-    ) -> Self {
+    pub fn new(trivia: &'a [Trivia<'a>], initial_space: usize, initial_indent: usize) -> Self {
         Self {
-            secondary_tokens,
+            trivia,
             output: String::new(),
             space: initial_space.max(MIN_SPACE) as isize,
             indent: initial_indent,
@@ -168,7 +164,12 @@ impl<'a> Printer<'a> {
             .unwrap_or(false);
 
         match &token {
-            Token::Text { text, mode } => {
+            Token::Text { text, mode, span } => {
+                // Print any trivia that appears before this token
+                if let Some(token_span) = span {
+                    self.print_trivia_before(*token_span);
+                }
+
                 let should_print = matches!(
                     (mode, content_break),
                     (TextMode::Always, _) | (TextMode::Break, true) | (TextMode::NoBreak, false)
@@ -213,9 +214,65 @@ impl<'a> Printer<'a> {
         };
     }
 
-    fn print_first_secondary(&mut self) {
-        let token = &self.secondary_tokens[0];
-        self.secondary_tokens = &self.secondary_tokens[1..];
+    /// Print the first trivia element and advance the slice
+    fn print_first_trivia(&mut self) {
+        if self.trivia.is_empty() {
+            return;
+        }
+
+        let trivia = &self.trivia[0];
+
+        match trivia.kind {
+            TriviaKind::LineComment => {
+                self.output.push_str(trivia.content);
+                self.space -= trivia.content.len() as isize;
+            }
+            TriviaKind::BlockComment => {
+                self.output.push_str(trivia.content);
+                self.space -= trivia.content.len() as isize;
+            }
+            TriviaKind::Whitespace => {
+                // For whitespace, we generally let the pretty printer control spacing
+                // But we should preserve newlines that appear in the original source
+                if trivia.content.contains('\n') {
+                    // If there are newlines, we might want to preserve them
+                    // For now, let the printer handle breaks
+                }
+            }
+        }
+
+        // Move to next trivia
+        self.trivia = &self.trivia[1..];
+    }
+
+    /// Print trivia that appears before the given token span
+    fn print_trivia_before(&mut self, token_span: Span) {
+        let token_start = token_span.start();
+
+        while !self.trivia.is_empty() {
+            let trivia = &self.trivia[0];
+
+            // Check if this trivia comes before the token
+            // We need to compare proc_macro2 line/column with our trivia span
+            let trivia_end_line = trivia.span.end_line;
+            let trivia_end_col = trivia.span.end_col;
+
+            let token_line = token_start.line;
+            let token_col = token_start.column;
+
+            // Trivia comes before token if:
+            // - It ends on an earlier line, OR
+            // - It ends on the same line but before the token column
+            let trivia_before_token = trivia_end_line < token_line
+                || (trivia_end_line == token_line && trivia_end_col <= token_col);
+
+            if !trivia_before_token {
+                break;
+            }
+
+            // Print this trivia
+            self.print_first_trivia();
+        }
     }
 
     pub fn eof(mut self) -> String {
@@ -223,8 +280,9 @@ impl<'a> Printer<'a> {
             self.print_first();
         }
 
-        while !self.secondary_tokens.is_empty() {
-            self.print_first_secondary();
+        // Print any remaining trivia at the end
+        while !self.trivia.is_empty() {
+            self.print_first_trivia();
         }
 
         self.output
