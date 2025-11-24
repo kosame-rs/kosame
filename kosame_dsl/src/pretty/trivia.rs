@@ -1,44 +1,12 @@
-use crate::pretty::{PrettyPrint, Printer};
+use proc_macro2::LineColumn;
+
+use crate::pretty::{PrettyPrint, Printer, Span};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TriviaKind {
     LineComment,
     BlockComment,
     Whitespace,
-}
-
-#[derive(Debug, Clone, PartialEq, Copy)]
-pub struct Span {
-    pub start_line: usize,
-    pub start_col: usize,
-    pub end_line: usize,
-    pub end_col: usize,
-}
-
-impl Span {
-    /// Check if this span immediately follows another span (no gap between them)
-    pub fn immediately_follows(&self, other: &Span) -> bool {
-        self.start_line == other.end_line && self.start_col == other.end_col
-    }
-
-    /// Check if this span comes before the given token span
-    pub fn comes_before(&self, other: &Span) -> bool {
-        self.end_line < other.start_line
-            || (self.end_line == other.start_line && self.end_col <= other.start_col)
-    }
-}
-
-impl From<&proc_macro2::Span> for Span {
-    fn from(span: &proc_macro2::Span) -> Self {
-        let start = span.start();
-        let end = span.end();
-        Span {
-            start_line: start.line,
-            start_col: start.column,
-            end_line: end.line,
-            end_col: end.column,
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -70,23 +38,23 @@ impl PrettyPrint for Trivia<'_> {
 }
 
 /// A lexer that skips code tokens but captures comments and whitespace.
-pub struct TriviaLexer<'a> {
+pub struct Lexer<'a> {
     input: &'a str,
     // Current byte offset in the input string
     cursor: usize,
     // Current line number (1-based)
     line: usize,
     // Current column number (0-based)
-    col: usize,
+    column: usize,
 }
 
-impl<'a> TriviaLexer<'a> {
+impl<'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Self {
         Self {
             input,
             cursor: 0,
             line: 1,
-            col: 0,
+            column: 0,
         }
     }
 
@@ -117,16 +85,16 @@ impl<'a> TriviaLexer<'a> {
 
         if c == '\n' {
             self.line += 1;
-            self.col = 0;
+            self.column = 0;
         } else {
-            self.col += 1;
+            self.column += 1;
         }
 
         Some(c)
     }
 
     fn current_pos(&self) -> (usize, usize) {
-        (self.line, self.col)
+        (self.line, self.column)
     }
 
     /// Scans whitespace and returns a Token
@@ -144,12 +112,16 @@ impl<'a> TriviaLexer<'a> {
 
         let content = &self.input[start_idx..self.cursor];
         Trivia {
-            span: Span {
-                start_line: s_line,
-                start_col: s_col,
-                end_line: self.line,
-                end_col: self.col,
-            },
+            span: Span::new(
+                LineColumn {
+                    line: s_line,
+                    column: s_col,
+                },
+                LineColumn {
+                    line: self.line,
+                    column: self.column,
+                },
+            ),
             content,
             kind: TriviaKind::Whitespace,
         }
@@ -173,12 +145,16 @@ impl<'a> TriviaLexer<'a> {
 
         let content = &self.input[start_idx..self.cursor];
         Trivia {
-            span: Span {
-                start_line: s_line,
-                start_col: s_col,
-                end_line: self.line,
-                end_col: self.col,
-            },
+            span: Span::new(
+                LineColumn {
+                    line: s_line,
+                    column: s_col,
+                },
+                LineColumn {
+                    line: self.line,
+                    column: self.column,
+                },
+            ),
             content,
             kind: TriviaKind::LineComment,
         }
@@ -215,12 +191,16 @@ impl<'a> TriviaLexer<'a> {
 
         let content = &self.input[start_idx..self.cursor];
         Trivia {
-            span: Span {
-                start_line: s_line,
-                start_col: s_col,
-                end_line: self.line,
-                end_col: self.col,
-            },
+            span: Span::new(
+                LineColumn {
+                    line: s_line,
+                    column: s_col,
+                },
+                LineColumn {
+                    line: self.line,
+                    column: self.column,
+                },
+            ),
             content,
             kind: TriviaKind::BlockComment,
         }
@@ -321,7 +301,7 @@ impl<'a> TriviaLexer<'a> {
     }
 }
 
-impl<'a> Iterator for TriviaLexer<'a> {
+impl<'a> Iterator for Lexer<'a> {
     type Item = Trivia<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -397,7 +377,7 @@ mod tests {
     use super::*;
 
     fn collect_tokens(input: &str) -> Vec<Trivia<'_>> {
-        TriviaLexer::new(input).collect()
+        Lexer::new(input).collect()
     }
 
     #[test]
@@ -476,12 +456,12 @@ mod tests {
 
         let newline = &tokens[0];
         assert_eq!(newline.kind, TriviaKind::Whitespace);
-        assert_eq!(newline.span.start_line, 1);
-        assert_eq!(newline.span.end_line, 2); // Ends after newline
+        assert_eq!(newline.span.start().line, 1);
+        assert_eq!(newline.span.end().line, 2); // Ends after newline
 
         let comment = &tokens[1];
         assert_eq!(comment.kind, TriviaKind::LineComment);
-        assert_eq!(comment.span.start_line, 2);
-        assert_eq!(comment.span.start_col, 0);
+        assert_eq!(comment.span.start().line, 2);
+        assert_eq!(comment.span.start().column, 0);
     }
 }

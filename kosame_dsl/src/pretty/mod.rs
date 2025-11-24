@@ -1,8 +1,10 @@
 mod printer;
+mod span;
 mod text;
 mod trivia;
 
 pub use printer::*;
+pub use span::*;
 pub use text::*;
 pub use trivia::*;
 
@@ -21,7 +23,7 @@ where
     T: Parse + PrettyPrint,
 {
     let ast: T = syn::parse_str(source_text)?;
-    let trivia = TriviaLexer::new(source_text).collect::<Vec<_>>();
+    let trivia = Lexer::new(source_text).collect::<Vec<_>>();
 
     let mut printer = Printer::new(&trivia, initial_space, initial_indent);
     printer.scan_begin(BreakMode::Consistent);
