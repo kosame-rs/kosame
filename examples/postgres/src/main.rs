@@ -5,7 +5,7 @@ mod schema {
     use kosame::pg_table;
 
     pg_table! {
-        create table pip (
+        create table mflasdf (
         );
     }
     pg_table!(
@@ -27,6 +27,8 @@ mod schema {
             //pip
             null not null not null not null default (3 + 4 + (5+ 6 + 8 + 9 + 10 + now(5))),
         );
+
+        pip: (kek, kek, kek,kek,kek,kek,kek,kek,kek,kek,kek,kek,kek,kek,            ) => mflasdf (lel, lel, le, le, le, le, le, le, le, le, le, le, le, lelllllllllll),
     }
 
     pg_table! {
@@ -57,6 +59,7 @@ mod schema {
 
         // You may also define the inverse relation if you need it.
         post: (post_id) => posts (id),
+        //pip
     }
 
     // The `kosame::pg_table!` macro is a shorthand for `kosame::table!` with the driver

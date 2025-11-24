@@ -8,11 +8,14 @@ use syn::{
     spanned::Spanned,
 };
 
-use crate::path_ext::PathExt;
+use crate::{
+    path_ext::PathExt,
+    pretty::{BreakMode, PrettyPrint, Printer},
+};
 
 pub struct Relation {
     pub name: Ident,
-    pub _colon: Token![:],
+    pub colon: Token![:],
     pub source_paren: syn::token::Paren,
     pub source_columns: Punctuated<Ident, Token![,]>,
     pub arrow: Arrow,
@@ -27,7 +30,7 @@ impl Parse for Relation {
         let dest_content;
         let result = Self {
             name: input.parse()?,
-            _colon: input.parse()?,
+            colon: input.parse()?,
             source_paren: parenthesized!(source_content in input),
             source_columns: source_content.parse_terminated(Ident::parse, Token![,])?,
             arrow: input.parse()?,
@@ -94,6 +97,27 @@ impl ToTokens for Relation {
     }
 }
 
+impl PrettyPrint for Relation {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        printer.flush_trivia(self.name.span().into());
+        printer.scan_text(&self.name);
+        printer.scan_text(&self.colon);
+        printer.scan_text(" ");
+
+        printer.scan_begin(Some((&self.source_paren).into()), BreakMode::Consistent);
+        self.source_columns.pretty_print(printer);
+        printer.scan_end(Some((&self.source_paren).into()));
+
+        printer.scan_text(" ");
+        self.arrow.pretty_print(printer);
+        printer.scan_text(" ");
+
+        printer.scan_begin(Some((&self.target_paren).into()), BreakMode::Consistent);
+        self.target_columns.pretty_print(printer);
+        printer.scan_end(Some((&self.target_paren).into()));
+    }
+}
+
 #[allow(unused)]
 pub enum Arrow {
     ManyToOne(Token![=>]),
@@ -120,5 +144,14 @@ impl ToTokens for Arrow {
             Self::OneToMany(..) => quote! { ::kosame::relation::Many<T> },
         }
         .to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for Arrow {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        match self {
+            Self::ManyToOne(inner) => printer.scan_text(inner),
+            Self::OneToMany(inner) => printer.scan_text(inner),
+        }
     }
 }

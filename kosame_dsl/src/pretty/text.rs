@@ -125,3 +125,5 @@ impl_token!(>);
 impl_token!(<);
 impl_token!($);
 impl_token!(as);
+impl_token!(=>);
+impl_token!(<=);

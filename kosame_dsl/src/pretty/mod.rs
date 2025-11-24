@@ -30,7 +30,6 @@ where
 
     let mut printer = Printer::new(&trivia, initial_space, initial_indent);
     ast.pretty_print(&mut printer);
-
     Ok(printer.eof())
 }
 

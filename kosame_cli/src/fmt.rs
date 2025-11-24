@@ -92,6 +92,10 @@ impl Fmt {
         let mut visitor = Visitor::default();
         visitor.visit_file(&file);
 
+        if !visitor.errors.is_empty() {
+            anyhow::bail!(visitor.errors.into_iter().next().unwrap());
+        }
+
         let mut current_index = 0;
         for replacement in visitor.replacements {
             output.push_str(&input[current_index..replacement.start]);

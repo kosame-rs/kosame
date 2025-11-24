@@ -203,9 +203,16 @@ impl PrettyPrint for Table {
         printer.scan_text(" ");
         self.table_kw.pretty_print(printer);
         printer.scan_text(" ");
-        printer.scan_begin(Some((&self.paren).into()), BreakMode::Consistent);
-        self.columns.pretty_print(printer);
-        printer.scan_end(Some((&self.paren).into()));
+        {
+            printer.scan_begin(Some((&self.paren).into()), BreakMode::Consistent);
+            self.columns.pretty_print(printer);
+            printer.scan_end(Some((&self.paren).into()));
+        }
         self.semi_token.pretty_print(printer);
+
+        if !self.relations.is_empty() {
+            printer.scan_break(false);
+            self.relations.pretty_print(printer);
+        }
     }
 }
