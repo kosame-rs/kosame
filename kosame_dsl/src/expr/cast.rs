@@ -11,7 +11,7 @@ use crate::{
     data_type::DataType,
     inferred_type::InferredType,
     keyword,
-    pretty::{BreakMode, PrettyPrint, Printer},
+    pretty::{BreakMode, DelimText, PrettyPrint, Printer},
     scopes::ScopeId,
 };
 
@@ -80,14 +80,12 @@ impl ToTokens for Cast {
 impl PrettyPrint for Cast {
     fn pretty_print(&self, printer: &mut Printer) {
         self.cast_kw.pretty_print(printer);
-        printer.scan_text(" (");
-        printer.scan_begin(BreakMode::Inconsistent);
+        printer.scan_begin(self.paren.open_text(), BreakMode::Inconsistent);
         self.value.pretty_print(printer);
         printer.scan_break(true);
         self.as_token.pretty_print(printer);
         printer.scan_text(" ");
         self.data_type.pretty_print(printer);
-        printer.scan_end();
-        printer.scan_text(")");
+        printer.scan_end(self.paren.close_text());
     }
 }

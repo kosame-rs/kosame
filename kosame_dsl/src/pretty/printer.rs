@@ -1,4 +1,4 @@
-use crate::pretty::TextMode;
+use crate::pretty::{DelimText, TextMode};
 
 use super::{PrettyPrint, RingBuffer, Span, Text, Trivia};
 
@@ -108,12 +108,19 @@ impl<'a> Printer<'a> {
         self.tokens.push_back(Token::Break { space, len });
     }
 
-    pub fn scan_begin(&mut self, mode: BreakMode) {
+    pub fn scan_begin(&mut self, delim: impl Into<Text>, mode: BreakMode) {
+        self.scan_text(delim);
         self.begin_stack.push(self.tokens.len());
         self.tokens.push_back(Token::Begin { mode, len: 0 });
     }
 
-    pub fn scan_end(&mut self) {
+    pub fn scan_end(&mut self, delim: impl Into<Text>) {
+        let delim = delim.into();
+        // Flush any trivia that appears before this token
+        if let Some(span) = delim.span() {
+            self.flush_trivia(span);
+        }
+
         let begin_index = self
             .begin_stack
             .pop()
@@ -130,6 +137,8 @@ impl<'a> Printer<'a> {
 
         self.last_break = None;
         self.tokens.push_back(Token::End);
+
+        self.scan_text(delim);
     }
 
     fn print_break(&mut self) {

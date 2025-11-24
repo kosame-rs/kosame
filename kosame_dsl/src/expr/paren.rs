@@ -1,5 +1,6 @@
 use crate::inferred_type::InferredType;
 use crate::pretty::BreakMode;
+use crate::pretty::DelimText;
 use crate::pretty::PrettyPrint;
 use crate::pretty::Printer;
 use crate::scopes::ScopeId;
@@ -58,10 +59,8 @@ impl ToTokens for Paren {
 
 impl PrettyPrint for Paren {
     fn pretty_print(&self, printer: &mut Printer) {
-        printer.scan_text("(");
-        printer.scan_begin(BreakMode::Inconsistent);
+        printer.scan_begin(self.paren.open_text(), BreakMode::Inconsistent);
         self.expr.pretty_print(printer);
-        printer.scan_end();
-        printer.scan_text(")");
+        printer.scan_end(self.paren.close_text());
     }
 }

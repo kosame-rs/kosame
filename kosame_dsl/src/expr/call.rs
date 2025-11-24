@@ -1,6 +1,6 @@
 use crate::{
     inferred_type::InferredType,
-    pretty::{BreakMode, PrettyPrint, Printer},
+    pretty::{BreakMode, DelimText, PrettyPrint, Printer},
     scopes::ScopeId,
 };
 
@@ -84,10 +84,8 @@ impl ToTokens for Call {
 impl PrettyPrint for Call {
     fn pretty_print(&self, printer: &mut Printer) {
         self.function.pretty_print(printer);
-        printer.scan_text("(");
-        printer.scan_begin(BreakMode::Consistent);
+        printer.scan_begin(self.paren.open_text(), BreakMode::Consistent);
         self.params.pretty_print(printer);
-        printer.scan_end();
-        printer.scan_text(")");
+        printer.scan_end(self.paren.close_text());
     }
 }

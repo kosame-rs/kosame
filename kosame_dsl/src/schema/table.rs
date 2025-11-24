@@ -6,7 +6,7 @@ use std::{
 use crate::{
     attribute::{CustomMeta, MetaLocation},
     keyword,
-    pretty::{BreakMode, PrettyPrint, Printer, TextMode},
+    pretty::{BreakMode, DelimText, PrettyPrint, Printer, TextMode},
     row::{Row, RowField},
     unique_macro::unique_macro,
 };
@@ -31,7 +31,7 @@ pub struct Table {
     pub table_kw: keyword::table,
     pub name: Ident,
 
-    pub _paren: syn::token::Paren,
+    pub paren: syn::token::Paren,
 
     pub columns: Punctuated<Column, Token![,]>,
 
@@ -58,7 +58,7 @@ impl Parse for Table {
             create_kw: input.call(keyword::create::parse_autocomplete)?,
             table_kw: input.call(keyword::table::parse_autocomplete)?,
             name: input.parse()?,
-            _paren: syn::parenthesized!(content in input),
+            paren: syn::parenthesized!(content in input),
             columns: content.parse_terminated(Column::parse, Token![,])?,
             semi_token: input.parse()?,
             relations: input.parse_terminated(Relation::parse, Token![,])?,
@@ -202,11 +202,10 @@ impl PrettyPrint for Table {
         self.create_kw.pretty_print(printer);
         printer.scan_text(" ");
         self.table_kw.pretty_print(printer);
-        printer.scan_text(" (");
-        printer.scan_begin(BreakMode::Consistent);
+        printer.scan_text(" ");
+        printer.scan_begin(self.paren.open_text(), BreakMode::Consistent);
         self.columns.pretty_print(printer);
-        printer.scan_end();
-        printer.scan_text(")");
+        printer.scan_end(self.paren.close_text());
         self.semi_token.pretty_print(printer);
     }
 }
