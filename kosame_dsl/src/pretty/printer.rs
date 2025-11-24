@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use super::{Delim, PrettyPrint, RingBuffer, Span, Text, TextMode, Trivia};
 
 pub const MARGIN: usize = 89;
@@ -147,12 +149,17 @@ impl<'a> Printer<'a> {
     fn print_break(&mut self) {
         self.output.push('\n');
         self.output.push_str(&" ".repeat(self.indent * INDENT));
-        self.space = (MARGIN - self.indent * INDENT).max(MIN_SPACE) as isize;
+        self.space = (MARGIN as isize - (self.indent * INDENT) as isize).max(MIN_SPACE as isize);
     }
 
     fn print_first(&mut self) {
         let token = self.tokens.pop_front().expect("no tokens to print");
 
+        let group_break = self
+            .print_frames
+            .last()
+            .map(|frame| frame.group_break)
+            .unwrap_or(false);
         let content_break = self
             .print_frames
             .last()
@@ -171,20 +178,19 @@ impl<'a> Printer<'a> {
                 }
             }
             Token::Break { space, len } => {
-                if content_break || *len as isize >= self.space {
+                if group_break || *len as isize >= self.space {
                     self.print_break();
-                } else {
-                    if *space {
-                        self.output.push(' ');
-                    }
-                    self.space -= *len as isize;
+                } else if *space {
+                    self.output.push(' ');
+                    self.space -= 1isize;
                 }
             }
             Token::Begin { mode, len, .. } => {
                 let group_break = *len as isize >= self.space && *mode == BreakMode::Consistent;
+                let content_break = *len as isize >= self.space;
                 self.print_frames.push(PrintFrame {
                     group_break,
-                    content_break: group_break,
+                    content_break,
                 });
                 self.indent += 1;
                 if group_break {
