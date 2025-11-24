@@ -2,9 +2,7 @@ use std::{borrow::Cow, collections::VecDeque};
 
 use proc_macro2::Span;
 
-use crate::pretty::{PrettyPrint, Trivia};
-
-use super::Text;
+use super::{PrettyPrint, RingBuffer, Text, Trivia};
 
 pub const MARGIN: usize = 89;
 pub const INDENT: usize = 4;
@@ -61,7 +59,7 @@ pub struct Printer<'a> {
     output: String,
     space: isize,
     indent: usize,
-    tokens: VecDeque<Token>,
+    tokens: RingBuffer<Token>,
     last_break: Option<usize>,
     begin_stack: Vec<usize>,
     print_frames: Vec<PrintFrame>,
@@ -74,19 +72,11 @@ impl<'a> Printer<'a> {
             output: String::new(),
             space: initial_space.max(MIN_SPACE) as isize,
             indent: initial_indent,
-            tokens: VecDeque::new(),
+            tokens: RingBuffer::new(),
             last_break: None,
             begin_stack: Vec::new(),
             print_frames: Vec::new(),
         }
-    }
-
-    fn token(&self, index: usize) -> &Token {
-        &self.tokens[index]
-    }
-
-    fn token_mut(&mut self, index: usize) -> &mut Token {
-        &mut self.tokens[index]
     }
 
     /// Registers a new token length to be tracked in the previous break and the surrounding
@@ -94,7 +84,7 @@ impl<'a> Printer<'a> {
     fn push_len(&mut self, token_len: usize) {
         // Track the length that the previous break token has to have available to not break.
         if let Some(break_index) = self.last_break {
-            match self.token_mut(break_index) {
+            match &mut self.tokens[break_index] {
                 Token::Break { len, .. } => *len += token_len,
                 _ => unreachable!(),
             }
@@ -102,7 +92,7 @@ impl<'a> Printer<'a> {
 
         // Track the length of the entire begin/end block.
         if let Some(begin_index) = self.begin_stack.last() {
-            match self.token_mut(*begin_index) {
+            match &mut self.tokens[*begin_index] {
                 Token::Begin { len, .. } => *len += token_len,
                 _ => unreachable!(),
             }
@@ -152,11 +142,11 @@ impl<'a> Printer<'a> {
             .begin_stack
             .pop()
             .expect("printed end without matching begin");
-        let begin_len = self.token(begin_index).len();
+        let begin_len = self.tokens[begin_index].len();
 
         // Add the length of this begin/end block to its parent.
         if let Some(begin_index) = self.begin_stack.last() {
-            match self.token_mut(*begin_index) {
+            match &mut self.tokens[*begin_index] {
                 Token::Begin { len, .. } => *len += begin_len,
                 _ => unreachable!(),
             }
@@ -190,7 +180,6 @@ impl<'a> Printer<'a> {
                 if should_print {
                     self.output.push_str(text);
                     self.space -= text.len() as isize;
-                    println!("{}", text);
                 }
             }
             Token::Break { space, len } => {
@@ -210,7 +199,6 @@ impl<'a> Printer<'a> {
                     content_break: group_break,
                 });
                 self.indent += 1;
-                println!("group len {} -> {group_break} >= {}", len, self.space);
                 if group_break {
                     self.print_break();
                 }
@@ -231,19 +219,7 @@ impl<'a> Printer<'a> {
 
     /// Forces the current print frame to break.
     pub fn scan_force_break(&mut self) {
-        if let Some(break_index) = self.last_break {
-            match self.token_mut(break_index) {
-                Token::Break { len, .. } => *len = MARGIN,
-                _ => unreachable!(),
-            }
-        }
-
-        if let Some(begin_index) = self.begin_stack.last() {
-            match self.token_mut(*begin_index) {
-                Token::Begin { len, .. } => *len = MARGIN,
-                _ => unreachable!(),
-            }
-        }
+        self.push_len(MARGIN);
     }
 
     /// Scans the first trivia element and convert it to tokens.
