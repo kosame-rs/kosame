@@ -104,8 +104,9 @@ impl<'a> Printer<'a> {
 
     pub fn scan_break(&mut self, space: bool) {
         self.last_break = Some(self.tokens.len());
+        self.tokens.push_back(Token::Break { space, len: 0 });
         let len = if space { 1 } else { 0 };
-        self.tokens.push_back(Token::Break { space, len });
+        self.push_len(len);
     }
 
     pub fn scan_begin(&mut self, delim: Option<Delim<'_>>, mode: BreakMode) {

@@ -28,7 +28,7 @@ mod schema {
             null not null not null not null default (3 + 4 + (5+ 6 + 8 + 9 + 10 + now(5))),
         );
 
-        pip: (kek, schnebul, kek,kek,kek,kek,schnebul,kek,kek,kek,kek,kek,kek,kek,            ) => mflasdf (lel, lel, le, le, le, le, le, le, le, le, le, le, le, lelllllllllll),
+        pip: (kek, schnebul, kek,kek,kek,kek,schnebul,kek,kek,kek,kek,kek,kek,kek,            ) => mflasdf (lel, lel, le, le, le, le, le, le, le, le, le, le, le, lellllllllllldfjaldgj),
     }
 
     pg_table! {
