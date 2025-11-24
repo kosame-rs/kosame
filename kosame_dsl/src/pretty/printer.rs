@@ -1,6 +1,4 @@
-use crate::pretty::{DelimText, TextMode};
-
-use super::{PrettyPrint, RingBuffer, Span, Text, Trivia};
+use super::{Delim, PrettyPrint, RingBuffer, Span, Text, TextMode, Trivia};
 
 pub const MARGIN: usize = 89;
 pub const INDENT: usize = 4;
@@ -108,16 +106,19 @@ impl<'a> Printer<'a> {
         self.tokens.push_back(Token::Break { space, len });
     }
 
-    pub fn scan_begin(&mut self, delim: impl Into<Text>, mode: BreakMode) {
-        self.scan_text(delim);
+    pub fn scan_begin(&mut self, delim: Option<Delim<'_>>, mode: BreakMode) {
+        if let Some(delim) = delim {
+            self.scan_text(delim.open_text());
+        }
         self.begin_stack.push(self.tokens.len());
         self.tokens.push_back(Token::Begin { mode, len: 0 });
     }
 
-    pub fn scan_end(&mut self, delim: impl Into<Text>) {
-        let delim = delim.into();
+    pub fn scan_end(&mut self, delim: Option<Delim<'_>>) {
         // Flush any trivia that appears before this token
-        if let Some(span) = delim.span() {
+        if let Some(delim) = delim.as_ref()
+            && let Some(span) = delim.close_text().span()
+        {
             self.flush_trivia(span);
         }
 
@@ -138,7 +139,9 @@ impl<'a> Printer<'a> {
         self.last_break = None;
         self.tokens.push_back(Token::End);
 
-        self.scan_text(delim);
+        if let Some(delim) = delim {
+            self.scan_text(delim.close_text());
+        }
     }
 
     fn print_break(&mut self) {

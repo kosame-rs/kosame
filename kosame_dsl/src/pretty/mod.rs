@@ -1,4 +1,4 @@
-mod delimiter;
+mod delim;
 mod printer;
 mod ring_buffer;
 mod rust;
@@ -6,7 +6,7 @@ mod span;
 mod text;
 mod trivia;
 
-pub use delimiter::*;
+pub use delim::*;
 pub use printer::*;
 pub use ring_buffer::*;
 pub use span::*;
@@ -27,16 +27,9 @@ where
     let trivia = Lexer::new(source_text).collect::<Vec<_>>();
 
     let mut printer = Printer::new(&trivia, initial_space, initial_indent);
-    printer.scan_begin(
-        Text::new(" ", Some(Span::first()), TextMode::NoBreak),
-        BreakMode::Consistent,
-    );
+    printer.scan_begin(None, BreakMode::Consistent);
     ast.pretty_print(&mut printer);
-    printer.scan_end(Text::new(
-        " ",
-        Some(Span::last(source_text)),
-        TextMode::NoBreak,
-    ));
+    printer.scan_end(None);
 
     Ok(printer.eof())
 }

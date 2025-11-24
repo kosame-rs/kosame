@@ -11,6 +11,24 @@ impl Span {
         Self { start, end }
     }
 
+    pub fn file(source_text: &str) -> Self {
+        let mut line = 1;
+        let mut column = 0;
+        for char in source_text.chars() {
+            match char {
+                '\n' => {
+                    line += 1;
+                    column = 0;
+                }
+                _ => column += 1,
+            }
+        }
+        Self {
+            start: LineColumn { line: 1, column: 0 },
+            end: LineColumn { line, column },
+        }
+    }
+
     pub fn first() -> Self {
         Self {
             start: LineColumn { line: 1, column: 0 },

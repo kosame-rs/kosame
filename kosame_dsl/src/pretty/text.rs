@@ -125,38 +125,3 @@ impl_token!(>);
 impl_token!(<);
 impl_token!($);
 impl_token!(as);
-
-pub trait DelimText {
-    fn open_text(&self) -> Text;
-    fn close_text(&self) -> Text;
-}
-
-impl DelimText for syn::token::Paren {
-    fn open_text(&self) -> Text {
-        Text::new("(", Some(self.span.open().into()), TextMode::Always)
-    }
-
-    fn close_text(&self) -> Text {
-        Text::new(")", Some(self.span.close().into()), TextMode::Always)
-    }
-}
-
-impl DelimText for syn::token::Brace {
-    fn open_text(&self) -> Text {
-        Text::new("{", Some(self.span.open().into()), TextMode::Always)
-    }
-
-    fn close_text(&self) -> Text {
-        Text::new("}", Some(self.span.close().into()), TextMode::Always)
-    }
-}
-
-impl DelimText for syn::token::Bracket {
-    fn open_text(&self) -> Text {
-        Text::new("[", Some(self.span.open().into()), TextMode::Always)
-    }
-
-    fn close_text(&self) -> Text {
-        Text::new("]", Some(self.span.close().into()), TextMode::Always)
-    }
-}

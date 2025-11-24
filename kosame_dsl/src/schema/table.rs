@@ -6,7 +6,7 @@ use std::{
 use crate::{
     attribute::{CustomMeta, MetaLocation},
     keyword,
-    pretty::{BreakMode, DelimText, PrettyPrint, Printer, TextMode},
+    pretty::{BreakMode, PrettyPrint, Printer},
     row::{Row, RowField},
     unique_macro::unique_macro,
 };
@@ -203,9 +203,9 @@ impl PrettyPrint for Table {
         printer.scan_text(" ");
         self.table_kw.pretty_print(printer);
         printer.scan_text(" ");
-        printer.scan_begin(self.paren.open_text(), BreakMode::Consistent);
+        printer.scan_begin(Some((&self.paren).into()), BreakMode::Consistent);
         self.columns.pretty_print(printer);
-        printer.scan_end(self.paren.close_text());
+        printer.scan_end(Some((&self.paren).into()));
         self.semi_token.pretty_print(printer);
     }
 }
