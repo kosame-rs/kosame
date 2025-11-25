@@ -104,7 +104,6 @@ impl PrettyPrint for Column {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         for attr in &self.attrs {
             attr.pretty_print(printer);
-            printer.scan_break(true);
         }
         printer.flush_trivia(self.name.span().into());
         printer.scan_begin(None, BreakMode::Inconsistent);

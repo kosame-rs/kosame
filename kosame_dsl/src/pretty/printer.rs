@@ -91,6 +91,7 @@ impl<'a> Printer<'a> {
         }
 
         let token = Token::Text(text);
+
         self.push_len(token.len());
         self.tokens.push_back(token);
 

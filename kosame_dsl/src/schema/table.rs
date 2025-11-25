@@ -193,11 +193,9 @@ impl PrettyPrint for Table {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         for attr in &self.inner_attrs {
             attr.pretty_print(printer);
-            printer.scan_break(true);
         }
         for attr in &self.outer_attrs {
             attr.pretty_print(printer);
-            printer.scan_break(true);
         }
         self.create_kw.pretty_print(printer);
         printer.scan_text(" ");
