@@ -7,7 +7,7 @@ use crate::{
 };
 
 use super::star::Star;
-use super::{CorrelationId, ScopeId, Field, Query, QueryNodePath, PathExt, Ident};
+use super::{CorrelationId, Field, Ident, PathExt, Query, QueryNodePath, ScopeId};
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, quote};
 use syn::{
@@ -19,7 +19,7 @@ use syn::{
 pub struct Node {
     pub correlation_id: CorrelationId,
     pub scope_id: ScopeId,
-    pub _brace: syn::token::Brace,
+    pub brace_token: syn::token::Brace,
     pub star: Option<Star>,
     pub fields: Punctuated<Field, Token![,]>,
     pub r#where: Option<Where>,
@@ -261,10 +261,7 @@ impl Parse for Node {
                 ));
             }
 
-            let name_string = field
-                .alias()
-                .map_or(name, |alias| &alias.ident)
-                .to_string();
+            let name_string = field.alias().map_or(name, |alias| &alias.ident).to_string();
             if existing.contains(&name_string) {
                 return Err(syn::Error::new(
                     field.span(),
@@ -277,7 +274,7 @@ impl Parse for Node {
         Ok(Self {
             correlation_id: CorrelationId::new(),
             scope_id: ScopeId::new(),
-            _brace,
+            brace_token: _brace,
             star,
             fields,
             r#where: content.call(Where::parse_optional)?,

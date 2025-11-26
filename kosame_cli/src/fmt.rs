@@ -13,13 +13,6 @@ pub struct Fmt {
 
 impl Fmt {
     pub fn run(&self) -> anyhow::Result<()> {
-        let input = if let Some(file) = &self.file { std::fs::read_to_string(file)? } else {
-            let mut buf = String::new();
-            std::io::stdin().read_to_string(&mut buf)?;
-            buf
-        };
-        let mut output = String::new();
-
         struct Replace {
             start: usize,
             end: usize,
@@ -28,10 +21,11 @@ impl Fmt {
 
         #[derive(Default)]
         struct Visitor {
-            indent: usize,
+            indent: isize,
             replacements: Vec<Replace>,
             errors: Vec<syn::Error>,
         }
+
         use syn::visit::Visit;
         impl<'ast> Visit<'ast> for Visitor {
             fn visit_item_mod(&mut self, node: &'ast syn::ItemMod) {
@@ -58,7 +52,7 @@ impl Fmt {
                 let name = &i.path.segments.last().expect("paths cannot be empty").ident;
                 let span = i.delimiter.span().span();
                 let source_text = span.source_text().unwrap();
-                let initial_space = MARGIN - span.start().column;
+                let initial_space = MARGIN - isize::try_from(span.start().column).unwrap();
                 let initial_indent = self.indent;
 
                 let result =
@@ -84,6 +78,15 @@ impl Fmt {
                 }
             }
         }
+
+        let input = if let Some(file) = &self.file {
+            std::fs::read_to_string(file)?
+        } else {
+            let mut buf = String::new();
+            std::io::stdin().read_to_string(&mut buf)?;
+            buf
+        };
+        let mut output = String::new();
 
         let file = syn::parse_file(&input)?;
         let mut visitor = Visitor::default();

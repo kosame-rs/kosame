@@ -134,16 +134,16 @@ impl Parse for MetaItem {
 
 pub struct MetaDriver {
     pub path: keyword::driver,
-    pub _eq_token: Token![=],
-    pub _value: LitStr,
+    pub eq_token: Token![=],
+    pub value: LitStr,
 }
 
 impl Parse for MetaDriver {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
             path: input.parse()?,
-            _eq_token: input.parse()?,
-            _value: {
+            eq_token: input.parse()?,
+            value: {
                 let value: LitStr = input.parse()?;
                 if value.value().parse::<Driver>().is_err() {
                     return Err(syn::Error::new(value.span(), "unknown driver value"));
@@ -156,7 +156,7 @@ impl Parse for MetaDriver {
 
 pub struct MetaRename {
     pub path: keyword::rename,
-    pub _eq_token: Token![=],
+    pub eq_token: Token![=],
     pub value: Ident,
 }
 
@@ -164,7 +164,7 @@ impl Parse for MetaRename {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
             path: input.parse()?,
-            _eq_token: input.parse()?,
+            eq_token: input.parse()?,
             value: input.parse()?,
         })
     }
@@ -172,7 +172,7 @@ impl Parse for MetaRename {
 
 pub struct MetaTypeOverride {
     pub path: keyword::ty,
-    pub _eq_token: Token![=],
+    pub eq_token: Token![=],
     pub value: Path,
 }
 
@@ -180,33 +180,33 @@ impl Parse for MetaTypeOverride {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
             path: input.parse()?,
-            _eq_token: input.parse()?,
+            eq_token: input.parse()?,
             value: input.parse()?,
         })
     }
 }
 
 pub struct MetaPass {
-    pub _pass_keyword: keyword::__pass,
-    pub _eq_token: Token![=],
+    pub pass_keyword: keyword::__pass,
+    pub eq_token: Token![=],
     pub value: LitInt,
 }
 
 impl Parse for MetaPass {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            _pass_keyword: input.parse()?,
-            _eq_token: input.parse()?,
+            pass_keyword: input.parse()?,
+            eq_token: input.parse()?,
             value: input.parse()?,
         })
     }
 }
 
 pub struct MetaTable {
-    pub _table_keyword: keyword::__table,
-    pub _paren_token: syn::token::Paren,
+    pub table_keyword: keyword::__table,
+    pub paren_token: syn::token::Paren,
     pub path: Path,
-    pub _eq_token: Token![=],
+    pub eq_token: Token![=],
     pub value: Box<Table>,
 }
 
@@ -214,10 +214,10 @@ impl Parse for MetaTable {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let content;
         Ok(Self {
-            _table_keyword: input.parse()?,
-            _paren_token: parenthesized!(content in input),
+            table_keyword: input.parse()?,
+            paren_token: parenthesized!(content in input),
             path: content.parse()?,
-            _eq_token: content.parse()?,
+            eq_token: content.parse()?,
             value: Box::new(content.parse()?),
         })
     }

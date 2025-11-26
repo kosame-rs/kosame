@@ -2,11 +2,17 @@ use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
-use crate::{clause::{Where, Returning, FromChain}, keyword, part::TargetTable, quote_option::QuoteOption, visitor::Visitor};
+use crate::{
+    clause::{FromChain, Returning, Where},
+    keyword,
+    part::TargetTable,
+    quote_option::QuoteOption,
+    visitor::Visitor,
+};
 
 pub struct Delete {
-    pub _delete_keyword: keyword::delete,
-    pub _from_keyword: keyword::from,
+    pub delete_keyword: keyword::delete,
+    pub from_keyword: keyword::from,
     pub target_table: TargetTable,
     pub using: Option<Using>,
     pub r#where: Option<Where>,
@@ -35,8 +41,8 @@ impl Delete {
 impl Parse for Delete {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            _delete_keyword: input.parse()?,
-            _from_keyword: input.parse()?,
+            delete_keyword: input.parse()?,
+            from_keyword: input.parse()?,
             target_table: input.parse()?,
             using: input.call(Using::parse_optional)?,
             r#where: input.call(Where::parse_optional)?,

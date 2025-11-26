@@ -24,7 +24,7 @@ use crate::{
 };
 
 pub struct Query {
-    pub _inner_attrs: Vec<Attribute>,
+    pub inner_attrs: Vec<Attribute>,
     pub outer_attrs: Vec<Attribute>,
     pub table: TablePath,
     pub body: Node,
@@ -36,7 +36,7 @@ impl Parse for Query {
         ScopeId::reset();
         CorrelationId::reset();
         Ok(Self {
-            _inner_attrs: {
+            inner_attrs: {
                 let attrs = Attribute::parse_inner(input)?;
                 CustomMeta::parse_attrs(&attrs, MetaLocation::QueryInner)?;
                 attrs

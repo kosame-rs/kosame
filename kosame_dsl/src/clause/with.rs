@@ -15,7 +15,7 @@ use crate::{
 };
 
 pub struct With {
-    pub _with_keyword: keyword::with,
+    pub with_keyword: keyword::with,
     pub items: Punctuated<WithItem, Token![,]>,
 }
 
@@ -38,7 +38,7 @@ impl With {
 impl Parse for With {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            _with_keyword: input.call(keyword::with::parse_autocomplete)?,
+            with_keyword: input.call(keyword::with::parse_autocomplete)?,
             items: {
                 let mut punctuated = Punctuated::new();
                 while !input.is_empty() {
@@ -69,8 +69,8 @@ impl ToTokens for With {
 
 pub struct WithItem {
     pub alias: TableAlias,
-    pub _as_token: Token![as],
-    pub _paren_token: syn::token::Paren,
+    pub as_token: Token![as],
+    pub paren_token: syn::token::Paren,
     pub command: Command,
     pub correlation_id: CorrelationId,
 }
@@ -80,7 +80,7 @@ impl WithItem {
         self.command.accept(visitor);
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn columns(&self) -> Vec<&Ident> {
         match &self.alias.columns {
             Some(columns) => columns.columns.iter().collect(),
@@ -99,8 +99,8 @@ impl Parse for WithItem {
         let content;
         Ok(Self {
             alias: input.parse()?,
-            _as_token: input.parse()?,
-            _paren_token: parenthesized!(content in input),
+            as_token: input.parse()?,
+            paren_token: parenthesized!(content in input),
             command: content.parse()?,
             correlation_id: CorrelationId::new(),
         })

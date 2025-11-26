@@ -18,7 +18,7 @@ use crate::{
 };
 
 pub struct From {
-    pub _from: keyword::from,
+    pub from: keyword::from,
     pub chain: FromChain,
 }
 
@@ -39,7 +39,7 @@ impl From {
 impl Parse for From {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            _from: input.parse()?,
+            from: input.parse()?,
             chain: input.parse()?,
         })
     }
@@ -65,23 +65,26 @@ impl FromChain {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn len(&self) -> usize {
         self.combinators.len() + 1
     }
 
-    #[must_use] 
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    #[must_use]
     pub fn nullables(&self) -> Vec<bool> {
         let mut nullables = vec![false; self.len()];
         {
             let mut nullable_join_found = false;
             for (index, combinator) in self.combinators.iter().enumerate() {
-                if let FromCombinator::Join { join_type, .. } = combinator {
-                    match join_type {
-                        JoinType::Left(..) => nullable_join_found = true,
-                        JoinType::Full(..) => nullable_join_found = true,
-                        _ => {}
-                    }
+                if let FromCombinator::Join { join_type, .. } = combinator
+                    && let JoinType::Left(..) | JoinType::Full(..) = join_type
+                {
+                    nullable_join_found = true;
                 }
                 nullables[index + 1] = nullables[index + 1] || nullable_join_found;
             }
@@ -89,17 +92,20 @@ impl FromChain {
         {
             let mut nullable_join_found = false;
             for (index, combinator) in self.combinators.iter().enumerate().rev() {
-                if let FromCombinator::Join { join_type, .. } = combinator {
-                    match join_type {
-                        JoinType::Right(..) => nullable_join_found = true,
-                        JoinType::Full(..) => nullable_join_found = true,
-                        _ => {}
-                    }
+                if let FromCombinator::Join { join_type, .. } = combinator
+                    && let JoinType::Right(..) | JoinType::Full(..) = join_type
+                {
+                    nullable_join_found = true;
                 }
                 nullables[index] = nullables[index] || nullable_join_found;
             }
         }
         nullables
+    }
+
+    #[must_use]
+    pub fn iter(&self) -> FromIter<'_> {
+        self.into_iter()
     }
 }
 
@@ -150,7 +156,7 @@ impl FromItem {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn name(&self) -> Option<&Ident> {
         match self {
             Self::Table {
@@ -167,7 +173,7 @@ impl FromItem {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn correlation_id(&self) -> CorrelationId {
         match self {
             Self::Table { correlation_id, .. } => *correlation_id,
@@ -175,7 +181,7 @@ impl FromItem {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn columns<'a>(&'a self, with_item: Option<&'a WithItem>) -> Vec<&'a Ident> {
         match self {
             Self::Table { alias, .. } => match with_item {
@@ -234,12 +240,15 @@ impl ToTokens for FromItem {
             Self::Table {
                 table_path, alias, ..
             } => {
-                let table = alias.as_ref().map_or(&table_path
+                let table = alias.as_ref().map_or(
+                    &table_path
                         .as_path()
                         .segments
                         .last()
                         .expect("paths cannot be empty")
-                        .ident, |alias| &alias.name);
+                        .ident,
+                    |alias| &alias.name,
+                );
                 let alias = QuoteOption::from(alias);
                 let scope_id = ScopeId::of_scope();
                 quote! {
@@ -250,12 +259,12 @@ impl ToTokens for FromItem {
                 }
             }
             Self::Subquery {
-                lateral_keyword: _lateral_keyword,
+                lateral_keyword,
                 command,
                 alias,
                 ..
             } => {
-                let lateral = _lateral_keyword.is_some();
+                let lateral = lateral_keyword.is_some();
                 let alias = QuoteOption::from(alias);
                 quote! {
                     ::kosame::repr::clause::FromItem::Subquery {
@@ -337,14 +346,14 @@ impl ToTokens for JoinType {
 }
 
 pub struct On {
-    pub _on_keyword: keyword::on,
+    pub on_keyword: keyword::on,
     pub expr: Expr,
 }
 
 impl Parse for On {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            _on_keyword: input.call(keyword::on::parse_autocomplete)?,
+            on_keyword: input.call(keyword::on::parse_autocomplete)?,
             expr: input.parse()?,
         })
     }
@@ -396,7 +405,7 @@ impl FromCombinator {
         Ok(result)
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn right(&self) -> &FromItem {
         match self {
             Self::Join { right, .. } => right,
@@ -483,7 +492,11 @@ impl<'a> Iterator for FromIter<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         let item = match self.index {
             -1 => &self.chain.start,
-            _ => self.chain.combinators.get(self.index as usize)?.right(),
+            _ => self
+                .chain
+                .combinators
+                .get::<usize>(self.index.try_into().unwrap())?
+                .right(),
         };
         self.index += 1;
         Some(item)

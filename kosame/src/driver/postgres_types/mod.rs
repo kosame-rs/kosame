@@ -124,7 +124,7 @@ where
     if length < 0 {
         Ok(T::from_sql_null(&ty)?)
     } else {
-        let length = length as usize;
+        let length = usize::try_from(length).unwrap();
         let result = Ok(T::from_sql(&ty, &buf[(*offset)..(*offset + length)])?);
         *offset += length;
         result

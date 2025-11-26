@@ -1,8 +1,8 @@
 use super::{Delim, PrettyPrint, RingBuffer, Span, Text, TextMode, Trivia};
 
-pub const MARGIN: usize = 89;
-pub const INDENT: usize = 4;
-pub const MIN_SPACE: usize = 60;
+pub const MARGIN: isize = 89;
+pub const INDENT: isize = 4;
+pub const MIN_SPACE: isize = 60;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum BreakMode {
@@ -12,15 +12,15 @@ pub enum BreakMode {
 
 enum Token {
     Text(Text),
-    Break { space: bool, len: usize },
-    Begin { mode: BreakMode, len: usize },
+    Break { space: bool, len: isize },
+    Begin { mode: BreakMode, len: isize },
     End,
 }
 
 impl Token {
-    fn len(&self) -> usize {
+    fn len(&self) -> isize {
         match self {
-            Self::Text(text) => text.len(),
+            Self::Text(text) => text.len().try_into().unwrap(),
             Self::Break { len, .. } | Self::Begin { len, .. } => *len,
             Self::End => 0,
         }
@@ -37,7 +37,7 @@ pub struct Printer<'a> {
     trivia: &'a [Trivia<'a>],
     output: String,
     space: isize,
-    indent: usize,
+    indent: isize,
     tokens: RingBuffer<Token>,
     last_break: Option<usize>,
     begin_stack: Vec<usize>,
@@ -46,11 +46,11 @@ pub struct Printer<'a> {
 
 impl<'a> Printer<'a> {
     #[must_use]
-    pub fn new(trivia: &'a [Trivia<'a>], initial_space: usize, initial_indent: usize) -> Self {
+    pub fn new(trivia: &'a [Trivia<'a>], initial_space: isize, initial_indent: isize) -> Self {
         Self {
             trivia,
             output: String::new(),
-            space: initial_space.max(MIN_SPACE).try_into().unwrap(),
+            space: initial_space.max(MIN_SPACE),
             indent: initial_indent,
             tokens: RingBuffer::new(),
             last_break: None,
@@ -61,7 +61,7 @@ impl<'a> Printer<'a> {
 
     /// Registers a new token length to be tracked in the previous break and the surrounding
     /// begin/end frame.
-    fn push_len(&mut self, token_len: usize) {
+    fn push_len(&mut self, token_len: isize) {
         // Track the length that the previous break token has to have available to not break.
         if let Some(break_index) = self.last_break {
             match &mut self.tokens[break_index] {
@@ -104,7 +104,7 @@ impl<'a> Printer<'a> {
     pub fn scan_break(&mut self, space: bool) {
         self.last_break = Some(self.tokens.len());
         self.tokens.push_back(Token::Break { space, len: 0 });
-        let len = usize::from(space);
+        let len = isize::from(space);
         self.push_len(len);
     }
 
@@ -116,6 +116,9 @@ impl<'a> Printer<'a> {
         self.tokens.push_back(Token::Begin { mode, len: 0 });
     }
 
+    /// # Panics
+    ///
+    /// Panics if there was no matching call to [`scan_begin`] prior to running this function.
     pub fn scan_end(&mut self, delim: Option<Delim<'_>>) {
         // Flush any trivia that appears before this token
         if let Some(delim) = delim.as_ref()
@@ -148,8 +151,9 @@ impl<'a> Printer<'a> {
 
     fn print_break(&mut self) {
         self.output.push('\n');
-        self.output.push_str(&" ".repeat(self.indent * INDENT));
-        self.space = (MARGIN as isize - (self.indent * INDENT) as isize).max(MIN_SPACE as isize);
+        self.output
+            .push_str(&" ".repeat((self.indent * INDENT).try_into().unwrap()));
+        self.space = MARGIN - (self.indent * INDENT).max(MIN_SPACE);
     }
 
     fn print_first(&mut self) {
@@ -172,11 +176,11 @@ impl<'a> Printer<'a> {
                 );
                 if should_print {
                     self.output.push_str(text);
-                    self.space -= text.len() as isize;
+                    self.space -= isize::try_from(text.len()).unwrap();
                 }
             }
             Token::Break { space, len } => {
-                if group_break || *len as isize >= self.space {
+                if group_break || *len >= self.space {
                     self.print_break();
                 } else if *space {
                     self.output.push(' ');
@@ -184,8 +188,8 @@ impl<'a> Printer<'a> {
                 }
             }
             Token::Begin { mode, len, .. } => {
-                let group_break = *len as isize >= self.space && *mode == BreakMode::Consistent;
-                let content_break = *len as isize >= self.space;
+                let group_break = *len >= self.space && *mode == BreakMode::Consistent;
+                let content_break = *len >= self.space;
                 self.print_frames.push(PrintFrame {
                     group_break,
                     content_break,
@@ -235,7 +239,7 @@ impl<'a> Printer<'a> {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn eof(mut self) -> String {
         while !self.trivia.is_empty() {
             self.scan_next_trivia();

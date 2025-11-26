@@ -5,7 +5,7 @@ use syn::parse::{Parse, ParseStream};
 use crate::{clause::Fields, keyword, visitor::Visitor};
 
 pub struct Select {
-    pub _select: keyword::select,
+    pub select_keyword: keyword::select,
     pub fields: Fields,
 }
 
@@ -22,7 +22,7 @@ impl Select {
 impl Parse for Select {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            _select: input.call(keyword::select::parse_autocomplete)?,
+            select_keyword: input.call(keyword::select::parse_autocomplete)?,
             fields: input.parse()?,
         })
     }

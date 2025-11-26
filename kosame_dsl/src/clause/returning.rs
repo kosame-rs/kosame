@@ -5,7 +5,7 @@ use syn::parse::{Parse, ParseStream};
 use crate::{clause::Fields, keyword, visitor::Visitor};
 
 pub struct Returning {
-    pub _returning: keyword::returning,
+    pub returning: keyword::returning,
     pub fields: Fields,
 }
 
@@ -26,7 +26,7 @@ impl Returning {
 impl Parse for Returning {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            _returning: input.parse()?,
+            returning: input.parse()?,
             fields: input.parse()?,
         })
     }

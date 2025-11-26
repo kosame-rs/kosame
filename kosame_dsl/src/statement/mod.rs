@@ -17,16 +17,16 @@ use crate::{
 };
 
 pub struct Statement {
-    pub _inner_attrs: Vec<Attribute>,
-    pub _paren_token: Option<syn::token::Paren>,
+    pub inner_attrs: Vec<Attribute>,
+    pub paren_token: Option<syn::token::Paren>,
     pub command: Command,
     pub alias: Option<Alias>,
 }
 
 impl Statement {
-    #[must_use] 
+    #[must_use]
     pub fn _custom_meta(&self) -> CustomMeta {
-        CustomMeta::parse_attrs(&self._inner_attrs, MetaLocation::StatementInner)
+        CustomMeta::parse_attrs(&self.inner_attrs, MetaLocation::StatementInner)
             .expect("custom meta should be checked during parsing")
     }
 
@@ -48,15 +48,15 @@ impl Parse for Statement {
         if input.peek(syn::token::Paren) {
             let content;
             Ok(Self {
-                _inner_attrs: inner_attrs,
-                _paren_token: Some(parenthesized!(content in input)),
+                inner_attrs,
+                paren_token: Some(parenthesized!(content in input)),
                 command: content.parse()?,
                 alias: input.call(Alias::parse_optional)?,
             })
         } else {
             Ok(Self {
-                _inner_attrs: inner_attrs,
-                _paren_token: None,
+                inner_attrs,
+                paren_token: None,
                 command: input.parse()?,
                 alias: input.call(Alias::parse_optional)?,
             })
@@ -141,7 +141,9 @@ impl ToTokens for Statement {
                     .collect(),
             );
             quote! { #row }
-        } else { quote! { pub enum Row {} } };
+        } else {
+            quote! { pub enum Row {} }
+        };
 
         let lifetime = (!bind_params.is_empty()).then_some(quote! { <'a> });
 

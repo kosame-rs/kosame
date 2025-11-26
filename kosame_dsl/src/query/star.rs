@@ -10,7 +10,7 @@ use crate::{part::Alias, row::RowField};
 
 pub struct Star {
     pub attrs: Vec<Attribute>,
-    pub _star_token: Token![*],
+    pub star_token: Token![*],
     pub alias: Option<Alias>,
 }
 
@@ -41,7 +41,7 @@ impl Parse for Star {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
             attrs: input.call(Attribute::parse_outer)?,
-            _star_token: input.parse()?,
+            star_token: input.parse()?,
             alias: input.call(Alias::parse_optional)?,
         })
     }

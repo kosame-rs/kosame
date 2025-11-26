@@ -19,8 +19,8 @@ use syn::parse::Parse;
 
 pub fn pretty_print_macro_str<T>(
     source_text: &str,
-    initial_space: usize,
-    initial_indent: usize,
+    initial_space: isize,
+    initial_indent: isize,
 ) -> syn::Result<String>
 where
     T: Parse + PrettyPrint,

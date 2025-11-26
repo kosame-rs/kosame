@@ -166,7 +166,7 @@ pub enum ScopeItem<'a> {
 }
 
 impl ScopeItem<'_> {
-    #[must_use] 
+    #[must_use]
     pub fn correlation_id(&self) -> CorrelationId {
         match self {
             Self::TargetTable { target_table, .. } => target_table.table.correlation_id,
@@ -175,7 +175,7 @@ impl ScopeItem<'_> {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn name(&self) -> Option<&Ident> {
         match self {
             Self::TargetTable { target_table, .. } => Some(target_table.name()),
@@ -184,21 +184,19 @@ impl ScopeItem<'_> {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn nullable(&self) -> bool {
         match self {
-            Self::TargetTable { .. } => false,
             Self::FromItem { nullable, .. } => *nullable,
-            Self::QueryNode { .. } => false,
+            Self::TargetTable { .. } | Self::QueryNode { .. } => false,
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn is_inherited(&self) -> bool {
         match self {
-            Self::TargetTable { .. } => false,
             Self::FromItem { inherited_from, .. } => inherited_from.is_some(),
-            Self::QueryNode { .. } => false,
+            Self::TargetTable { .. } | Self::QueryNode { .. } => false,
         }
     }
 }

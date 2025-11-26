@@ -8,14 +8,14 @@ pub struct BindParamsBuilder<'a> {
 }
 
 impl BindParamsBuilder<'_> {
-    #[must_use] 
+    #[must_use]
     pub fn new() -> Self {
         Self { params: Vec::new() }
     }
 }
 
 impl<'a> BindParamsBuilder<'a> {
-    #[must_use] 
+    #[must_use]
     pub fn build(self) -> BindParams<'a> {
         BindParams::new(self.params)
     }
@@ -38,7 +38,7 @@ impl<'a> BindParams<'a> {
         Self { params }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.params.is_empty()
     }
@@ -48,7 +48,7 @@ impl ToTokens for BindParams<'_> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let mut modules = vec![];
         for (ordinal, name) in self.params.iter().enumerate() {
-            let ordinal = ordinal as u32;
+            let ordinal = u32::try_from(ordinal).unwrap();
             let name_string = name.to_string();
             modules.push(quote! {
                 pub(super) mod #name {
@@ -64,7 +64,6 @@ impl ToTokens for BindParams<'_> {
             });
         }
         let fields_len = fields.len();
-        let field_names = &self.params;
 
         let lifetime = (fields_len > 0).then(|| quote! { <'a> });
 
@@ -81,13 +80,16 @@ impl ToTokens for BindParams<'_> {
         .to_tokens(tokens);
 
         #[cfg(any(feature = "postgres", feature = "tokio-postgres"))]
-        quote! {
+        {
+            let field_names = &self.params;
+            quote! {
             impl<'a> ::kosame::params::Params<Vec<&'a (dyn ::kosame::driver::postgres_types::ToSql + ::std::marker::Sync + 'a)>> for Params #lifetime {
                 fn to_driver(&self) -> Vec<&'a (dyn ::kosame::driver::postgres_types::ToSql + ::std::marker::Sync + 'a)> {
                     vec![#(self.#field_names),*]
                 }
             }
         }.to_tokens(tokens);
+        }
     }
 }
 
@@ -97,7 +99,7 @@ pub struct BindParamsClosure<'a> {
 }
 
 impl<'a> BindParamsClosure<'a> {
-    #[must_use] 
+    #[must_use]
     pub fn new(module_name: &'a Ident, bind_params: &'a BindParams<'a>) -> Self {
         Self {
             module_name,

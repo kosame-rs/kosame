@@ -5,7 +5,7 @@ use syn::parse::{Parse, ParseStream};
 use crate::{expr::Expr, keyword, visitor::Visitor};
 
 pub struct Offset {
-    pub _offset: keyword::offset,
+    pub offset: keyword::offset,
     pub expr: Expr,
 }
 
@@ -26,7 +26,7 @@ impl Offset {
 impl Parse for Offset {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            _offset: input.parse()?,
+            offset: input.parse()?,
             expr: input.parse()?,
         })
     }

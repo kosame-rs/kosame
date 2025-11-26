@@ -6,7 +6,7 @@ use syn::{
 };
 
 pub struct Alias {
-    pub _as: Token![as],
+    pub as_token: Token![as],
     pub ident: Ident,
 }
 
@@ -23,7 +23,7 @@ impl Alias {
 impl Parse for Alias {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            _as: input.parse()?,
+            as_token: input.parse()?,
             ident: input.parse()?,
         })
     }

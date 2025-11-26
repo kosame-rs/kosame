@@ -8,7 +8,7 @@ use syn::{
 use crate::{expr::Expr, visitor::Visitor};
 
 pub struct Where {
-    pub _where: Token![where],
+    pub where_token: Token![where],
     pub expr: Expr,
 }
 
@@ -29,7 +29,7 @@ impl Where {
 impl Parse for Where {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            _where: input.parse()?,
+            where_token: input.parse()?,
             expr: input.parse()?,
         })
     }
