@@ -10,6 +10,7 @@ pub struct Call<'a> {
 
 impl<'a> Call<'a> {
     #[inline]
+    #[must_use] 
     pub const fn new(function: &'a str, params: &'a [&'a Expr], keyword: bool) -> Self {
         Self {
             function,

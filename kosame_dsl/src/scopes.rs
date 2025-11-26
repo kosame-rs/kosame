@@ -166,6 +166,7 @@ pub enum ScopeItem<'a> {
 }
 
 impl ScopeItem<'_> {
+    #[must_use] 
     pub fn correlation_id(&self) -> CorrelationId {
         match self {
             Self::TargetTable { target_table, .. } => target_table.table.correlation_id,
@@ -174,6 +175,7 @@ impl ScopeItem<'_> {
         }
     }
 
+    #[must_use] 
     pub fn name(&self) -> Option<&Ident> {
         match self {
             Self::TargetTable { target_table, .. } => Some(target_table.name()),
@@ -182,6 +184,7 @@ impl ScopeItem<'_> {
         }
     }
 
+    #[must_use] 
     pub fn nullable(&self) -> bool {
         match self {
             Self::TargetTable { .. } => false,
@@ -190,6 +193,7 @@ impl ScopeItem<'_> {
         }
     }
 
+    #[must_use] 
     pub fn is_inherited(&self) -> bool {
         match self {
             Self::TargetTable { .. } => false,
@@ -275,7 +279,7 @@ impl<'a> From<&'a Query> for Scopes<'a> {
             let scope_id = node.scope_id;
             let items = vec![ScopeItem::QueryNode { node, name }];
 
-            for field in node.fields.iter() {
+            for field in &node.fields {
                 if let query::Field::Relation { node, name, .. } = field {
                     inner(scopes, node, name);
                 }

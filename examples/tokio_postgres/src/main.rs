@@ -244,7 +244,7 @@ async fn connect() -> tokio_postgres::Client {
 
     tokio::spawn(async move {
         if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
+            eprintln!("connection error: {e}");
         }
     });
 

@@ -4,7 +4,7 @@ pub use record_array::*;
 
 use crate::{driver::Connection, params::Params};
 
-use super::*;
+use super::{Query, Node, Field};
 
 pub trait Runner {
     fn run<'a, C, Q>(

@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use crate::{clause::*, part::TargetTable};
+use crate::{clause::{FromChain, Where, Returning}, part::TargetTable};
 
 pub struct Delete<'a> {
     target_table: TargetTable<'a>,
@@ -11,6 +11,7 @@ pub struct Delete<'a> {
 
 impl<'a> Delete<'a> {
     #[inline]
+    #[must_use] 
     pub const fn new(
         target_table: TargetTable<'a>,
         using: Option<FromChain<'a>>,
@@ -26,6 +27,7 @@ impl<'a> Delete<'a> {
     }
 
     #[inline]
+    #[must_use] 
     pub const fn target_table(&self) -> &TargetTable<'a> {
         &self.target_table
     }

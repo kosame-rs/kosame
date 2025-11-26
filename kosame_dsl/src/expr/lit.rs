@@ -26,14 +26,17 @@ pub enum Lit {
 impl Lit {
     pub fn accept<'a>(&'a self, _visitor: &mut impl Visitor<'a>) {}
 
+    #[must_use] 
     pub fn infer_name(&self) -> Option<&Ident> {
         None
     }
 
+    #[must_use] 
     pub fn infer_type(&self, _scope_id: ScopeId) -> Option<InferredType<'_>> {
         None
     }
 
+    #[must_use] 
     pub fn span(&self) -> Span {
         match self {
             Self::Int(inner) => inner.span(),

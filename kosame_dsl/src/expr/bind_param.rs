@@ -22,10 +22,12 @@ impl BindParam {
         visitor.visit_bind_param(self);
     }
 
+    #[must_use] 
     pub fn infer_name(&self) -> Option<&Ident> {
         Some(&self.name)
     }
 
+    #[must_use] 
     pub fn infer_type(&self, _scope_id: ScopeId) -> Option<InferredType<'_>> {
         None
     }
@@ -34,6 +36,7 @@ impl BindParam {
         input.peek(Token![:])
     }
 
+    #[must_use] 
     pub fn span(&self) -> Span {
         self.colon_token
             .span
@@ -54,7 +57,7 @@ impl Parse for BindParam {
 impl ToTokens for BindParam {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let name = &self.name;
-        quote! { params::#name::BIND_PARAM }.to_tokens(tokens)
+        quote! { params::#name::BIND_PARAM }.to_tokens(tokens);
     }
 }
 

@@ -7,10 +7,12 @@ pub struct Span {
 }
 
 impl Span {
+    #[must_use] 
     pub fn new(start: LineColumn, end: LineColumn) -> Self {
         Self { start, end }
     }
 
+    #[must_use] 
     pub fn file(source_text: &str) -> Self {
         let mut line = 1;
         let mut column = 0;
@@ -29,6 +31,7 @@ impl Span {
         }
     }
 
+    #[must_use] 
     pub fn first() -> Self {
         Self {
             start: LineColumn { line: 1, column: 0 },
@@ -36,6 +39,7 @@ impl Span {
         }
     }
 
+    #[must_use] 
     pub fn last(source_text: &str) -> Self {
         let mut line = 1;
         let mut column = 0;
@@ -58,20 +62,24 @@ impl Span {
     }
 
     /// Returns true if this span immediately follows another span (no gap between them).
+    #[must_use] 
     pub fn immediately_follows(&self, other: &Span) -> bool {
         self.start.line == other.end.line && self.start.column == other.end.column
     }
 
     /// Returns true if this span comes before the given token span.
+    #[must_use] 
     pub fn comes_before(&self, other: &Span) -> bool {
         self.end.line < other.start.line
             || (self.end.line == other.start.line && self.end.column <= other.start.column)
     }
 
+    #[must_use] 
     pub fn start(&self) -> LineColumn {
         self.start
     }
 
+    #[must_use] 
     pub fn end(&self) -> LineColumn {
         self.end
     }

@@ -17,6 +17,7 @@ pub struct Command<'a> {
 
 impl<'a> Command<'a> {
     #[inline]
+    #[must_use] 
     pub const fn new(with: Option<With<'a>>, command_type: CommandType<'a>) -> Self {
         Self { with, command_type }
     }

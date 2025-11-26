@@ -8,6 +8,7 @@ pub struct QueryNodePath {
 }
 
 impl QueryNodePath {
+    #[must_use] 
     pub fn new() -> Self {
         Self { segments: vec![] }
     }
@@ -16,11 +17,13 @@ impl QueryNodePath {
         self.segments.push(segment);
     }
 
+    #[must_use] 
     pub fn appended(mut self, segment: Ident) -> Self {
         self.append(segment);
         self
     }
 
+    #[must_use] 
     pub fn to_struct_name(&self, prefix: &str) -> Ident {
         let mut struct_name = prefix.to_string();
         for segment in &self.segments {
@@ -29,6 +32,7 @@ impl QueryNodePath {
         Ident::new(&struct_name, Span::call_site())
     }
 
+    #[must_use] 
     pub fn to_module_name(&self, prefix: &str) -> Ident {
         let mut module_name = prefix.to_string();
         for segment in &self.segments {
@@ -38,6 +42,7 @@ impl QueryNodePath {
         Ident::new(&module_name, Span::call_site())
     }
 
+    #[must_use] 
     pub fn resolve(&self, root_table: &Path) -> Path {
         let mut path = root_table.clone();
         for segment in &self.segments {

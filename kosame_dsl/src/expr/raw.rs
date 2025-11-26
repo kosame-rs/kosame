@@ -20,10 +20,12 @@ pub struct Raw {
 impl Raw {
     pub fn accept<'a>(&'a self, _visitor: &mut impl Visitor<'a>) {}
 
+    #[must_use] 
     pub fn infer_name(&self) -> Option<&Ident> {
         None
     }
 
+    #[must_use] 
     pub fn infer_type(&self, _scope_id: ScopeId) -> Option<InferredType<'_>> {
         None
     }
@@ -32,6 +34,7 @@ impl Raw {
         input.peek(Token![$])
     }
 
+    #[must_use] 
     pub fn span(&self) -> Span {
         self.dollar_token
             .span
@@ -52,7 +55,7 @@ impl Parse for Raw {
 impl ToTokens for Raw {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let string = &self.string;
-        quote! { ::kosame::repr::expr::Raw::new(#string) }.to_tokens(tokens)
+        quote! { ::kosame::repr::expr::Raw::new(#string) }.to_tokens(tokens);
     }
 }
 

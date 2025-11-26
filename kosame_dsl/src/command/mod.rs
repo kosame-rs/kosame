@@ -38,7 +38,7 @@ impl Command {
         visitor.visit_command(self);
         {
             if let Some(inner) = &self.with {
-                inner.accept(visitor)
+                inner.accept(visitor);
             }
             self.command_type.accept(visitor);
         }
@@ -169,6 +169,6 @@ impl ToTokens for CommandType {
                 ::kosame::repr::command::CommandType::Update(#inner)
             },
         }
-        .to_tokens(tokens)
+        .to_tokens(tokens);
     }
 }

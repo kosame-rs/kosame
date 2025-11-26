@@ -38,6 +38,6 @@ impl ToTokens for Returning {
         quote! {
             ::kosame::repr::clause::Returning::new(#fields)
         }
-        .to_tokens(tokens)
+        .to_tokens(tokens);
     }
 }

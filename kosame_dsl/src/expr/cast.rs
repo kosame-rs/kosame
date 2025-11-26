@@ -34,10 +34,12 @@ impl Cast {
         self.value.accept(visitor);
     }
 
+    #[must_use] 
     pub fn infer_name(&self) -> Option<&Ident> {
         self.value.infer_name()
     }
 
+    #[must_use] 
     pub fn infer_type(&self, _scope_id: ScopeId) -> Option<InferredType<'_>> {
         // Difficulty detecting nullability
         // Some(InferredType::DataType(self.data_type.clone()))
@@ -45,6 +47,7 @@ impl Cast {
         None
     }
 
+    #[must_use] 
     pub fn span(&self) -> Span {
         self.cast_kw
             .span

@@ -8,6 +8,7 @@ pub struct Limit<'a> {
 
 impl<'a> Limit<'a> {
     #[inline]
+    #[must_use] 
     pub const fn new(expr: Expr<'a>) -> Self {
         Self { expr }
     }

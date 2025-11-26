@@ -22,6 +22,7 @@ impl TargetTable {
         visitor.visit_table_path(&self.table);
     }
 
+    #[must_use] 
     pub fn name(&self) -> &Ident {
         self.alias
             .as_ref()

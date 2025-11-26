@@ -55,11 +55,11 @@ where
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         for (index, item) in self.pairs().enumerate() {
             item.value().pretty_print(printer);
-            if index != self.len() - 1 {
+            if index == self.len() - 1 {
+                printer.scan_text(Text::new(",", None, TextMode::Break));
+            } else {
                 item.punct().unwrap().pretty_print(printer);
                 printer.scan_break(true);
-            } else {
-                printer.scan_text(Text::new(",", None, TextMode::Break));
             }
         }
     }

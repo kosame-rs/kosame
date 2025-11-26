@@ -34,6 +34,6 @@ impl ToTokens for Select {
         quote! {
             ::kosame::repr::clause::Select::new(#fields)
         }
-        .to_tokens(tokens)
+        .to_tokens(tokens);
     }
 }

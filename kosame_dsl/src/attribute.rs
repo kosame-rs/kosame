@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use proc_macro_error::emit_call_site_error;
 use syn::{
     Ident, LitInt, LitStr, Path, Token, parenthesized,
     parse::{Parse, ParseStream},
@@ -33,7 +32,7 @@ impl CustomMeta {
     pub fn parse_attrs(attrs: &[syn::Attribute], location: MetaLocation) -> syn::Result<Self> {
         let mut result = Self::default();
 
-        for attr in attrs.iter() {
+        for attr in attrs {
             if attr.path().is_ident("kosame") {
                 let list = attr.meta.require_list()?;
                 let items =

@@ -113,7 +113,7 @@ impl Display for ColumnConstraint {
             Self::NotNull(_) => f.write_str("not null")?,
             Self::PrimaryKey(_) => f.write_str("primary key")?,
             Self::Default(_) => f.write_str("default ...")?,
-        };
+        }
         Ok(())
     }
 }

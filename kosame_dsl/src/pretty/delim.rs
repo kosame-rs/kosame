@@ -7,6 +7,7 @@ pub enum Delim<'a> {
 }
 
 impl Delim<'_> {
+    #[must_use] 
     pub fn span(&self) -> (Span, Span) {
         match self {
             Self::Paren(inner) => (inner.span.open().into(), inner.span.close().into()),
@@ -15,6 +16,7 @@ impl Delim<'_> {
         }
     }
 
+    #[must_use] 
     pub fn open_text(&self) -> Text {
         Text::new(
             match self {
@@ -27,6 +29,7 @@ impl Delim<'_> {
         )
     }
 
+    #[must_use] 
     pub fn close_text(&self) -> Text {
         Text::new(
             match self {

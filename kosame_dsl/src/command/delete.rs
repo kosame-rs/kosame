@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
-use crate::{clause::*, keyword, part::TargetTable, quote_option::QuoteOption, visitor::Visitor};
+use crate::{clause::{Where, Returning, FromChain}, keyword, part::TargetTable, quote_option::QuoteOption, visitor::Visitor};
 
 pub struct Delete {
     pub _delete_keyword: keyword::delete,
@@ -21,13 +21,13 @@ impl Delete {
     pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
         self.target_table.accept(visitor);
         if let Some(inner) = &self.using {
-            inner.accept(visitor)
+            inner.accept(visitor);
         }
         if let Some(inner) = &self.r#where {
-            inner.accept(visitor)
+            inner.accept(visitor);
         }
         if let Some(inner) = &self.returning {
-            inner.accept(visitor)
+            inner.accept(visitor);
         }
     }
 }

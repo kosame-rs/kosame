@@ -22,6 +22,7 @@ thread_local! {
 pub struct CorrelationId(u32);
 
 impl CorrelationId {
+    #[must_use] 
     pub fn new() -> Self {
         let id = CORRELATION_ID_AUTO_INCREMENT.get();
         CORRELATION_ID_AUTO_INCREMENT.set(id + 1);
@@ -34,6 +35,7 @@ impl CorrelationId {
         CORRELATION_ID_CONTEXT.with(|cell| cell.replace(previous));
     }
 
+    #[must_use] 
     pub fn of_scope() -> CorrelationId {
         CORRELATION_ID_CONTEXT
             .get()
@@ -41,7 +43,7 @@ impl CorrelationId {
     }
 
     pub fn reset() {
-        CORRELATION_ID_AUTO_INCREMENT.set(0)
+        CORRELATION_ID_AUTO_INCREMENT.set(0);
     }
 }
 
@@ -62,6 +64,7 @@ pub struct Correlations<'a> {
 }
 
 impl<'a> Correlations<'a> {
+    #[must_use] 
     pub fn infer_type(
         &'a self,
         correlation_id: CorrelationId,
@@ -184,36 +187,30 @@ impl ToTokens for Correlation<'_> {
                     pub use #table_path as #id;
                 }
             }
-            Self::Command(command) => match command.fields() {
-                Some(fields) => {
-                    let fields = fields.columns();
-                    let field_strings = fields.iter().map(|field| field.to_string());
-                    quote! {
-                        pub mod #id {
-                            pub mod columns {
-                                #(
-                                    pub mod #fields {
-                                        pub const COLUMN_NAME: &str = #field_strings;
-                                    }
-                                )*
-                            }
+            Self::Command(command) => if let Some(fields) = command.fields() {
+                let fields = fields.columns();
+                let field_strings = fields.iter().map(std::string::ToString::to_string);
+                quote! {
+                    pub mod #id {
+                        pub mod columns {
+                            #(
+                                pub mod #fields {
+                                    pub const COLUMN_NAME: &str = #field_strings;
+                                }
+                            )*
                         }
                     }
                 }
-                None => quote! { pub mod #id {} },
-            },
-            Self::WithItem(with_item) => match &with_item.alias.columns {
-                Some(_) => {
-                    unimplemented!();
-                }
-                None => {
-                    let source_id = with_item.command.correlation_id;
-                    let alias = with_item.alias.name.to_string();
-                    quote! {
-                        pub mod #id {
-                            pub const TABLE_NAME: &str = #alias;
-                            pub use super::#source_id::columns;
-                        }
+            } else { quote! { pub mod #id {} } },
+            Self::WithItem(with_item) => if let Some(_) = &with_item.alias.columns {
+                unimplemented!();
+            } else {
+                let source_id = with_item.command.correlation_id;
+                let alias = with_item.alias.name.to_string();
+                quote! {
+                    pub mod #id {
+                        pub const TABLE_NAME: &str = #alias;
+                        pub use super::#source_id::columns;
                     }
                 }
             },
@@ -222,33 +219,27 @@ impl ToTokens for Correlation<'_> {
                     table_path, alias, ..
                 } => {
                     let source_id = table_path.correlation_id;
-                    match alias {
-                        Some(alias) => {
-                            let alias = alias.name.to_string();
-                            quote! {
-                                pub mod #id {
-                                    pub const TABLE_NAME: &str = #alias;
-                                    pub use super::#source_id::columns;
-                                }
+                    if let Some(alias) = alias {
+                        let alias = alias.name.to_string();
+                        quote! {
+                            pub mod #id {
+                                pub const TABLE_NAME: &str = #alias;
+                                pub use super::#source_id::columns;
                             }
                         }
-                        None => quote! { pub use #source_id as #id; },
-                    }
+                    } else { quote! { pub use #source_id as #id; } }
                 }
                 FromItem::Subquery { command, alias, .. } => {
                     let source_id = command.correlation_id;
-                    match alias {
-                        Some(alias) => {
-                            let alias = alias.name.to_string();
-                            quote! {
-                                pub mod #id {
-                                    pub const TABLE_NAME: &str = #alias;
-                                    pub use super::#source_id::columns;
-                                }
+                    if let Some(alias) = alias {
+                        let alias = alias.name.to_string();
+                        quote! {
+                            pub mod #id {
+                                pub const TABLE_NAME: &str = #alias;
+                                pub use super::#source_id::columns;
                             }
                         }
-                        None => quote! { pub use #source_id as #id; },
-                    }
+                    } else { quote! { pub use #source_id as #id; } }
                 }
             },
             Self::QueryNodePath {
@@ -333,7 +324,7 @@ impl<'a> From<&'a Query> for Correlations<'a> {
             node: &'a query::Node,
             node_path: QueryNodePath,
         ) {
-            for field in node.fields.iter() {
+            for field in &node.fields {
                 if let query::Field::Relation { node, name, .. } = field {
                     inner(
                         correlations,

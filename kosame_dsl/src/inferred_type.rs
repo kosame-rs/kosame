@@ -26,6 +26,7 @@ pub enum InferredType<'a> {
     },
 }
 
+#[must_use] 
 pub fn resolve_type(
     correlations: &Correlations<'_>,
     scopes: &Scopes<'_>,
@@ -54,14 +55,11 @@ pub fn resolve_type(
             }
             InferredType::TableColumn { table_path, column } => {
                 let table_path = table_path.as_path().to_call_site(1);
-                match combined_nullable {
-                    true => {
-                        return Some(
-                            parse_quote!(::core::option::Option<#table_path::columns::#column::TypeNotNull>),
-                        );
-                    }
-                    false => return Some(parse_quote!(#table_path::columns::#column::Type)),
-                }
+                if combined_nullable {
+                    return Some(
+                        parse_quote!(::core::option::Option<#table_path::columns::#column::TypeNotNull>),
+                    );
+                }                return Some(parse_quote!(#table_path::columns::#column::Type))
             }
         }
     }

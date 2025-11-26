@@ -63,7 +63,7 @@ impl Parse for With {
 impl ToTokens for With {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let items = self.items.iter();
-        quote! { ::kosame::repr::clause::With::new(&[#(#items),*]) }.to_tokens(tokens)
+        quote! { ::kosame::repr::clause::With::new(&[#(#items),*]) }.to_tokens(tokens);
     }
 }
 
@@ -80,6 +80,7 @@ impl WithItem {
         self.command.accept(visitor);
     }
 
+    #[must_use] 
     pub fn columns(&self) -> Vec<&Ident> {
         match &self.alias.columns {
             Some(columns) => columns.columns.iter().collect(),

@@ -28,7 +28,7 @@ where
     }
 }
 
-impl<'a, D> Write for Formatter<'a, D> {
+impl<D> Write for Formatter<'_, D> {
     fn write_str(&mut self, s: &str) -> std::fmt::Result {
         self.buf.write_str(s)
     }

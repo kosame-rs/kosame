@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
-use crate::{clause::*, keyword, part::TargetTable, quote_option::QuoteOption, visitor::Visitor};
+use crate::{clause::{Values, Returning}, keyword, part::TargetTable, quote_option::QuoteOption, visitor::Visitor};
 
 pub struct Insert {
     pub _insert_keyword: keyword::insert,
@@ -21,7 +21,7 @@ impl Insert {
         self.target_table.accept(visitor);
         self.values.accept(visitor);
         if let Some(inner) = &self.returning {
-            inner.accept(visitor)
+            inner.accept(visitor);
         }
     }
 }

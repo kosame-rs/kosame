@@ -104,7 +104,7 @@ impl<'a> Printer<'a> {
     pub fn scan_break(&mut self, space: bool) {
         self.last_break = Some(self.tokens.len());
         self.tokens.push_back(Token::Break { space, len: 0 });
-        let len = if space { 1 } else { 0 };
+        let len = usize::from(space);
         self.push_len(len);
     }
 
@@ -158,13 +158,11 @@ impl<'a> Printer<'a> {
         let group_break = self
             .print_frames
             .last()
-            .map(|frame| frame.group_break)
-            .unwrap_or(false);
+            .is_some_and(|frame| frame.group_break);
         let content_break = self
             .print_frames
             .last()
-            .map(|frame| frame.content_break)
-            .unwrap_or(false);
+            .is_some_and(|frame| frame.content_break);
 
         match &token {
             Token::Text(text) => {
@@ -208,7 +206,7 @@ impl<'a> Printer<'a> {
                     self.print_break();
                 }
             }
-        };
+        }
     }
 
     /// Forces the current print frame to break.
@@ -237,6 +235,7 @@ impl<'a> Printer<'a> {
         }
     }
 
+    #[must_use] 
     pub fn eof(mut self) -> String {
         while !self.trivia.is_empty() {
             self.scan_next_trivia();

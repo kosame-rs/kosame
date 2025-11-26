@@ -20,10 +20,12 @@ pub struct ColumnRef {
 impl ColumnRef {
     pub fn accept<'a>(&'a self, _visitor: &mut impl Visitor<'a>) {}
 
+    #[must_use] 
     pub fn infer_name(&self) -> Option<&Ident> {
         Some(&self.name)
     }
 
+    #[must_use] 
     pub fn infer_type(&self, scope_id: ScopeId) -> Option<InferredType<'_>> {
         Some(InferredType::Scope {
             scope_id,
@@ -35,6 +37,7 @@ impl ColumnRef {
         })
     }
 
+    #[must_use] 
     pub fn span(&self) -> Span {
         if let Some(correlation) = &self.correlation {
             correlation
@@ -89,7 +92,7 @@ impl ToTokens for ColumnRef {
                         scopes::#scope_id::tables::#correlation::columns::#name::COLUMN_NAME
                     )
                 }
-                .to_tokens(tokens)
+                .to_tokens(tokens);
             }
             None => quote! {
                 ::kosame::repr::expr::ColumnRef::new(

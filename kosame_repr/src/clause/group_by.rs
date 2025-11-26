@@ -8,6 +8,7 @@ pub struct GroupBy<'a> {
 
 impl<'a> GroupBy<'a> {
     #[inline]
+    #[must_use] 
     pub const fn new(items: &'a [GroupByItem]) -> Self {
         Self { items }
     }
@@ -31,6 +32,7 @@ pub struct GroupByItem<'a> {
 
 impl<'a> GroupByItem<'a> {
     #[inline]
+    #[must_use] 
     pub const fn new(expr: Expr<'a>) -> Self {
         Self { expr }
     }

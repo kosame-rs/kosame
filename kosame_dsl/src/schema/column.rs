@@ -62,10 +62,7 @@ impl ToTokens for Column {
 
         let data_type = &self.data_type;
         let data_type_string = data_type.name.to_string();
-        let rust_type_not_null = match meta.type_override {
-            Some(type_override) => type_override.value.to_call_site(3).to_token_stream(),
-            None => quote! { #data_type },
-        };
+        let rust_type_not_null = if let Some(type_override) = meta.type_override { type_override.value.to_call_site(3).to_token_stream() } else { quote! { #data_type } };
         let rust_type_nullable = quote! { Option<#data_type> };
         let rust_type_auto =
             if self.constraints.not_null().is_none() && self.constraints.primary_key().is_none() {

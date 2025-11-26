@@ -23,7 +23,7 @@ impl Parse for ColumnList {
 
 impl ToTokens for ColumnList {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let columns = self.columns.iter().map(|column| column.to_string());
+        let columns = self.columns.iter().map(std::string::ToString::to_string);
         quote! {
             ::kosame::repr::part::ColumnList::new(&[#(#columns),*])
         }

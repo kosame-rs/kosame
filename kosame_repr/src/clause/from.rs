@@ -8,11 +8,13 @@ pub struct From<'a> {
 
 impl<'a> From<'a> {
     #[inline]
+    #[must_use] 
     pub const fn new(chain: FromChain<'a>) -> Self {
         Self { chain }
     }
 
     #[inline]
+    #[must_use] 
     pub const fn chain(&self) -> &FromChain<'a> {
         &self.chain
     }
@@ -36,6 +38,7 @@ pub struct FromChain<'a> {
 
 impl<'a> FromChain<'a> {
     #[inline]
+    #[must_use] 
     pub const fn new(start: FromItem<'a>, combinators: &'a [FromCombinator<'a>]) -> Self {
         Self { start, combinators }
     }
@@ -47,7 +50,7 @@ impl kosame_sql::FmtSql for FromChain<'_> {
         D: kosame_sql::Dialect,
     {
         self.start.fmt_sql(formatter)?;
-        for combinator in self.combinators.iter() {
+        for combinator in self.combinators {
             combinator.fmt_sql(formatter)?;
         }
         Ok(())

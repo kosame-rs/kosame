@@ -8,10 +8,7 @@ where
     T: ToTokens,
 {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        match &self.0 {
-            Some(inner) => quote! { ::core::option::Option::Some(#inner) },
-            None => quote! { ::core::option::Option::None },
-        }
+        if let Some(inner) = &self.0 { quote! { ::core::option::Option::Some(#inner) } } else { quote! { ::core::option::Option::None } }
         .to_tokens(tokens);
     }
 }

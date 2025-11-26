@@ -24,6 +24,7 @@ pub struct Statement {
 }
 
 impl Statement {
+    #[must_use] 
     pub fn _custom_meta(&self) -> CustomMeta {
         CustomMeta::parse_attrs(&self._inner_attrs, MetaLocation::StatementInner)
             .expect("custom meta should be checked during parsing")
@@ -128,22 +129,19 @@ impl ToTokens for Statement {
 
         let command = &self.command;
         let fields = command.fields();
-        let row = match fields {
-            Some(fields) => {
-                let row = Row::new(
-                    command.attrs.to_owned(),
-                    Ident::new("Row", Span::call_site()),
-                    fields
-                        .iter()
-                        .filter_map(|field| {
-                            field.to_row_field(&correlations, &scopes, command.correlation_id)
-                        })
-                        .collect(),
-                );
-                quote! { #row }
-            }
-            None => quote! { pub enum Row {} },
-        };
+        let row = if let Some(fields) = fields {
+            let row = Row::new(
+                command.attrs.clone(),
+                Ident::new("Row", Span::call_site()),
+                fields
+                    .iter()
+                    .filter_map(|field| {
+                        field.to_row_field(&correlations, &scopes, command.correlation_id)
+                    })
+                    .collect(),
+            );
+            quote! { #row }
+        } else { quote! { pub enum Row {} } };
 
         let lifetime = (!bind_params.is_empty()).then_some(quote! { <'a> });
 

@@ -5,7 +5,7 @@ use kosame_sql::FmtSql;
 
 use crate::driver::Connection;
 
-use super::*;
+use super::{Query, Runner, Params, Node, Field};
 
 pub struct RecordArrayRunner {}
 

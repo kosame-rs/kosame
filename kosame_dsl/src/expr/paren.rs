@@ -23,14 +23,17 @@ pub struct Paren {
 impl Paren {
     pub fn accept<'a>(&'a self, _visitor: &mut impl Visitor<'a>) {}
 
+    #[must_use] 
     pub fn span(&self) -> Span {
         self.paren.span.span()
     }
 
+    #[must_use] 
     pub fn infer_name(&self) -> Option<&Ident> {
         self.expr.infer_name()
     }
 
+    #[must_use] 
     pub fn infer_type(&self, scope_id: ScopeId) -> Option<InferredType<'_>> {
         self.expr.infer_type(scope_id)
     }

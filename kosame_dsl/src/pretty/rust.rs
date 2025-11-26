@@ -11,7 +11,7 @@ impl PrettyPrint for syn::Attribute {
 
         self.pound_token.pretty_print(printer);
         if let syn::AttrStyle::Inner(not) = &self.style {
-            not.pretty_print(printer)
+            not.pretty_print(printer);
         }
         if let Some(source_text) = self.bracket_token.span.span().source_text() {
             printer.scan_text(source_text);

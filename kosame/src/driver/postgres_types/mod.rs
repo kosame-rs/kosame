@@ -45,9 +45,7 @@ where
         ty: &Type,
         raw: &'a [u8],
     ) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
-        if ty.name() != "_record" {
-            panic!("expected _record type");
-        };
+        assert!(ty.name() == "_record", "expected _record type");
 
         let array = postgres_protocol::types::array_from_sql(raw)?;
         if array.dimensions().count()? > 1 {
@@ -63,9 +61,7 @@ where
     }
 
     fn from_sql_null(ty: &Type) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
-        if ty.name() != "_record" {
-            panic!("expected _record type");
-        };
+        assert!(ty.name() == "_record", "expected _record type");
         Ok(Self::new(vec![]))
     }
 }
@@ -82,9 +78,7 @@ where
         ty: &Type,
         raw: &'a [u8],
     ) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
-        if ty.name() != "_record" {
-            panic!("expected _record type");
-        };
+        assert!(ty.name() == "_record", "expected _record type");
 
         let array = postgres_protocol::types::array_from_sql(raw)?;
         let mut dimensions = array.dimensions();
@@ -107,9 +101,7 @@ where
     }
 
     fn from_sql_null(ty: &Type) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
-        if ty.name() != "_record" {
-            panic!("expected _record type");
-        };
+        assert!(ty.name() == "_record", "expected _record type");
         Ok(Self::new(None))
     }
 }
@@ -124,7 +116,7 @@ where
     let oid = postgres_protocol::types::oid_from_sql(&buf[*offset..(*offset + 4)])? as u32;
     *offset += 4;
     let Some(ty) = ::postgres_types::Type::from_oid(oid) else {
-        panic!("unknown oid {}", oid);
+        panic!("unknown oid {oid}");
     };
     let length = postgres_protocol::types::int4_from_sql(&buf[*offset..(*offset + 4)])?;
     *offset += 4;

@@ -29,18 +29,22 @@ impl Text {
         }
     }
 
+    #[must_use] 
     pub fn span(&self) -> Option<Span> {
         self.span
     }
 
+    #[must_use] 
     pub fn mode(&self) -> TextMode {
         self.mode
     }
 
+    #[must_use] 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
+    #[must_use] 
     pub fn len(&self) -> usize {
         self.string.len()
     }
@@ -50,7 +54,7 @@ impl Deref for Text {
     type Target = str;
 
     fn deref(&self) -> &Self::Target {
-        self.string.deref()
+        &*self.string
     }
 }
 

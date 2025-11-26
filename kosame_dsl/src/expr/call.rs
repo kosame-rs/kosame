@@ -25,20 +25,23 @@ impl Call {
         input.peek(Ident) && input.peek2(syn::token::Paren)
     }
 
+    #[must_use] 
     pub fn infer_name(&self) -> Option<&Ident> {
         Some(&self.function)
     }
 
+    #[must_use] 
     pub fn infer_type(&self, _scope_id: ScopeId) -> Option<InferredType<'_>> {
         None
     }
 
     pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
-        for param in self.params.iter() {
+        for param in &self.params {
             param.accept(visitor);
         }
     }
 
+    #[must_use] 
     pub fn span(&self) -> Span {
         self.function
             .span()
@@ -77,7 +80,7 @@ impl ToTokens for Call {
                 #keyword,
             )
         }
-        .to_tokens(tokens)
+        .to_tokens(tokens);
     }
 }
 

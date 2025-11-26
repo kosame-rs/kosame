@@ -7,7 +7,7 @@ use crate::{
 };
 
 use super::star::Star;
-use super::*;
+use super::{CorrelationId, ScopeId, Field, Query, QueryNodePath, PathExt, Ident};
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, quote};
 use syn::{
@@ -39,16 +39,16 @@ impl Node {
         }
 
         if let Some(inner) = self.r#where.as_ref() {
-            inner.accept(visitor)
+            inner.accept(visitor);
         }
         if let Some(inner) = self.order_by.as_ref() {
-            inner.accept(visitor)
+            inner.accept(visitor);
         }
         if let Some(inner) = self.limit.as_ref() {
-            inner.accept(visitor)
+            inner.accept(visitor);
         }
         if let Some(inner) = self.offset.as_ref() {
-            inner.accept(visitor)
+            inner.accept(visitor);
         }
     }
 
@@ -119,7 +119,7 @@ impl Node {
         let table_path = table_path.to_call_site(2);
         let mut module_rows = vec![];
 
-        for field in self.fields.iter() {
+        for field in &self.fields {
             let name = match field {
                 Field::Column { name, .. } => name,
                 Field::Relation { name, .. } => name,
@@ -263,13 +263,12 @@ impl Parse for Node {
 
             let name_string = field
                 .alias()
-                .map(|alias| &alias.ident)
-                .unwrap_or(name)
+                .map_or(name, |alias| &alias.ident)
                 .to_string();
             if existing.contains(&name_string) {
                 return Err(syn::Error::new(
                     field.span(),
-                    format!("duplicate field `{}`", name_string),
+                    format!("duplicate field `{name_string}`"),
                 ));
             }
             existing.push(name_string);

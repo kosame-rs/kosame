@@ -65,10 +65,12 @@ impl FromChain {
         }
     }
 
+    #[must_use] 
     pub fn len(&self) -> usize {
         self.combinators.len() + 1
     }
 
+    #[must_use] 
     pub fn nullables(&self) -> Vec<bool> {
         let mut nullables = vec![false; self.len()];
         {
@@ -148,6 +150,7 @@ impl FromItem {
         }
     }
 
+    #[must_use] 
     pub fn name(&self) -> Option<&Ident> {
         match self {
             Self::Table {
@@ -164,6 +167,7 @@ impl FromItem {
         }
     }
 
+    #[must_use] 
     pub fn correlation_id(&self) -> CorrelationId {
         match self {
             Self::Table { correlation_id, .. } => *correlation_id,
@@ -171,6 +175,7 @@ impl FromItem {
         }
     }
 
+    #[must_use] 
     pub fn columns<'a>(&'a self, with_item: Option<&'a WithItem>) -> Vec<&'a Ident> {
         match self {
             Self::Table { alias, .. } => match with_item {
@@ -229,14 +234,12 @@ impl ToTokens for FromItem {
             Self::Table {
                 table_path, alias, ..
             } => {
-                let table = alias.as_ref().map(|alias| &alias.name).unwrap_or(
-                    &table_path
+                let table = alias.as_ref().map_or(&table_path
                         .as_path()
                         .segments
                         .last()
                         .expect("paths cannot be empty")
-                        .ident,
-                );
+                        .ident, |alias| &alias.name);
                 let alias = QuoteOption::from(alias);
                 let scope_id = ScopeId::of_scope();
                 quote! {
@@ -393,6 +396,7 @@ impl FromCombinator {
         Ok(result)
     }
 
+    #[must_use] 
     pub fn right(&self) -> &FromItem {
         match self {
             Self::Join { right, .. } => right,

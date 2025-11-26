@@ -36,6 +36,7 @@ pub enum Field {
 }
 
 impl Field {
+    #[must_use] 
     pub fn name(&self) -> &Ident {
         match self {
             Self::Column { name, .. } => name,
@@ -44,6 +45,7 @@ impl Field {
         }
     }
 
+    #[must_use] 
     pub fn alias(&self) -> Option<&Alias> {
         match self {
             Self::Column { alias, .. } => alias.as_ref(),
@@ -52,6 +54,7 @@ impl Field {
         }
     }
 
+    #[must_use] 
     pub fn span(&self) -> Span {
         match self {
             Self::Column { name, .. } => name.span(),
@@ -68,6 +71,7 @@ impl Field {
         matches!(self, Self::Column { .. })
     }
 
+    #[must_use] 
     pub fn to_row_field(&self, table_path: &Path, node_path: &QueryNodePath) -> RowField {
         match self {
             Field::Column {
@@ -79,14 +83,11 @@ impl Field {
             } => {
                 let alias_or_name = alias
                     .as_ref()
-                    .map(|alias| &alias.ident)
-                    .unwrap_or(name)
+                    .map_or(name, |alias| &alias.ident)
                     .clone();
 
                 let type_override_or_default = type_override
-                    .as_ref()
-                    .map(|type_override| type_override.type_path.to_call_site(1))
-                    .unwrap_or_else(|| parse_quote! { #table_path::columns::#name::Type });
+                    .as_ref().map_or_else(|| parse_quote! { #table_path::columns::#name::Type }, |type_override| type_override.type_path.to_call_site(1));
 
                 RowField::new(
                     attrs.clone(),
@@ -99,8 +100,7 @@ impl Field {
             } => {
                 let alias_or_name = alias
                     .as_ref()
-                    .map(|alias| &alias.ident)
-                    .unwrap_or(name)
+                    .map_or(name, |alias| &alias.ident)
                     .clone();
 
                 let mut node_path = node_path.clone();

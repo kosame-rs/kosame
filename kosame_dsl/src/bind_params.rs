@@ -8,12 +8,14 @@ pub struct BindParamsBuilder<'a> {
 }
 
 impl BindParamsBuilder<'_> {
+    #[must_use] 
     pub fn new() -> Self {
         Self { params: Vec::new() }
     }
 }
 
 impl<'a> BindParamsBuilder<'a> {
+    #[must_use] 
     pub fn build(self) -> BindParams<'a> {
         BindParams::new(self.params)
     }
@@ -36,6 +38,7 @@ impl<'a> BindParams<'a> {
         Self { params }
     }
 
+    #[must_use] 
     pub fn is_empty(&self) -> bool {
         self.params.is_empty()
     }
@@ -94,6 +97,7 @@ pub struct BindParamsClosure<'a> {
 }
 
 impl<'a> BindParamsClosure<'a> {
+    #[must_use] 
     pub fn new(module_name: &'a Ident, bind_params: &'a BindParams<'a>) -> Self {
         Self {
             module_name,

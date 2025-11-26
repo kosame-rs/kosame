@@ -49,6 +49,7 @@ pub struct Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
+    #[must_use] 
     pub fn new(input: &'a str) -> Self {
         Self {
             input,
@@ -288,9 +289,8 @@ impl<'a> Lexer<'a> {
                             self.bump();
                         } // consume #
                         return;
-                    } else {
-                        self.bump(); // Just a quote inside string
                     }
+                    self.bump(); // Just a quote inside string
                 }
                 Some(_) => {
                     self.bump();
@@ -355,7 +355,7 @@ impl<'a> Iterator for Lexer<'a> {
                 'r' => {
                     // Could be r" or r# or identifier 'rust'
                     match self.peek_second() {
-                        Some('"') | Some('#') => {
+                        Some('"' | '#') => {
                             self.bump(); // consume r
                             self.skip_raw_string();
                         }
