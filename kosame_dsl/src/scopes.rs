@@ -63,13 +63,14 @@ pub struct Scopes<'a> {
     scopes: Vec<Scope<'a>>,
 }
 
-impl<'a> Scopes<'a> {
-    pub fn infer_type<'b>(
+impl Scopes<'_> {
+    #[must_use]
+    pub fn infer_type<'a>(
         &self,
         scope_id: ScopeId,
         table: Option<&Ident>,
-        column: &'b Ident,
-    ) -> Option<InferredType<'b>> {
+        column: &'a Ident,
+    ) -> Option<InferredType<'a>> {
         let scope = self
             .scopes
             .iter()
@@ -164,7 +165,7 @@ pub enum ScopeItem<'a> {
     },
 }
 
-impl<'a> ScopeItem<'a> {
+impl ScopeItem<'_> {
     pub fn correlation_id(&self) -> CorrelationId {
         match self {
             Self::TargetTable { target_table, .. } => target_table.table.correlation_id,

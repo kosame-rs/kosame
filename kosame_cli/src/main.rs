@@ -24,7 +24,7 @@ fn main() {
         Root::Fmt(inner) => inner.run(),
     };
     if let Err(error) = result {
-        eprintln!("{}", error);
+        eprintln!("{error}");
         std::process::exit(1);
     }
 }

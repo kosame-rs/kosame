@@ -13,13 +13,10 @@ pub struct Fmt {
 
 impl Fmt {
     pub fn run(&self) -> anyhow::Result<()> {
-        let input = match &self.file {
-            Some(file) => std::fs::read_to_string(file)?,
-            None => {
-                let mut buf = String::new();
-                std::io::stdin().read_to_string(&mut buf)?;
-                buf
-            }
+        let input = if let Some(file) = &self.file { std::fs::read_to_string(file)? } else {
+            let mut buf = String::new();
+            std::io::stdin().read_to_string(&mut buf)?;
+            buf
         };
         let mut output = String::new();
 
@@ -84,7 +81,7 @@ impl Fmt {
                         self.errors.push(error);
                     }
                     None => {}
-                };
+                }
             }
         }
 
@@ -107,8 +104,8 @@ impl Fmt {
 
         match &self.file {
             Some(file) => std::fs::write(file, output).unwrap(),
-            None => print!("{}", output),
-        };
+            None => print!("{output}"),
+        }
 
         Ok(())
     }
