@@ -137,11 +137,23 @@ impl<'a> Printer<'a> {
         self.tokens.push_back(Token::End);
     }
 
+    fn line_dirt(&self) -> bool {
+        if let Some(last) = self.output.chars().last() {
+            return last != '\n';
+        }
+        true
+    }
+
     fn print_break(&mut self) {
         self.output.push('\n');
-        self.output
-            .push_str(&" ".repeat((self.indent * INDENT).try_into().unwrap()));
-        self.space = (MARGIN - self.indent * INDENT).max(MIN_SPACE);
+    }
+
+    fn print_indent(&mut self) {
+        if !self.line_dirt() {
+            self.output
+                .push_str(&" ".repeat((self.indent * INDENT).try_into().unwrap()));
+            self.space = (MARGIN - self.indent * INDENT).max(MIN_SPACE);
+        }
     }
 
     fn print_first(&mut self) {
@@ -158,6 +170,7 @@ impl<'a> Printer<'a> {
 
         match &token {
             Token::Text { string, mode } => {
+                self.print_indent();
                 let should_print = matches!(
                     (mode, content_break),
                     (TextMode::Always, _) | (TextMode::Break, true) | (TextMode::NoBreak, false)
@@ -176,6 +189,7 @@ impl<'a> Printer<'a> {
                 }
             }
             Token::Begin { mode, len, .. } => {
+                self.print_indent();
                 let group_break = *len >= self.space && *mode == BreakMode::Consistent;
                 let content_break = *len >= self.space;
                 self.print_frames.push(PrintFrame {

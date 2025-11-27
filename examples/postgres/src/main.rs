@@ -20,16 +20,16 @@ mod schema {
         );
     }
 
-    // pg_table! {
-    //     // Kosame uses the familiar SQL syntax to declare tables.
-    //     create table kek (
-    //         id int primary key not null not null not null not/*kek*/null not null not null not null not null not null not null not null not null not null not null not null not null not
-    //         //pip
-    //         null not null not null not null default (3 + 4 + (5+ 6 + 8 + 9 + 10 + now(5))),
-    //     );
-    //
-    //     pip: (kek, schnebul, kek,kek,kek,kek,schnebul,kek,kek,kek,kek,kek,kek,kek,            ) => mflasdf (lel, lel, le, le, le, le, le, le, le, le, le, le, le, lelllllllllll),
-    // }
+    pg_table! {
+        // Kosame uses the familiar SQL syntax to declare tables.
+        create table kek (
+            id int primary key not null not null not null not/*kek*/null not null not null not null not null not null not null not null not null not null not null not null not null not
+            //pip
+            null not null not null not null default (3 + 4 + (5+ 6 + 8 + 9 + 10 + now(5))),
+        );
+
+        pip: (kek, schnebul, kek,kek,kek,kek,schnebul,kek,kek,kek,kek,kek,kek,kek,            ) => mflasdf (lel, lel, le, le, le, le, le, le, le, le, le, le, le, lelllllllllll),
+    }
 
     pg_table! {
         // Kosame uses the familiar SQL syntax to declare tables.
