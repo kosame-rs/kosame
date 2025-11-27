@@ -105,8 +105,8 @@ impl<'a> Printer<'a> {
 
     pub fn scan_break(&mut self, space: bool) {
         self.last_break = Some(self.tokens.len());
-        self.tokens.push_back(Token::Break { space, len: 0 });
         let len = isize::from(space);
+        self.tokens.push_back(Token::Break { space, len });
         self.push_len(len);
     }
 
@@ -141,7 +141,7 @@ impl<'a> Printer<'a> {
         self.output.push('\n');
         self.output
             .push_str(&" ".repeat((self.indent * INDENT).try_into().unwrap()));
-        self.space = MARGIN - (self.indent * INDENT).max(MIN_SPACE);
+        self.space = (MARGIN - self.indent * INDENT).max(MIN_SPACE);
     }
 
     fn print_first(&mut self) {
@@ -183,20 +183,10 @@ impl<'a> Printer<'a> {
                     content_break,
                 });
                 self.indent += 1;
-                if group_break {
-                    self.print_break();
-                }
             }
             Token::End => {
-                let print_frame = self
-                    .print_frames
-                    .pop()
-                    .expect("emitted end token without begin");
+                self.print_frames.pop();
                 self.indent -= 1;
-
-                if print_frame.group_break {
-                    self.print_break();
-                }
             }
         }
     }

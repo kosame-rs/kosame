@@ -6,15 +6,21 @@ pub trait Delim {
     fn pretty_print(
         &self,
         printer: &mut Printer<'_>,
-        break_mode: BreakMode,
+        break_mode: Option<BreakMode>,
         f: impl FnOnce(&mut Printer<'_>),
     ) {
         printer.flush_trivia(self.span().open().into());
         self.open_text().pretty_print(printer);
-        printer.scan_begin(break_mode);
+        if let Some(break_mode) = break_mode {
+            printer.scan_begin(break_mode);
+        }
+        printer.scan_break(false);
         f(printer);
         printer.flush_trivia(self.span().close().into());
-        printer.scan_end();
+        printer.scan_break(false);
+        if break_mode.is_some() {
+            printer.scan_end();
+        }
         self.close_text().pretty_print(printer);
     }
 

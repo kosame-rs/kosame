@@ -55,19 +55,19 @@ where
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         match self {
             Self::Parenthesized { paren, inner } => {
-                paren.pretty_print(printer, BreakMode::Consistent, |printer| {
+                paren.pretty_print(printer, Some(BreakMode::Consistent), |printer| {
                     inner.pretty_print(printer);
                 });
             }
             Self::Braced { brace, inner } => {
-                brace.pretty_print(printer, BreakMode::Consistent, |printer| {
+                brace.pretty_print(printer, Some(BreakMode::Consistent), |printer| {
                     printer.scan_text(" ".into(), super::TextMode::NoBreak);
                     inner.pretty_print(printer);
                     printer.scan_text(" ".into(), super::TextMode::NoBreak);
                 });
             }
             Self::Bracketed { bracket, inner } => {
-                bracket.pretty_print(printer, BreakMode::Consistent, |printer| {
+                bracket.pretty_print(printer, Some(BreakMode::Consistent), |printer| {
                     inner.pretty_print(printer);
                 });
             }

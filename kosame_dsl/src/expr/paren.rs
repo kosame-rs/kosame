@@ -60,7 +60,7 @@ impl ToTokens for Paren {
 impl PrettyPrint for Paren {
     fn pretty_print(&self, printer: &mut Printer) {
         self.paren
-            .pretty_print(printer, BreakMode::Inconsistent, |printer| {
+            .pretty_print(printer, Some(BreakMode::Inconsistent), |printer| {
                 self.expr.pretty_print(printer);
             });
     }

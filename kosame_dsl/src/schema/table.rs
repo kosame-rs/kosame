@@ -203,7 +203,7 @@ impl PrettyPrint for Table {
         self.table_kw.pretty_print(printer);
         " ".pretty_print(printer);
         self.paren
-            .pretty_print(printer, BreakMode::Consistent, |printer| {
+            .pretty_print(printer, Some(BreakMode::Consistent), |printer| {
                 self.columns.pretty_print(printer);
             });
         self.semi_token.pretty_print(printer);

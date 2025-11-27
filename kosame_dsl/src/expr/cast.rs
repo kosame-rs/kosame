@@ -84,7 +84,7 @@ impl PrettyPrint for Cast {
     fn pretty_print(&self, printer: &mut Printer) {
         self.cast_kw.pretty_print(printer);
         self.paren
-            .pretty_print(printer, BreakMode::Inconsistent, |printer| {
+            .pretty_print(printer, Some(BreakMode::Inconsistent), |printer| {
                 self.value.pretty_print(printer);
                 printer.scan_break(true);
                 self.as_token.pretty_print(printer);

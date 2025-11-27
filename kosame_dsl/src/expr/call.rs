@@ -88,7 +88,7 @@ impl PrettyPrint for Call {
     fn pretty_print(&self, printer: &mut Printer) {
         self.function.pretty_print(printer);
         self.paren
-            .pretty_print(printer, BreakMode::Consistent, |printer| {
+            .pretty_print(printer, Some(BreakMode::Consistent), |printer| {
                 self.params.pretty_print(printer);
             });
     }
