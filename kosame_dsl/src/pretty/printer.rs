@@ -59,6 +59,7 @@ pub struct Printer<'a> {
     begin_stack: Vec<usize>,
     print_frames: Vec<PrintFrame>,
     cursor: LineColumn,
+    pending_break: bool,
 }
 
 impl<'a> Printer<'a> {
@@ -74,6 +75,7 @@ impl<'a> Printer<'a> {
             begin_stack: Vec::new(),
             print_frames: Vec::new(),
             cursor: LineColumn { line: 1, column: 0 },
+            pending_break: false,
         }
     }
 
@@ -197,6 +199,7 @@ impl<'a> Printer<'a> {
 
     fn print_break(&mut self) {
         self.output.push('\n');
+        self.pending_break = false;
     }
 
     fn print_indent(&mut self) {
@@ -221,6 +224,9 @@ impl<'a> Printer<'a> {
 
         match &token {
             Token::Text { string, mode } => {
+                if self.pending_break {
+                    self.print_break();
+                }
                 self.print_indent();
                 let should_print = matches!(
                     (mode, content_break),
@@ -243,7 +249,7 @@ impl<'a> Printer<'a> {
                 self.output.push_str(string);
                 self.space -= isize::try_from(string.len()).unwrap();
                 if *force_break {
-                    self.print_break();
+                    self.pending_break = true;
                 }
             }
             Token::Break { space, len } => {
@@ -286,9 +292,11 @@ impl<'a> Printer<'a> {
             match trivia.kind {
                 TriviaKind::BlockComment => {
                     self.scan_comment(trivia.content, false);
+                    self.scan_break(false);
                 }
                 TriviaKind::LineComment => {
                     self.scan_comment(trivia.content, true);
+                    self.scan_break(false);
                 }
                 TriviaKind::Whitespace => {}
             }
