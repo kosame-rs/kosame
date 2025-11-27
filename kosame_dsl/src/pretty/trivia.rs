@@ -16,6 +16,13 @@ pub struct Trivia<'a> {
     pub kind: TriviaKind,
 }
 
+impl Trivia<'_> {
+    #[must_use]
+    pub fn newlines(&self) -> usize {
+        self.content.chars().filter(|item| *item == '\n').count()
+    }
+}
+
 impl PrettyPrint for Trivia<'_> {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         match self.kind {
@@ -29,7 +36,7 @@ impl PrettyPrint for Trivia<'_> {
                 printer.scan_break(true);
             }
             TriviaKind::Whitespace => {
-                if self.content.chars().filter(|item| *item == '\n').count() >= 2 {
+                if self.newlines() >= 2 {
                     printer.scan_break(false);
                 }
             }
