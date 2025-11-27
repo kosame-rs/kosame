@@ -1,8 +1,17 @@
-use super::{PrettyPrint, RingBuffer, Span, Text, TextMode, Trivia};
+use std::borrow::Cow;
+
+use super::{PrettyPrint, RingBuffer, Span, Trivia};
 
 pub const MARGIN: isize = 89;
 pub const INDENT: isize = 4;
 pub const MIN_SPACE: isize = 60;
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum TextMode {
+    Always,
+    NoBreak,
+    Break,
+}
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum BreakMode {
@@ -10,17 +19,26 @@ pub enum BreakMode {
     Inconsistent,
 }
 
-enum Token {
-    Text(Text),
-    Break { space: bool, len: isize },
-    Begin { mode: BreakMode, len: isize },
+enum Token<'a> {
+    Text {
+        string: Cow<'a, str>,
+        mode: TextMode,
+    },
+    Break {
+        space: bool,
+        len: isize,
+    },
+    Begin {
+        mode: BreakMode,
+        len: isize,
+    },
     End,
 }
 
-impl Token {
+impl Token<'_> {
     fn len(&self) -> isize {
         match self {
-            Self::Text(text) => text.len().try_into().unwrap(),
+            Self::Text { string, .. } => string.len().try_into().unwrap(),
             Self::Break { len, .. } | Self::Begin { len, .. } => *len,
             Self::End => 0,
         }
@@ -38,7 +56,7 @@ pub struct Printer<'a> {
     output: String,
     space: isize,
     indent: isize,
-    tokens: RingBuffer<Token>,
+    tokens: RingBuffer<Token<'a>>,
     last_break: Option<usize>,
     begin_stack: Vec<usize>,
     print_frames: Vec<PrintFrame>,
@@ -79,26 +97,10 @@ impl<'a> Printer<'a> {
         }
     }
 
-    pub fn scan_text(&mut self, text: impl Into<Text>) {
-        let text = text.into();
-        let span = text.span();
-
-        // Flush any trivia that appears before this token
-        if let Some(token_span) = span {
-            self.flush_trivia(token_span);
-        }
-
-        let token = Token::Text(text);
-
+    pub fn scan_text(&mut self, string: Cow<'static, str>, mode: TextMode) {
+        let token = Token::Text { string, mode };
         self.push_len(token.len());
         self.tokens.push_back(token);
-
-        // if let Some(token_span) = &span
-        //     && let Some(trivia) = self.trivia.first()
-        //     && trivia.span.immediately_follows(&token_span.into())
-        // {
-        //     self.scan_next_trivia();
-        // }
     }
 
     pub fn scan_break(&mut self, space: bool) {
@@ -155,14 +157,14 @@ impl<'a> Printer<'a> {
             .is_some_and(|frame| frame.content_break);
 
         match &token {
-            Token::Text(text) => {
+            Token::Text { string, mode } => {
                 let should_print = matches!(
-                    (text.mode(), content_break),
+                    (mode, content_break),
                     (TextMode::Always, _) | (TextMode::Break, true) | (TextMode::NoBreak, false)
                 );
                 if should_print {
-                    self.output.push_str(text);
-                    self.space -= isize::try_from(text.len()).unwrap();
+                    self.output.push_str(string);
+                    self.space -= isize::try_from(string.len()).unwrap();
                 }
             }
             Token::Break { space, len } => {

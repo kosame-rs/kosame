@@ -88,7 +88,7 @@ impl PrettyPrint for Cast {
                 self.value.pretty_print(printer);
                 printer.scan_break(true);
                 self.as_token.pretty_print(printer);
-                printer.scan_text(" ");
+                " ".pretty_print(printer);
                 self.data_type.pretty_print(printer);
             });
     }

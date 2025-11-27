@@ -100,18 +100,18 @@ impl ToTokens for Relation {
 impl PrettyPrint for Relation {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         printer.flush_trivia(self.name.span().into());
-        printer.scan_text(&self.name);
-        printer.scan_text(&self.colon);
-        printer.scan_text(" ");
+        self.name.pretty_print(printer);
+        self.colon.pretty_print(printer);
+        " ".pretty_print(printer);
 
         self.source_paren
             .pretty_print(printer, BreakMode::Consistent, |printer| {
                 self.source_columns.pretty_print(printer);
             });
 
-        printer.scan_text(" ");
+        " ".pretty_print(printer);
         self.arrow.pretty_print(printer);
-        printer.scan_text(" ");
+        " ".pretty_print(printer);
 
         self.target_paren
             .pretty_print(printer, BreakMode::Consistent, |printer| {
@@ -152,8 +152,8 @@ impl ToTokens for Arrow {
 impl PrettyPrint for Arrow {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         match self {
-            Self::ManyToOne(inner) => printer.scan_text(inner),
-            Self::OneToMany(inner) => printer.scan_text(inner),
+            Self::ManyToOne(inner) => inner.pretty_print(printer),
+            Self::OneToMany(inner) => inner.pretty_print(printer),
         }
     }
 }

@@ -20,7 +20,7 @@ pub struct Unary {
 }
 
 impl Unary {
-    #[must_use] 
+    #[must_use]
     pub fn new(op: UnOp, operand: Expr) -> Self {
         Self {
             op,
@@ -32,12 +32,12 @@ impl Unary {
         self.operand.accept(visitor);
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn infer_name(&self) -> Option<&Ident> {
         None
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn infer_type(&self, _scope_id: ScopeId) -> Option<InferredType<'_>> {
         None
     }
@@ -57,7 +57,7 @@ impl ToTokens for Unary {
 impl PrettyPrint for Unary {
     fn pretty_print(&self, printer: &mut Printer) {
         self.op.pretty_print(printer);
-        printer.scan_text(" ");
+        " ".pretty_print(printer);
         self.operand.pretty_print(printer);
     }
 }
@@ -72,7 +72,7 @@ impl UnOp {
         input.fork().parse::<UnOp>().is_ok()
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn precedence(&self) -> u32 {
         // Taken from https://www.postgresql.org/docs/18/sql-syntax-lexical.html#SQL-PRECEDENCE
         match self {

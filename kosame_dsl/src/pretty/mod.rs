@@ -12,7 +12,6 @@ pub use r#macro::*;
 pub use printer::*;
 pub use ring_buffer::*;
 pub use span::*;
-pub use text::*;
 pub use trivia::*;
 
 use syn::parse::Parse;
@@ -56,7 +55,7 @@ where
         for (index, item) in self.pairs().enumerate() {
             item.value().pretty_print(printer);
             if index == self.len() - 1 {
-                printer.scan_text(Text::new(",", None, TextMode::Break));
+                printer.scan_text(",".into(), TextMode::Break);
             } else {
                 item.punct().unwrap().pretty_print(printer);
                 printer.scan_break(true);

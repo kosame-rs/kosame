@@ -1,6 +1,6 @@
 use proc_macro2::LineColumn;
 
-use crate::pretty::{PrettyPrint, Printer, Span};
+use crate::pretty::{PrettyPrint, Printer, Span, TextMode};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TriviaKind {
@@ -21,11 +21,11 @@ impl PrettyPrint for Trivia<'_> {
         match self.kind {
             TriviaKind::LineComment => {
                 printer.scan_force_break();
-                printer.scan_text(self.content.to_string());
+                printer.scan_text(self.content.to_string().into(), TextMode::Always);
                 printer.scan_break(false);
             }
             TriviaKind::BlockComment => {
-                printer.scan_text(self.content.to_string());
+                printer.scan_text(self.content.to_string().into(), TextMode::Always);
                 printer.scan_break(true);
             }
             TriviaKind::Whitespace => {
@@ -49,7 +49,7 @@ pub struct Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-    #[must_use] 
+    #[must_use]
     pub fn new(input: &'a str) -> Self {
         Self {
             input,

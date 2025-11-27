@@ -20,12 +20,12 @@ pub struct Raw {
 impl Raw {
     pub fn accept<'a>(&'a self, _visitor: &mut impl Visitor<'a>) {}
 
-    #[must_use] 
+    #[must_use]
     pub fn infer_name(&self) -> Option<&Ident> {
         None
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn infer_type(&self, _scope_id: ScopeId) -> Option<InferredType<'_>> {
         None
     }
@@ -34,7 +34,7 @@ impl Raw {
         input.peek(Token![$])
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn span(&self) -> Span {
         self.dollar_token
             .span
@@ -62,6 +62,6 @@ impl ToTokens for Raw {
 impl PrettyPrint for Raw {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         self.dollar_token.pretty_print(printer);
-        self.string.token().pretty_print(printer);
+        self.string.pretty_print(printer);
     }
 }

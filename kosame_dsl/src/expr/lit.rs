@@ -26,17 +26,17 @@ pub enum Lit {
 impl Lit {
     pub fn accept<'a>(&'a self, _visitor: &mut impl Visitor<'a>) {}
 
-    #[must_use] 
+    #[must_use]
     pub fn infer_name(&self) -> Option<&Ident> {
         None
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn infer_type(&self, _scope_id: ScopeId) -> Option<InferredType<'_>> {
         None
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn span(&self) -> Span {
         match self {
             Self::Int(inner) => inner.span(),
@@ -85,10 +85,10 @@ impl ToTokens for Lit {
 impl PrettyPrint for Lit {
     fn pretty_print(&self, printer: &mut Printer) {
         match self {
-            Self::Int(inner) => inner.token().pretty_print(printer),
-            Self::Float(inner) => inner.token().pretty_print(printer),
-            Self::Str(inner) => inner.token().pretty_print(printer),
-            Self::Bool(inner) => inner.token().pretty_print(printer),
+            Self::Int(inner) => inner.pretty_print(printer),
+            Self::Float(inner) => inner.pretty_print(printer),
+            Self::Str(inner) => inner.pretty_print(printer),
+            Self::Bool(inner) => inner.pretty_print(printer),
             Self::Null(inner) => inner.pretty_print(printer),
         }
     }

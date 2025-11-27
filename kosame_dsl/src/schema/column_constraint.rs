@@ -90,17 +90,17 @@ impl PrettyPrint for ColumnConstraint {
         match self {
             Self::NotNull(inner) => {
                 inner.not_kw.pretty_print(printer);
-                printer.scan_text(" ");
+                " ".pretty_print(printer);
                 inner.null_kw.pretty_print(printer);
             }
             Self::PrimaryKey(inner) => {
                 inner.primary_kw.pretty_print(printer);
-                printer.scan_text(" ");
+                " ".pretty_print(printer);
                 inner.key_kw.pretty_print(printer);
             }
             Self::Default(inner) => {
                 inner.default_kw.pretty_print(printer);
-                printer.scan_text(" ");
+                " ".pretty_print(printer);
                 inner.expr.pretty_print(printer);
             }
         }

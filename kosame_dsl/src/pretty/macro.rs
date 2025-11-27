@@ -3,7 +3,7 @@ use syn::{
     parse::{Parse, ParseStream},
 };
 
-use crate::pretty::{BreakMode, Delim, PrettyPrint, Printer, Text};
+use crate::pretty::{BreakMode, Delim, PrettyPrint, Printer};
 
 pub enum Macro<T> {
     Parenthesized {
@@ -61,9 +61,9 @@ where
             }
             Self::Braced { brace, inner } => {
                 brace.pretty_print(printer, BreakMode::Consistent, |printer| {
-                    printer.scan_text(Text::new(" ", None, super::TextMode::NoBreak));
+                    printer.scan_text(" ".into(), super::TextMode::NoBreak);
                     inner.pretty_print(printer);
-                    printer.scan_text(Text::new(" ", None, super::TextMode::NoBreak));
+                    printer.scan_text(" ".into(), super::TextMode::NoBreak);
                 });
             }
             Self::Bracketed { bracket, inner } => {

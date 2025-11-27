@@ -74,7 +74,7 @@ impl PrettyPrint for Binary {
         self.lhs.pretty_print(printer);
         printer.scan_break(true);
         self.op.pretty_print(printer);
-        printer.scan_text(" ");
+        " ".pretty_print(printer);
         self.rhs.pretty_print(printer);
     }
 }
@@ -254,14 +254,14 @@ impl PrettyPrint for BinOp {
             Self::Is(inner) => inner.pretty_print(printer),
             Self::IsNot(is, not) => {
                 is.pretty_print(printer);
-                printer.scan_text(" ");
+                " ".pretty_print(printer);
                 not.pretty_print(printer);
             }
             Self::IsDistinctFrom(is, distinct, from) => {
                 is.pretty_print(printer);
-                printer.scan_text(" ");
+                " ".pretty_print(printer);
                 distinct.pretty_print(printer);
-                printer.scan_text(" ");
+                " ".pretty_print(printer);
                 from.pretty_print(printer);
             }
             Self::And(inner) => inner.pretty_print(printer),

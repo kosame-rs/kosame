@@ -199,9 +199,9 @@ impl PrettyPrint for Table {
             attr.pretty_print(printer);
         }
         self.create_kw.pretty_print(printer);
-        printer.scan_text(" ");
+        " ".pretty_print(printer);
         self.table_kw.pretty_print(printer);
-        printer.scan_text(" ");
+        " ".pretty_print(printer);
         self.paren
             .pretty_print(printer, BreakMode::Consistent, |printer| {
                 self.columns.pretty_print(printer);

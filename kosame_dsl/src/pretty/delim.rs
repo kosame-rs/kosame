@@ -1,6 +1,6 @@
 use proc_macro2::extra::DelimSpan;
 
-use crate::pretty::{BreakMode, Printer};
+use crate::pretty::{BreakMode, PrettyPrint, Printer};
 
 pub trait Delim {
     fn pretty_print(
@@ -10,12 +10,12 @@ pub trait Delim {
         f: impl FnOnce(&mut Printer<'_>),
     ) {
         printer.flush_trivia(self.span().open().into());
-        printer.scan_text(self.open_text());
+        self.open_text().pretty_print(printer);
         printer.scan_begin(break_mode);
         f(printer);
         printer.flush_trivia(self.span().close().into());
         printer.scan_end();
-        printer.scan_text(self.close_text());
+        self.close_text().pretty_print(printer);
     }
 
     #[must_use]

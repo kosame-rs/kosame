@@ -1,5 +1,4 @@
 use quote::ToTokens;
-use syn::spanned::Spanned;
 
 macro_rules! custom_keyword {
     ($kw:ident) => {
@@ -24,11 +23,10 @@ macro_rules! custom_keyword {
             }
         }
 
-        impl From<&$kw> for crate::pretty::Text {
-            fn from(value: &$kw) -> Self {
-                Self::new(
-                    value.to_token_stream().to_string(),
-                    Some(value.span().into()),
+        impl crate::pretty::PrettyPrint for $kw {
+            fn pretty_print(&self, printer: &mut crate::pretty::Printer<'_>) {
+                printer.scan_text(
+                    self.to_token_stream().to_string().into(),
                     crate::pretty::TextMode::Always,
                 )
             }
