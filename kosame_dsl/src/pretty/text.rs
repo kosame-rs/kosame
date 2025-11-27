@@ -20,6 +20,7 @@ impl PrettyPrint for Literal {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         printer.flush_trivia(self.span().into());
         printer.scan_text(self.to_string().into(), TextMode::Always);
+        printer.set_cursor(self.span().end());
     }
 }
 
@@ -27,6 +28,7 @@ impl PrettyPrint for syn::Ident {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         printer.flush_trivia(self.span().into());
         printer.scan_text(self.to_string().into(), TextMode::Always);
+        printer.set_cursor(self.span().end());
     }
 }
 
@@ -34,6 +36,7 @@ impl PrettyPrint for syn::Lit {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         printer.flush_trivia(self.span().into());
         printer.scan_text(self.to_token_stream().to_string().into(), TextMode::Always);
+        printer.set_cursor(self.span().end());
     }
 }
 
@@ -42,7 +45,8 @@ macro_rules! impl_token {
         impl PrettyPrint for syn::Token![$token] {
             fn pretty_print(&self, printer: &mut Printer<'_>) {
                 printer.flush_trivia(self.span().into());
-                printer.scan_text($literal.into(), TextMode::Always)
+                printer.scan_text($literal.into(), TextMode::Always);
+                printer.set_cursor(self.span().end());
             }
         }
     };

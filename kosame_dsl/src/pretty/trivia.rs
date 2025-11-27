@@ -27,7 +27,7 @@ impl PrettyPrint for Trivia<'_> {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         match self.kind {
             TriviaKind::LineComment => {
-                printer.scan_force_break();
+                printer.force_break();
                 printer.scan_text(self.content.to_string().into(), TextMode::Always);
                 printer.scan_break(false);
             }

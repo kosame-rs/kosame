@@ -30,6 +30,7 @@ macro_rules! custom_keyword {
                     self.to_token_stream().to_string().into(),
                     crate::pretty::TextMode::Always,
                 );
+                printer.set_cursor(self.span.end());
             }
         }
     };
