@@ -1,6 +1,6 @@
 use proc_macro2::LineColumn;
 
-use crate::pretty::{PrettyPrint, Printer, Span, TextMode};
+use crate::pretty::Span;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TriviaKind {
@@ -20,27 +20,6 @@ impl Trivia<'_> {
     #[must_use]
     pub fn newlines(&self) -> usize {
         self.content.chars().filter(|item| *item == '\n').count()
-    }
-}
-
-impl PrettyPrint for Trivia<'_> {
-    fn pretty_print(&self, printer: &mut Printer<'_>) {
-        match self.kind {
-            TriviaKind::LineComment => {
-                printer.force_break();
-                printer.scan_text(self.content.to_string().into(), TextMode::Always);
-                printer.scan_break(false);
-            }
-            TriviaKind::BlockComment => {
-                printer.scan_text(self.content.to_string().into(), TextMode::Always);
-                printer.scan_break(true);
-            }
-            TriviaKind::Whitespace => {
-                if self.newlines() >= 2 {
-                    printer.scan_break(false);
-                }
-            }
-        }
     }
 }
 

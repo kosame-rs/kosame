@@ -109,7 +109,7 @@ impl PrettyPrint for Column {
         printer.flush_trivia(self.name.span().into());
         printer.scan_begin(BreakMode::Inconsistent);
         self.name.pretty_print(printer);
-        printer.scan_break(true);
+        printer.scan_break(true, false);
         self.data_type.pretty_print(printer);
         self.constraints.pretty_print(printer);
         printer.scan_end();

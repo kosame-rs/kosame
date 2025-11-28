@@ -209,7 +209,7 @@ impl PrettyPrint for Table {
         self.semi_token.pretty_print(printer);
 
         if !self.relations.is_empty() {
-            printer.scan_break(false);
+            printer.scan_break(false, false);
             self.relations.pretty_print(printer);
         }
     }

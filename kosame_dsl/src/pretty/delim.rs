@@ -14,10 +14,10 @@ pub trait Delim {
         if let Some(break_mode) = break_mode {
             printer.scan_begin(break_mode);
         }
-        printer.scan_break(false);
+        printer.scan_break(false, false);
         f(printer);
         printer.flush_trivia(self.span().close().into());
-        printer.scan_break(false);
+        printer.scan_break(false, false);
         if break_mode.is_some() {
             printer.scan_end();
         }

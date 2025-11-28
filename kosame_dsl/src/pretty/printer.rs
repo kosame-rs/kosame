@@ -31,10 +31,7 @@ enum Token<'a> {
     Break {
         space: bool,
         len: isize,
-    },
-    Comment {
-        string: &'a str,
-        force_break: bool,
+        force: bool,
     },
     Begin {
         mode: BreakMode,
@@ -117,20 +114,10 @@ impl<'a> Printer<'a> {
         self.tokens.push_back(token);
     }
 
-    pub fn scan_comment(&mut self, string: &'a str, force_break: bool) {
-        if force_break {
-            self.force_break();
-        }
-        self.tokens.push_back(Token::Comment {
-            string,
-            force_break,
-        });
-    }
-
-    pub fn scan_break(&mut self, space: bool) {
+    pub fn scan_break(&mut self, space: bool, force: bool) {
         self.last_break = Some(self.tokens.len());
-        let len = isize::from(space);
-        self.tokens.push_back(Token::Break { space, len });
+        let len = if force { MARGIN } else { isize::from(space) };
+        self.tokens.push_back(Token::Break { space, len, force });
         self.push_len(len);
     }
 
@@ -167,10 +154,13 @@ impl<'a> Printer<'a> {
         while let Some(trivia) = self.ready_trivia() {
             match trivia.kind {
                 TriviaKind::BlockComment => {
-                    self.scan_comment(trivia.content, false);
+                    self.scan_text(" ".into(), TextMode::Always);
+                    self.scan_text(trivia.content.to_string().into(), TextMode::Always);
                 }
                 TriviaKind::LineComment => {
-                    self.scan_comment(trivia.content, true);
+                    self.scan_text(" ".into(), TextMode::Always);
+                    self.scan_text(trivia.content.to_string().into(), TextMode::Always);
+                    self.scan_break(false, true);
                 }
                 TriviaKind::Whitespace => {}
             }
@@ -181,14 +171,14 @@ impl<'a> Printer<'a> {
         while let Some(trivia) = self.ready_trivia() {
             match trivia.kind {
                 TriviaKind::BlockComment => {
-                    self.scan_comment(trivia.content, false);
+                    self.scan_text(trivia.content.to_string().into(), TextMode::Always);
                 }
                 TriviaKind::LineComment => {
-                    self.scan_comment(trivia.content, true);
+                    self.scan_text(trivia.content.to_string().into(), TextMode::Always);
                 }
                 TriviaKind::Whitespace => {
                     if trivia.newlines() > 1 {
-                        self.scan_break(false);
+                        self.scan_break(false, false);
                     }
                 }
             }
@@ -258,25 +248,11 @@ impl<'a> Printer<'a> {
                     self.print_string(string);
                 }
             }
-            Token::Comment {
-                string,
-                force_break,
-            } => {
-                if self.line_dirty() {
-                    self.output.push(' ');
-                    self.space -= 1;
-                }
-                self.print_string(string);
-                if *force_break {
-                    self.pending_break = true;
-                }
-            }
-            Token::Break { space, len } => {
-                if group_break || *len >= self.space {
+            Token::Break { space, len, force } => {
+                if group_break || *len >= self.space || *force {
                     self.print_break();
                 } else if *space {
-                    self.output.push(' ');
-                    self.space -= 1isize;
+                    self.print_string(" ");
                 }
             }
             Token::Begin { mode, len, .. } => {
@@ -296,11 +272,6 @@ impl<'a> Printer<'a> {
         }
     }
 
-    /// Forces the current print frame to break.
-    pub fn force_break(&mut self) {
-        self.push_len(MARGIN);
-    }
-
     /// Flushes all trivia that appears before the given token span.
     /// This should be called before structural operations like `scan_begin` to ensure
     /// comments appear in the right place.
@@ -308,16 +279,16 @@ impl<'a> Printer<'a> {
         while let Some(trivia) = self.trivia.first()
             && trivia.span.comes_before(&token_span)
         {
-            match trivia.kind {
-                TriviaKind::BlockComment => {
-                    self.scan_comment(trivia.content, false);
-                    self.scan_break(true);
-                }
-                TriviaKind::LineComment => {
-                    self.scan_comment(trivia.content, true);
-                }
-                TriviaKind::Whitespace => {}
-            }
+            // match trivia.kind {
+            //     // TriviaKind::BlockComment => {
+            //     //     self.scan_comment(trivia.content, false);
+            //     //     self.scan_break(true);
+            //     // }
+            //     // TriviaKind::LineComment => {
+            //     //     self.scan_comment(trivia.content, true);
+            //     // }
+            //     // TriviaKind::Whitespace => {}
+            // }
             self.trivia = &self.trivia[1..];
         }
     }

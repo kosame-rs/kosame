@@ -86,7 +86,7 @@ impl PrettyPrint for Cast {
         self.paren
             .pretty_print(printer, Some(BreakMode::Inconsistent), |printer| {
                 self.value.pretty_print(printer);
-                printer.scan_break(true);
+                printer.scan_break(true, false);
                 self.as_token.pretty_print(printer);
                 " ".pretty_print(printer);
                 self.data_type.pretty_print(printer);

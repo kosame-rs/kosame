@@ -58,7 +58,7 @@ where
                 printer.scan_text(",".into(), TextMode::Break);
             } else {
                 item.punct().unwrap().pretty_print(printer);
-                printer.scan_break(true);
+                printer.scan_break(true, false);
             }
         }
     }
