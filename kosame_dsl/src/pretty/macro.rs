@@ -92,7 +92,12 @@ mod tests {
         let source = "(this_is_a_very_long_identifier_name_that_should_definitely_break_across_multiple_lines_when_pretty_printed)";
         let result = crate::pretty::pretty_print_macro_str::<Macro<syn::Ident>>(source, 0, 0);
         assert!(result.is_ok());
-        println!("{}", result.as_ref().unwrap());
+        assert_eq!(
+            result.unwrap(),
+            r"(
+    this_is_a_very_long_identifier_name_that_should_definitely_break_across_multiple_lines_when_pretty_printed
+)"
+        );
     }
 
     #[test]
@@ -108,7 +113,12 @@ mod tests {
         let source = "{ this_is_a_very_long_identifier_name_that_should_definitely_break_across_multiple_lines_when_pretty_printed }";
         let result = crate::pretty::pretty_print_macro_str::<Macro<syn::Ident>>(source, 0, 0);
         assert!(result.is_ok());
-        println!("{}", result.as_ref().unwrap());
+        assert_eq!(
+            result.unwrap(),
+            r"{
+    this_is_a_very_long_identifier_name_that_should_definitely_break_across_multiple_lines_when_pretty_printed
+}"
+        );
     }
 
     #[test]
@@ -124,6 +134,11 @@ mod tests {
         let source = "[this_is_a_very_long_identifier_name_that_should_definitely_break_across_multiple_lines_when_pretty_printed]";
         let result = crate::pretty::pretty_print_macro_str::<Macro<syn::Ident>>(source, 0, 0);
         assert!(result.is_ok());
-        println!("{}", result.as_ref().unwrap());
+        assert_eq!(
+            result.unwrap(),
+            r"[
+    this_is_a_very_long_identifier_name_that_should_definitely_break_across_multiple_lines_when_pretty_printed
+]"
+        );
     }
 }
