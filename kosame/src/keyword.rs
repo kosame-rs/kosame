@@ -94,3 +94,8 @@ keyword_group!(group_join {
 });
 keyword_group!(group_order_by_dir { asc, desc });
 keyword_group!(group_order_by_nulls { first, last });
+keyword_group!(group_set_op {
+    union,
+    intersect,
+    except
+});
