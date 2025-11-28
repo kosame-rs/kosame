@@ -1,5 +1,7 @@
 use std::fmt::Write;
 
+use crate::Ident;
+
 use super::Expr;
 
 pub struct Call<'a> {
@@ -31,7 +33,7 @@ impl kosame_sql::FmtSql for Call<'_> {
         if self.keyword {
             formatter.write_str(self.function)?;
         } else {
-            formatter.write_ident(self.function)?;
+            Ident::new(self.function).fmt_sql(formatter)?;
         }
 
         formatter.write_str("(")?;

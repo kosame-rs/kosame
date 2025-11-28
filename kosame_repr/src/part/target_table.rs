@@ -1,26 +1,31 @@
 use std::fmt::Write;
 
+use crate::Ident;
+
 pub struct TargetTable<'a> {
-    table: &'a str,
-    alias: Option<&'a str>,
+    table: Ident<'a>,
+    alias: Option<Ident<'a>>,
 }
 
 impl<'a> TargetTable<'a> {
     #[inline]
     #[must_use]
     pub const fn new(table: &'a str, alias: Option<&'a str>) -> Self {
-        Self { table, alias }
+        Self {
+            table: Ident::new(table),
+            alias: Ident::from_option(alias),
+        }
     }
 
     #[inline]
     #[must_use]
-    pub const fn table(&self) -> &'a str {
+    pub const fn table(&self) -> Ident<'a> {
         self.table
     }
 
     #[inline]
     #[must_use]
-    pub const fn alias(&self) -> Option<&'a str> {
+    pub const fn alias(&self) -> Option<Ident<'a>> {
         self.alias
     }
 }
@@ -30,10 +35,10 @@ impl kosame_sql::FmtSql for TargetTable<'_> {
     where
         D: kosame_sql::Dialect,
     {
-        formatter.write_ident(self.table)?;
+        self.table.fmt_sql(formatter)?;
         if let Some(alias) = &self.alias {
             formatter.write_str(" as ")?;
-            formatter.write_ident(alias)?;
+            alias.fmt_sql(formatter)?;
         }
         Ok(())
     }

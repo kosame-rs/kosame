@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use crate::expr::Expr;
+use crate::{Ident, expr::Expr};
 
 pub struct Set<'a> {
     items: &'a [SetItem<'a>],
@@ -43,11 +43,11 @@ impl kosame_sql::FmtSql for SetItem<'_> {
     {
         match self {
             Self::Default { column } => {
-                formatter.write_ident(column)?;
+                Ident::new(column).fmt_sql(formatter)?;
                 formatter.write_str(" = default")?;
             }
             Self::Expr { column, expr } => {
-                formatter.write_ident(column)?;
+                Ident::new(column).fmt_sql(formatter)?;
                 formatter.write_str(" = ")?;
                 expr.fmt_sql(formatter)?;
             }

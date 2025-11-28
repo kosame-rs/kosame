@@ -1,7 +1,7 @@
-use crate::part::ColumnList;
+use crate::{Ident, part::ColumnList};
 
 pub struct TableAlias<'a> {
-    alias: &'a str,
+    alias: Ident<'a>,
     columns: Option<ColumnList<'a>>,
 }
 
@@ -9,7 +9,10 @@ impl<'a> TableAlias<'a> {
     #[inline]
     #[must_use]
     pub const fn new(alias: &'a str, columns: Option<ColumnList<'a>>) -> Self {
-        Self { alias, columns }
+        Self {
+            alias: Ident::new(alias),
+            columns,
+        }
     }
 }
 
@@ -18,7 +21,7 @@ impl kosame_sql::FmtSql for TableAlias<'_> {
     where
         D: kosame_sql::Dialect,
     {
-        formatter.write_ident(self.alias)?;
+        self.alias.fmt_sql(formatter)?;
         self.columns.fmt_sql(formatter)?;
         Ok(())
     }

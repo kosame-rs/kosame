@@ -51,7 +51,7 @@ fn fmt_node_sql<D: kosame_sql::Dialect>(
 
     if node.star() {
         for (index, column) in node.table().columns().iter().enumerate() {
-            formatter.write_ident(column.name())?;
+            column.name().fmt_sql(formatter)?;
             if index != node.table().columns().len() - 1 {
                 formatter.write_str(", ")?;
             }
@@ -64,7 +64,7 @@ fn fmt_node_sql<D: kosame_sql::Dialect>(
     for (index, field) in node.fields().iter().enumerate() {
         match field {
             Field::Column { column, .. } => {
-                formatter.write_ident(column.name())?;
+                column.name().fmt_sql(formatter)?;
             }
             Field::Relation { node, relation, .. } => {
                 formatter.write_str("array(")?;
@@ -85,7 +85,7 @@ fn fmt_node_sql<D: kosame_sql::Dialect>(
     }
 
     formatter.write_str(" from ")?;
-    formatter.write_ident(node.table().name())?;
+    node.table().name().fmt_sql(formatter)?;
 
     if relation.is_some() || node.r#where().is_some() {
         formatter.write_str(" where ")?;
@@ -97,13 +97,13 @@ fn fmt_node_sql<D: kosame_sql::Dialect>(
 
     if let Some(relation) = relation {
         for (index, (source_column, target_column)) in relation.column_pairs().enumerate() {
-            formatter.write_ident(relation.source_table())?;
+            relation.source_table().fmt_sql(formatter)?;
             formatter.write_str(".")?;
-            formatter.write_ident(source_column.name())?;
+            source_column.name().fmt_sql(formatter)?;
             formatter.write_str(" = ")?;
-            formatter.write_ident(relation.target_table())?;
+            relation.target_table().fmt_sql(formatter)?;
             formatter.write_str(".")?;
-            formatter.write_ident(target_column.name())?;
+            target_column.name().fmt_sql(formatter)?;
             if index != relation.source_columns().len() - 1 {
                 formatter.write_str(" and ")?;
             }

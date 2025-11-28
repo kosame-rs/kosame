@@ -1,8 +1,8 @@
-use crate::expr::Expr;
+use crate::{Ident, expr::Expr};
 
 pub struct Column<'a> {
-    pub name: &'a str,
-    pub data_type: &'a str,
+    pub name: Ident<'a>,
+    pub data_type: Ident<'a>,
     pub primary_key: bool,
     pub not_null: bool,
     pub default: Option<&'a Expr<'a>>,
@@ -11,13 +11,31 @@ pub struct Column<'a> {
 impl<'a> Column<'a> {
     #[inline]
     #[must_use]
-    pub const fn name(&self) -> &'a str {
+    pub const fn new(
+        name: &'a str,
+        data_type: &'a str,
+        primary_key: bool,
+        not_null: bool,
+        default: Option<&'a Expr<'a>>,
+    ) -> Self {
+        Self {
+            name: Ident::new(name),
+            data_type: Ident::new(data_type),
+            primary_key,
+            not_null,
+            default,
+        }
+    }
+
+    #[inline]
+    #[must_use]
+    pub const fn name(&self) -> Ident<'a> {
         self.name
     }
 
     #[inline]
     #[must_use]
-    pub const fn data_type(&self) -> &'a str {
+    pub const fn data_type(&self) -> Ident<'a> {
         self.data_type
     }
 

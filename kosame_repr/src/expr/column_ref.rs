@@ -1,8 +1,10 @@
 use std::fmt::Write;
 
+use crate::Ident;
+
 pub struct ColumnRef<'a> {
-    correlation: Option<&'a str>,
-    column: &'a str,
+    correlation: Option<Ident<'a>>,
+    column: Ident<'a>,
 }
 
 impl<'a> ColumnRef<'a> {
@@ -10,8 +12,8 @@ impl<'a> ColumnRef<'a> {
     #[must_use]
     pub const fn new(correlation: Option<&'a str>, column: &'a str) -> Self {
         Self {
-            correlation,
-            column,
+            correlation: Ident::from_option(correlation),
+            column: Ident::new(column),
         }
     }
 }
@@ -23,10 +25,10 @@ impl kosame_sql::FmtSql for ColumnRef<'_> {
         formatter: &mut kosame_sql::Formatter<D>,
     ) -> kosame_sql::Result {
         if let Some(correlation) = &self.correlation {
-            formatter.write_ident(correlation)?;
+            correlation.fmt_sql(formatter)?;
             formatter.write_str(".")?;
         }
-        formatter.write_ident(self.column)?;
+        self.column.fmt_sql(formatter)?;
         Ok(())
     }
 }

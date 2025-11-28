@@ -1,10 +1,12 @@
+use crate::Ident;
+
 use super::Column;
 
 pub struct Relation<'a> {
-    name: &'a str,
-    source_table: &'a str,
+    name: Ident<'a>,
+    source_table: Ident<'a>,
     source_columns: &'a [&'a Column<'a>],
-    target_table: &'a str,
+    target_table: Ident<'a>,
     target_columns: &'a [&'a Column<'a>],
 }
 
@@ -19,23 +21,23 @@ impl<'a> Relation<'a> {
         target_columns: &'a [&'a Column],
     ) -> Self {
         Self {
-            name,
-            source_table,
+            name: Ident::new(name),
+            source_table: Ident::new(source_table),
             source_columns,
-            target_table,
+            target_table: Ident::new(target_table),
             target_columns,
         }
     }
 
     #[inline]
     #[must_use]
-    pub const fn name(&self) -> &'a str {
+    pub const fn name(&self) -> Ident<'a> {
         self.name
     }
 
     #[inline]
     #[must_use]
-    pub const fn source_table(&self) -> &'a str {
+    pub const fn source_table(&self) -> Ident<'a> {
         self.source_table
     }
 
@@ -47,7 +49,7 @@ impl<'a> Relation<'a> {
 
     #[inline]
     #[must_use]
-    pub const fn target_table(&self) -> &'a str {
+    pub const fn target_table(&self) -> Ident<'a> {
         self.target_table
     }
 

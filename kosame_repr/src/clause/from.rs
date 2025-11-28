@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use crate::{command::Command, expr::Expr, part::TableAlias};
+use crate::{Ident, command::Command, expr::Expr, part::TableAlias};
 
 pub struct From<'a> {
     chain: FromChain<'a>,
@@ -90,7 +90,7 @@ impl kosame_sql::FmtSql for FromItem<'_> {
     {
         match self {
             Self::Table { table, alias } => {
-                formatter.write_ident(table)?;
+                Ident::new(table).fmt_sql(formatter)?;
                 if let Some(alias) = alias {
                     formatter.write_str(" as ")?;
                     alias.fmt_sql(formatter)?;

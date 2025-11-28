@@ -17,6 +17,6 @@ impl kosame_sql::FmtSql for BindParam<'_> {
         &self,
         formatter: &mut kosame_sql::Formatter<D>,
     ) -> kosame_sql::Result {
-        formatter.write_bind_param(self.name, self.ordinal)
+        D::fmt_bind_param(formatter, self.name, self.ordinal)
     }
 }

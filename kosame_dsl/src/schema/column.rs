@@ -85,13 +85,13 @@ impl ToTokens for Column {
         quote! {
             pub mod #rust_name {
                 pub const COLUMN_NAME: &str = #name;
-                pub const COLUMN: ::kosame::repr::schema::Column<'_> = ::kosame::repr::schema::Column {
-                    name: #name,
-                    data_type: #data_type_string,
-                    not_null: #not_null,
-                    primary_key: #primary_key,
-                    default: #default,
-                };
+                pub const COLUMN: ::kosame::repr::schema::Column<'_> = ::kosame::repr::schema::Column::new(
+                    #name,
+                    #data_type_string,
+                    #not_null,
+                    #primary_key,
+                    #default,
+                );
                 pub type TypeNotNull = #rust_type_not_null;
                 pub type TypeNullable = #rust_type_nullable;
                 pub type Type = #rust_type_auto;

@@ -1,17 +1,20 @@
 use std::{fmt::Write, ops::Deref};
 
-use crate::expr::Expr;
+use crate::{Ident, expr::Expr};
 
 pub struct Field<'a> {
     expr: Expr<'a>,
-    alias: Option<&'a str>,
+    alias: Option<Ident<'a>>,
 }
 
 impl<'a> Field<'a> {
     #[inline]
     #[must_use]
     pub const fn new(expr: Expr<'a>, alias: Option<&'a str>) -> Self {
-        Self { expr, alias }
+        Self {
+            expr,
+            alias: Ident::from_option(alias),
+        }
     }
 
     #[inline]
@@ -22,7 +25,7 @@ impl<'a> Field<'a> {
 
     #[inline]
     #[must_use]
-    pub const fn alias(&self) -> Option<&'a str> {
+    pub const fn alias(&self) -> Option<Ident<'a>> {
         self.alias
     }
 }
@@ -36,7 +39,7 @@ impl kosame_sql::FmtSql for Field<'_> {
         self.expr.fmt_sql(formatter)?;
         if let Some(alias) = &self.alias {
             formatter.write_str(" as ")?;
-            formatter.write_ident(alias)?;
+            alias.fmt_sql(formatter)?;
         }
         Ok(())
     }
