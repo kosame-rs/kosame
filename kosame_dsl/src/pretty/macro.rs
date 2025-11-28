@@ -5,6 +5,34 @@ use syn::{
 
 use crate::pretty::{BreakMode, Delim, PrettyPrint, Printer};
 
+/// A wrapper type that parses and pretty-prints content with any of the three delimiter types.
+///
+/// This enum is used by the Kosame formatter (`cargo kosame fmt`) to scan macro invocations
+/// in Rust source files and reformat their contents while preserving the original delimiter
+/// choice. Different delimiter types receive different formatting treatment:
+///
+/// - **Parentheses `()`**: No extra spacing around content
+/// - **Braces `{}`**: Adds spaces around content (e.g., `{ foo }`)
+/// - **Brackets `[]`**: No extra spacing around content
+///
+/// # Usage
+///
+/// The formatter uses this type with [`pretty_print_macro_str`] to reformat macro contents:
+///
+/// ```ignore
+/// // Parse and reformat a macro invocation based on its delimiter
+/// let result = pretty_print_macro_str::<Macro<kosame_dsl::schema::Table>>(
+///     "{ create table users ( id int ) }",
+///     initial_space,
+///     initial_indent,
+/// )?;
+/// ```
+///
+/// When the formatter encounters a macro like `pg_table! { ... }` or `table!( ... )`,
+/// it extracts the delimiter span and uses this type to parse and reformat the contents
+/// according to the delimiter type used.
+///
+/// [`pretty_print_macro_str`]: crate::pretty::pretty_print_macro_str
 pub enum Macro<T> {
     Parenthesized {
         paren: syn::token::Paren,
