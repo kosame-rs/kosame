@@ -213,16 +213,26 @@ impl<'a> Printer<'a> {
         true
     }
 
+    fn print_string(&mut self, string: &str) {
+        if self.pending_break {
+            self.print_break();
+        }
+        self.print_indent();
+        self.output.push_str(string);
+        self.space -= isize::try_from(string.len()).unwrap();
+    }
+
     fn print_break(&mut self) {
         self.output.push('\n');
         self.pending_break = false;
+        self.space = MARGIN;
     }
 
     fn print_indent(&mut self) {
         if !self.line_dirty() {
             self.output
                 .push_str(&" ".repeat((self.indent * INDENT).try_into().unwrap()));
-            self.space = (MARGIN - self.indent * INDENT).max(MIN_SPACE);
+            self.space = (self.space - self.indent * INDENT).max(MIN_SPACE);
         }
     }
 
@@ -240,33 +250,23 @@ impl<'a> Printer<'a> {
 
         match &token {
             Token::Text { string, mode } => {
-                if self.pending_break {
-                    self.print_break();
-                }
-                self.print_indent();
                 let should_print = matches!(
                     (mode, content_break),
                     (TextMode::Always, _) | (TextMode::Break, true) | (TextMode::NoBreak, false)
                 );
                 if should_print {
-                    self.output.push_str(string);
-                    self.space -= isize::try_from(string.len()).unwrap();
+                    self.print_string(string);
                 }
             }
             Token::Comment {
                 string,
                 force_break,
             } => {
-                if self.pending_break {
-                    self.print_break();
-                }
                 if self.line_dirty() {
                     self.output.push(' ');
                     self.space -= 1;
                 }
-                self.print_indent();
-                self.output.push_str(string);
-                self.space -= isize::try_from(string.len()).unwrap();
+                self.print_string(string);
                 if *force_break {
                     self.pending_break = true;
                 }
