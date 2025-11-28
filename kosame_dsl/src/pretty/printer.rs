@@ -29,7 +29,6 @@ enum Token<'a> {
         mode: TextMode,
     },
     Break {
-        space: bool,
         len: isize,
         force: bool,
     },
@@ -114,10 +113,10 @@ impl<'a> Printer<'a> {
         self.tokens.push_back(token);
     }
 
-    pub fn scan_break(&mut self, space: bool, force: bool) {
+    pub fn scan_break(&mut self, force: bool) {
         self.last_break = Some(self.tokens.len());
-        let len = if force { MARGIN } else { isize::from(space) };
-        self.tokens.push_back(Token::Break { space, len, force });
+        let len = if force { MARGIN } else { 0 };
+        self.tokens.push_back(Token::Break { len, force });
         self.push_len(len);
     }
 
@@ -160,7 +159,7 @@ impl<'a> Printer<'a> {
                 TriviaKind::LineComment => {
                     self.scan_text(" ".into(), TextMode::Always);
                     self.scan_text(trivia.content.to_string().into(), TextMode::Always);
-                    self.scan_break(false, true);
+                    self.scan_break(true);
                 }
                 TriviaKind::Whitespace => {}
             }
@@ -178,7 +177,7 @@ impl<'a> Printer<'a> {
                 }
                 TriviaKind::Whitespace => {
                     if trivia.newlines() > 1 {
-                        self.scan_break(false, false);
+                        self.scan_break(false);
                     }
                 }
             }
@@ -203,9 +202,12 @@ impl<'a> Printer<'a> {
         true
     }
 
-    fn print_string(&mut self, string: &str) {
+    fn print_string(&mut self, mut string: &str) {
         if self.pending_break {
             self.print_break();
+        }
+        if !self.line_dirty() {
+            string = string.trim_start();
         }
         self.print_indent();
         self.output.push_str(string);
@@ -233,26 +235,20 @@ impl<'a> Printer<'a> {
             .print_frames
             .last()
             .is_some_and(|frame| frame.group_break);
-        let content_break = self
-            .print_frames
-            .last()
-            .is_some_and(|frame| frame.content_break);
 
         match &token {
             Token::Text { string, mode } => {
                 let should_print = matches!(
-                    (mode, content_break),
+                    (mode, group_break),
                     (TextMode::Always, _) | (TextMode::Break, true) | (TextMode::NoBreak, false)
                 );
                 if should_print {
                     self.print_string(string);
                 }
             }
-            Token::Break { space, len, force } => {
+            Token::Break { len, force } => {
                 if group_break || *len >= self.space || *force {
                     self.print_break();
-                } else if *space {
-                    self.print_string(" ");
                 }
             }
             Token::Begin { mode, len, .. } => {
