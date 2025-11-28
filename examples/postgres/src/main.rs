@@ -4,9 +4,6 @@ use kosame::prelude::*;
 mod schema {
     use kosame::pg_table;
 
-    pg_table! { create table mflasdf (); }
-    pg_table!(create table pip (););
-
     pg_table! {
         // Kosame uses the familiar SQL syntax to declare tables.
         create table lel (id int primary key);
@@ -14,51 +11,7 @@ mod schema {
 
     pg_table! {
         // Kosame uses the familiar SQL syntax to declare tables.
-        create table kek (
-            id int primary key not null not null not null not /*kek*/ null not null
-                not null not null not null not null not null not null not null not null
-                not null not null not null not //pip
-                null not null not null not null default (3 + 4 + (5 + 6 + 8 + 9 + 10
-                        + now(5))),
-        );
-
-        pip: (
-            kek,
-            schnebul,
-            kek,
-            kek,
-            kek,
-            kek,
-            schnebul,
-            kek,
-            kek,
-            kek,
-            kek,
-            kek,
-            kek,
-            kek,
-        ) => mflasdf (
-            lel,
-            lel,
-            le,
-            le,
-            le,
-            le,
-            le,
-            le,
-            le,
-            le,
-            le,
-            le,
-            le,
-            lelllllllllll,
-        ),
-    }
-
-    pg_table! {
-        // Kosame uses the familiar SQL syntax to declare tables.
         create table posts (
-            /// kek
             id int primary key,
 
             // Kosame converts database identifiers to snake_case automatically and
@@ -76,14 +29,13 @@ mod schema {
     pg_table! {
         create table comments (
             id int primary key,
-            post_id int not null /* before comma */,
-            content text not null, /* after comma */
+            post_id int not null,
+            content text not null,
             upvotes int not null default 0,
         );
 
         // You may also define the inverse relation if you need it.
-        post: (post_id) => posts (id),//pip
-
+        post: (post_id) => posts (id),
     }
 
     // The `kosame::pg_table!` macro is a shorthand for `kosame::table!` with the driver

@@ -290,6 +290,7 @@ impl<'a> Printer<'a> {
                     self.scan_text(" ".into(), TextMode::Always);
                 }
                 TriviaKind::LineComment => {
+                    self.scan_text(" ".into(), TextMode::Always);
                     self.scan_text(trivia.content.to_string().into(), TextMode::Always);
                     self.scan_break(true);
                 }
