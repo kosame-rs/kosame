@@ -36,7 +36,7 @@ pub enum Field {
 }
 
 impl Field {
-    #[must_use] 
+    #[must_use]
     pub fn name(&self) -> &Ident {
         match self {
             Self::Column { name, .. } => name,
@@ -45,7 +45,7 @@ impl Field {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn alias(&self) -> Option<&Alias> {
         match self {
             Self::Column { alias, .. } => alias.as_ref(),
@@ -54,7 +54,7 @@ impl Field {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn span(&self) -> Span {
         match self {
             Self::Column { name, .. } => name.span(),
@@ -71,7 +71,7 @@ impl Field {
         matches!(self, Self::Column { .. })
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn to_row_field(&self, table_path: &Path, node_path: &QueryNodePath) -> RowField {
         match self {
             Field::Column {
@@ -81,13 +81,12 @@ impl Field {
                 type_override,
                 ..
             } => {
-                let alias_or_name = alias
-                    .as_ref()
-                    .map_or(name, |alias| &alias.ident)
-                    .clone();
+                let alias_or_name = alias.as_ref().map_or(name, |alias| &alias.ident).clone();
 
-                let type_override_or_default = type_override
-                    .as_ref().map_or_else(|| parse_quote! { #table_path::columns::#name::Type }, |type_override| type_override.type_path.to_call_site(1));
+                let type_override_or_default = type_override.as_ref().map_or_else(
+                    || parse_quote! { #table_path::columns::#name::Type },
+                    |type_override| type_override.type_path.to_call_site(1),
+                );
 
                 RowField::new(
                     attrs.clone(),
@@ -98,10 +97,7 @@ impl Field {
             Field::Relation {
                 attrs, name, alias, ..
             } => {
-                let alias_or_name = alias
-                    .as_ref()
-                    .map_or(name, |alias| &alias.ident)
-                    .clone();
+                let alias_or_name = alias.as_ref().map_or(name, |alias| &alias.ident).clone();
 
                 let mut node_path = node_path.clone();
                 node_path.append(name.clone());

@@ -8,7 +8,7 @@ pub struct Offset<'a> {
 
 impl<'a> Offset<'a> {
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn new(expr: Expr<'a>) -> Self {
         Self { expr }
     }

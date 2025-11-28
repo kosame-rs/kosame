@@ -9,19 +9,19 @@ pub struct Field<'a> {
 
 impl<'a> Field<'a> {
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn new(expr: Expr<'a>, alias: Option<&'a str>) -> Self {
         Self { expr, alias }
     }
 
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn expr(&self) -> &Expr<'a> {
         &self.expr
     }
 
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn alias(&self) -> Option<&'a str> {
         self.alias
     }
@@ -46,7 +46,7 @@ pub struct Fields<'a>(&'a [Field<'a>]);
 
 impl<'a> Fields<'a> {
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn new(fields: &'a [Field<'a>]) -> Self {
         Self(fields)
     }

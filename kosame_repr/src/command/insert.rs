@@ -1,6 +1,9 @@
 use std::fmt::Write;
 
-use crate::{clause::{Values, Returning}, part::TargetTable};
+use crate::{
+    clause::{Returning, Values},
+    part::TargetTable,
+};
 
 pub struct Insert<'a> {
     target_table: TargetTable<'a>,
@@ -10,7 +13,7 @@ pub struct Insert<'a> {
 
 impl<'a> Insert<'a> {
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn new(
         target_table: TargetTable<'a>,
         values: Values<'a>,
@@ -24,19 +27,19 @@ impl<'a> Insert<'a> {
     }
 
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn target_table(&self) -> &TargetTable<'a> {
         &self.target_table
     }
 
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn values(&self) -> &Values<'a> {
         &self.values
     }
 
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn returning(&self) -> Option<&Returning<'a>> {
         self.returning.as_ref()
     }

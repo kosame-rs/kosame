@@ -8,13 +8,13 @@ pub struct Values<'a> {
 
 impl<'a> Values<'a> {
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn new(rows: &'a [ValuesRow<'a>]) -> Self {
         Self { rows }
     }
 
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn rows(&self) -> &'a [ValuesRow<'a>] {
         self.rows
     }
@@ -38,13 +38,13 @@ pub struct ValuesRow<'a> {
 
 impl<'a> ValuesRow<'a> {
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn new(items: &'a [ValuesItem<'a>]) -> Self {
         Self { items }
     }
 
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn items(&self) -> &'a [ValuesItem<'a>] {
         self.items
     }

@@ -22,12 +22,12 @@ impl BindParam {
         visitor.visit_bind_param(self);
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn infer_name(&self) -> Option<&Ident> {
         Some(&self.name)
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn infer_type(&self, _scope_id: ScopeId) -> Option<InferredType<'_>> {
         None
     }
@@ -36,7 +36,7 @@ impl BindParam {
         input.peek(Token![:])
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn span(&self) -> Span {
         self.colon_token
             .span

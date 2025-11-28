@@ -74,7 +74,7 @@ impl Expr {
         variants!(branches!());
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn infer_name(&self) -> Option<&Ident> {
         macro_rules! branches {
             ($($variant:ident)*) => {
@@ -87,7 +87,7 @@ impl Expr {
         variants!(branches!())
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn infer_type(&self, scope_id: ScopeId) -> Option<InferredType<'_>> {
         macro_rules! branches {
             ($($variant:ident)*) => {
@@ -151,7 +151,7 @@ impl Expr {
         Ok(lhs)
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn span(&self) -> Span {
         macro_rules! branches {
             ($($variant:ident)*) => {

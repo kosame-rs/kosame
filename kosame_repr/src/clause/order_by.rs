@@ -8,7 +8,7 @@ pub struct OrderBy<'a> {
 
 impl<'a> OrderBy<'a> {
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn new(items: &'a [OrderByItem]) -> Self {
         Self { items }
     }
@@ -34,7 +34,7 @@ pub struct OrderByItem<'a> {
 
 impl<'a> OrderByItem<'a> {
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn new(expr: Expr<'a>, dir: Option<OrderByDir>, nulls: Option<OrderByNulls>) -> Self {
         Self { expr, dir, nulls }
     }

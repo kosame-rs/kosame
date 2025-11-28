@@ -8,13 +8,13 @@ pub struct Set<'a> {
 
 impl<'a> Set<'a> {
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn new(items: &'a [SetItem<'a>]) -> Self {
         Self { items }
     }
 
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn items(&self) -> &'a [SetItem<'a>] {
         self.items
     }

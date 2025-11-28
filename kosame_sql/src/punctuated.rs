@@ -14,13 +14,13 @@ impl<'a, T> Punctuated<'a, T> {
     }
 
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn items(&self) -> &'a [T] {
         self.items
     }
 
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn punctuation(&self) -> &'a str {
         self.punctuation
     }

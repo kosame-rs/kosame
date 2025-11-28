@@ -8,7 +8,7 @@ pub struct With<'a> {
 
 impl<'a> With<'a> {
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn new(items: &'a [WithItem]) -> Self {
         Self { items }
     }
@@ -34,7 +34,7 @@ pub struct WithItem<'a> {
 
 impl<'a> WithItem<'a> {
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn new(alias: TableAlias<'a>, command: Command<'a>) -> Self {
         Self { alias, command }
     }

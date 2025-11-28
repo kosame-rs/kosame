@@ -16,12 +16,12 @@ impl TablePath {
         visitor.visit_table_path(self);
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn get_ident(&self) -> Option<&Ident> {
         self.path.get_ident()
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn as_path(&self) -> &Path {
         &self.path
     }

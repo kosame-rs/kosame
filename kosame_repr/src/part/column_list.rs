@@ -6,13 +6,13 @@ pub struct ColumnList<'a> {
 
 impl<'a> ColumnList<'a> {
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn new(columns: &'a [&'a str]) -> Self {
         Self { columns }
     }
 
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub const fn columns(&self) -> &'a [&'a str] {
         self.columns
     }
