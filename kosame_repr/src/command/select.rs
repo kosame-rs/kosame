@@ -177,6 +177,7 @@ impl kosame_sql::FmtSql for SelectCombinator<'_> {
         formatter.write_str(" ")?;
         self.op.fmt_sql(formatter)?;
         self.quantifier.fmt_sql(formatter)?;
+        formatter.write_str(" ")?;
         self.right.fmt_sql(formatter)?;
         Ok(())
     }

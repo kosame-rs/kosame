@@ -3,7 +3,7 @@ use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
 use crate::{
-    clause::{self, Fields, Limit, Offset, OrderBy},
+    clause::{self, Fields, FromChain, Limit, Offset, OrderBy},
     keyword,
     parse_option::ParseOption,
     quote_option::QuoteOption,
@@ -18,10 +18,23 @@ pub struct Select {
 }
 
 impl Select {
+    #[must_use]
     pub fn fields(&self) -> &Fields {
         match &self.chain.start {
-            SelectItem::Paren(select) => select.fields(),
             SelectItem::Core(core) => &core.select.fields,
+            SelectItem::Paren(select) => select.fields(),
+        }
+    }
+
+    #[must_use]
+    #[allow(clippy::wrong_self_convention)]
+    pub fn from_chain(&self) -> Option<&FromChain> {
+        if !self.chain.combinators.is_empty() {
+            return None;
+        }
+        match &self.chain.start {
+            SelectItem::Core(core) => core.from.as_ref().map(|from| &from.chain),
+            SelectItem::Paren(select) => select.from_chain(),
         }
     }
 

@@ -111,7 +111,7 @@ impl CommandType {
         match self {
             Self::Delete(inner) => inner.returning.as_ref().map(|returning| &returning.fields),
             Self::Insert(inner) => inner.returning.as_ref().map(|returning| &returning.fields),
-            Self::Select(inner) => Some(&inner.fields()),
+            Self::Select(inner) => Some(inner.fields()),
             Self::Update(inner) => inner.returning.as_ref().map(|returning| &returning.fields),
         }
     }
@@ -132,7 +132,7 @@ impl CommandType {
         match self {
             Self::Delete(delete) => delete.using.as_ref().map(|using| &using.chain),
             Self::Insert(..) => None,
-            Self::Select(select) => select.from.as_ref().map(|from| &from.chain),
+            Self::Select(select) => select.from_chain(),
             Self::Update(update) => update.from.as_ref().map(|from| &from.chain),
         }
     }
