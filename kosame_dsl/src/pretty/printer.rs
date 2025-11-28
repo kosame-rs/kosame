@@ -273,20 +273,20 @@ impl<'a> Printer<'a> {
     /// This should be called before structural operations like `scan_begin` to ensure
     /// comments appear in the right place.
     pub fn flush_trivia(&mut self, token_span: Span) {
-        while let Some(trivia) = self.trivia.first()
-            && trivia.span.comes_before(&token_span)
-        {
-            // match trivia.kind {
-            //     // TriviaKind::BlockComment => {
-            //     //     self.scan_comment(trivia.content, false);
-            //     //     self.scan_break(true);
-            //     // }
-            //     // TriviaKind::LineComment => {
-            //     //     self.scan_comment(trivia.content, true);
-            //     // }
-            //     // TriviaKind::Whitespace => {}
-            // }
-            self.trivia = &self.trivia[1..];
+        self.cursor = token_span.start();
+        while let Some(trivia) = self.ready_trivia() {
+            match trivia.kind {
+                TriviaKind::BlockComment => {
+                    self.scan_text(trivia.content.to_string().into(), TextMode::Always);
+                    self.scan_break(false);
+                    self.scan_text(" ".into(), TextMode::Always);
+                }
+                TriviaKind::LineComment => {
+                    self.scan_text(trivia.content.to_string().into(), TextMode::Always);
+                    self.scan_break(true);
+                }
+                TriviaKind::Whitespace => {}
+            }
         }
     }
 

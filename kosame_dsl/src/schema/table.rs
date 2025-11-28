@@ -210,6 +210,8 @@ impl PrettyPrint for Table {
 
         if !self.relations.is_empty() {
             printer.scan_break(false);
+            printer.scan_break(false);
+            " ".pretty_print(printer);
             self.relations.pretty_print(printer);
         }
     }
