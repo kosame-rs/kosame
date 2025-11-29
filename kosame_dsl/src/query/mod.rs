@@ -17,13 +17,12 @@ use syn::{
 
 use crate::{
     attribute::{CustomMeta, MetaLocation},
-    bind_params::{BindParamsBuilder, BindParamsClosure},
+    bind_params::{BindParams, BindParamsClosure},
     correlations::{CorrelationId, Correlations},
     parse_option::ParseOption,
     part::{Alias, TablePath},
     path_ext::PathExt,
     scopes::{ScopeId, Scopes},
-    visit::Visit,
 };
 
 pub struct Query {
@@ -63,11 +62,7 @@ impl ToTokens for Query {
             None => &Ident::new("internal", Span::call_site()),
         };
 
-        let bind_params = {
-            let mut builder = BindParamsBuilder::new();
-            builder.visit_node(&self.body);
-            builder.build()
-        };
+        let bind_params = BindParams::from(self);
         let correlations = Correlations::from(self);
         let scopes = Scopes::from(self);
 

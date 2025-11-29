@@ -1,32 +1,20 @@
 use crate::{
     expr::{self, visit_bind_param},
+    query::Query,
+    statement::Statement,
     visit::Visit,
 };
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 use syn::Ident;
 
-pub struct BindParamsBuilder<'a> {
+struct BindParamsBuilder<'a> {
     params: Vec<&'a Ident>,
 }
 
-impl BindParamsBuilder<'_> {
-    #[must_use]
-    pub fn new() -> Self {
-        Self { params: Vec::new() }
-    }
-}
-
-impl Default for BindParamsBuilder<'_> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl<'a> BindParamsBuilder<'a> {
-    #[must_use]
-    pub fn build(self) -> BindParams<'a> {
-        BindParams::new(self.params)
+    fn new() -> Self {
+        Self { params: Vec::new() }
     }
 }
 
@@ -44,13 +32,29 @@ pub struct BindParams<'a> {
 }
 
 impl<'a> BindParams<'a> {
-    fn new(params: Vec<&'a Ident>) -> Self {
-        Self { params }
-    }
-
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.params.is_empty()
+    }
+}
+
+impl<'a> From<&'a Statement> for BindParams<'a> {
+    fn from(value: &'a Statement) -> Self {
+        let mut builder = BindParamsBuilder::new();
+        builder.visit_statement(value);
+        Self {
+            params: builder.params,
+        }
+    }
+}
+
+impl<'a> From<&'a Query> for BindParams<'a> {
+    fn from(value: &'a Query) -> Self {
+        let mut builder = BindParamsBuilder::new();
+        builder.visit_node(&value.body);
+        Self {
+            params: builder.params,
+        }
     }
 }
 

@@ -7,7 +7,7 @@ use syn::{
 
 use crate::{
     attribute::{CustomMeta, MetaLocation},
-    bind_params::{BindParamsBuilder, BindParamsClosure},
+    bind_params::{BindParams, BindParamsClosure},
     command::Command,
     correlations::{CorrelationId, Correlations},
     parse_option::ParseOption,
@@ -120,11 +120,7 @@ impl ToTokens for Statement {
             None => &Ident::new("internal", Span::call_site()),
         };
 
-        let bind_params = {
-            let mut builder = BindParamsBuilder::new();
-            builder.visit_statement(self);
-            builder.build()
-        };
+        let bind_params = BindParams::from(self);
         let correlations = Correlations::from(&self.command);
         let scopes = Scopes::from(&self.command);
 
