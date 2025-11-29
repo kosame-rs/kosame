@@ -278,50 +278,56 @@ impl<'a> From<&'a Command> for Correlations<'a> {
         }
 
         impl<'a> Visit<'a> for Visitor<'a> {
+            fn visit_with_item(&mut self, with_item: &'a WithItem) {
+                self.correlations.push(Correlation::WithItem(with_item));
+                self.visit_command(&with_item.command);
+                self.inherited_with_items.push(with_item);
+            }
+
+            fn visit_target_table(&mut self, target_table: &'a crate::part::TargetTable) {
+                self.correlations
+                    .push(Correlation::Table(&target_table.table, None));
+            }
+
+            fn visit_from_item(&mut self, from_item: &'a FromItem) {
+                self.correlations.push(Correlation::FromItem(from_item));
+
+                match from_item {
+                    FromItem::Table { table_path, .. } => {
+                        let with_item = match from_item {
+                            FromItem::Table { table_path, .. } => match table_path.get_ident() {
+                                Some(table) => self
+                                    .inherited_with_items
+                                    .iter()
+                                    .rev()
+                                    .find(|with_item| with_item.alias.name == *table),
+                                None => None,
+                            },
+                            FromItem::Subquery { .. } => None,
+                        };
+                        self.correlations
+                            .push(Correlation::Table(table_path, with_item.copied()));
+                    }
+                    FromItem::Subquery { command, .. } => {
+                        self.visit_command(command);
+                    }
+                }
+            }
+
             fn visit_command(&mut self, command: &'a Command) {
                 self.correlations.push(Correlation::Command(command));
                 let with_items_truncate = self.inherited_with_items.len();
 
                 if let Some(with) = &command.with {
-                    for with_item in &with.items {
-                        self.correlations.push(Correlation::WithItem(with_item));
-                        self.visit_command(&with_item.command);
-                        self.inherited_with_items.push(with_item);
-                    }
+                    self.visit_with(with);
                 }
 
                 if let Some(target_table) = command.target_table() {
-                    self.correlations
-                        .push(Correlation::Table(&target_table.table, None));
+                    self.visit_target_table(target_table);
                 }
 
                 if let Some(from_chain) = command.from_chain() {
-                    for from_item in from_chain {
-                        self.correlations.push(Correlation::FromItem(from_item));
-
-                        match from_item {
-                            FromItem::Table { table_path, .. } => {
-                                let with_item = match from_item {
-                                    FromItem::Table { table_path, .. } => {
-                                        match table_path.get_ident() {
-                                            Some(table) => {
-                                                self.inherited_with_items.iter().rev().find(
-                                                    |with_item| with_item.alias.name == *table,
-                                                )
-                                            }
-                                            None => None,
-                                        }
-                                    }
-                                    FromItem::Subquery { .. } => None,
-                                };
-                                self.correlations
-                                    .push(Correlation::Table(table_path, with_item.copied()));
-                            }
-                            FromItem::Subquery { command, .. } => {
-                                self.visit_command(command);
-                            }
-                        }
-                    }
+                    self.visit_from_chain(from_chain);
                 }
 
                 self.inherited_with_items.truncate(with_items_truncate);
