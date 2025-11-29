@@ -24,18 +24,18 @@ impl Delete {
     pub fn peek(input: ParseStream) -> bool {
         input.peek(keyword::delete)
     }
+}
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.target_table.accept(visitor);
-        if let Some(inner) = &self.using {
-            inner.accept(visitor);
-        }
-        if let Some(inner) = &self.r#where {
-            inner.accept(visitor);
-        }
-        if let Some(inner) = &self.returning {
-            inner.accept(visitor);
-        }
+pub fn visit_delete<'a>(visit: &mut (impl Visit<'a> + ?Sized), delete: &'a Delete) {
+    visit.visit_target_table(&delete.target_table);
+    if let Some(inner) = &delete.using {
+        visit.visit_using(inner);
+    }
+    if let Some(inner) = &delete.r#where {
+        visit.visit_where(inner);
+    }
+    if let Some(inner) = &delete.returning {
+        visit.visit_returning(inner);
     }
 }
 
@@ -82,10 +82,8 @@ impl ParseOption for Using {
     }
 }
 
-impl Using {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.chain.accept(visitor);
-    }
+pub fn visit_using<'a>(visit: &mut (impl Visit<'a> + ?Sized), using: &'a Using) {
+    visit.visit_from_chain(&using.chain);
 }
 
 impl Parse for Using {

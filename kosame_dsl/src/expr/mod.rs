@@ -18,6 +18,17 @@ pub use paren::*;
 pub use raw::*;
 pub use unary::*;
 
+// Re-export visit functions
+pub use binary::visit_binary;
+pub use bind_param::visit_bind_param;
+pub use call::visit_call;
+pub use cast::visit_cast;
+pub use column_ref::visit_column_ref;
+pub use lit::visit_lit;
+pub use paren::visit_paren;
+pub use raw::visit_raw;
+pub use unary::visit_unary;
+
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, quote};
 use syn::{
@@ -62,18 +73,6 @@ macro_rules! variants {
 }
 
 impl Expr {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        macro_rules! branches {
-            ($($variant:ident)*) => {
-                match self {
-                    $(Self::$variant(inner) => inner.accept(visitor)),*
-                }
-            };
-        }
-
-        variants!(branches!());
-    }
-
     #[must_use]
     pub fn infer_name(&self) -> Option<&Ident> {
         macro_rules! branches {
@@ -162,6 +161,20 @@ impl Expr {
         }
 
         variants!(branches!())
+    }
+}
+
+pub fn visit_expr<'a>(visit: &mut (impl Visit<'a> + ?Sized), expr: &'a Expr) {
+    match expr {
+        Expr::Binary(inner) => visit.visit_binary(inner),
+        Expr::BindParam(inner) => visit.visit_bind_param(inner),
+        Expr::Call(inner) => visit.visit_call(inner),
+        Expr::Cast(inner) => visit.visit_cast(inner),
+        Expr::ColumnRef(inner) => visit.visit_column_ref(inner),
+        Expr::Lit(inner) => visit.visit_lit(inner),
+        Expr::Paren(inner) => visit.visit_paren(inner),
+        Expr::Raw(inner) => visit.visit_raw(inner),
+        Expr::Unary(inner) => visit.visit_unary(inner),
     }
 }
 

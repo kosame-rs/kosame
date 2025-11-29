@@ -24,8 +24,6 @@ pub enum Lit {
 }
 
 impl Lit {
-    pub fn accept<'a>(&'a self, _visitor: &mut impl Visit<'a>) {}
-
     #[must_use]
     pub fn infer_name(&self) -> Option<&Ident> {
         None
@@ -47,6 +45,8 @@ impl Lit {
         }
     }
 }
+
+pub fn visit_lit<'a>(_visit: &mut (impl Visit<'a> + ?Sized), _lit: &'a Lit) {}
 
 impl Parse for Lit {
     fn parse(input: ParseStream) -> syn::Result<Self> {

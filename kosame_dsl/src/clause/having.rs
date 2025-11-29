@@ -15,10 +15,8 @@ impl ParseOption for Having {
     }
 }
 
-impl Having {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.expr.accept(visitor);
-    }
+pub fn visit_having<'a>(visit: &mut (impl Visit<'a> + ?Sized), having: &'a Having) {
+    visit.visit_expr(&having.expr);
 }
 
 impl Parse for Having {

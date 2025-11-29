@@ -28,10 +28,6 @@ impl Unary {
         }
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.operand.accept(visitor);
-    }
-
     #[must_use]
     pub fn infer_name(&self) -> Option<&Ident> {
         None
@@ -41,6 +37,10 @@ impl Unary {
     pub fn infer_type(&self, _scope_id: ScopeId) -> Option<InferredType<'_>> {
         None
     }
+}
+
+pub fn visit_unary<'a>(visit: &mut (impl Visit<'a> + ?Sized), unary: &'a Unary) {
+    visit.visit_expr(&unary.operand);
 }
 
 impl ToTokens for Unary {

@@ -30,28 +30,6 @@ pub struct Node {
 }
 
 impl Node {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        for field in &self.fields {
-            match field {
-                Field::Relation { node, .. } => node.accept(visitor),
-                Field::Expr { expr, .. } => expr.accept(visitor),
-                Field::Column { .. } => {}
-            }
-        }
-
-        if let Some(inner) = self.r#where.as_ref() {
-            inner.accept(visitor);
-        }
-        if let Some(inner) = self.order_by.as_ref() {
-            inner.accept(visitor);
-        }
-        if let Some(inner) = self.limit.as_ref() {
-            inner.accept(visitor);
-        }
-        if let Some(inner) = self.offset.as_ref() {
-            inner.accept(visitor);
-        }
-    }
 
     pub fn to_row_tokens(
         &self,
@@ -219,6 +197,29 @@ impl Node {
             }
             .to_tokens(tokens);
         });
+    }
+}
+
+pub fn visit_node<'a>(visit: &mut (impl Visit<'a> + ?Sized), node: &'a Node) {
+    for field in &node.fields {
+        match field {
+            Field::Relation { node, .. } => visit.visit_node(node),
+            Field::Expr { expr, .. } => visit.visit_expr(expr),
+            Field::Column { .. } => {}
+        }
+    }
+
+    if let Some(inner) = node.r#where.as_ref() {
+        visit.visit_where(inner);
+    }
+    if let Some(inner) = node.order_by.as_ref() {
+        visit.visit_order_by(inner);
+    }
+    if let Some(inner) = node.limit.as_ref() {
+        visit.visit_limit(inner);
+    }
+    if let Some(inner) = node.offset.as_ref() {
+        visit.visit_offset(inner);
     }
 }
 

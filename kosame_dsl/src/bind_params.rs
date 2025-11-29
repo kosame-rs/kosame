@@ -1,4 +1,7 @@
-use crate::{expr, visit::Visit};
+use crate::{
+    expr::{self, visit_bind_param},
+    visit::Visit,
+};
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 use syn::Ident;
@@ -32,6 +35,7 @@ impl<'a> Visit<'a> for BindParamsBuilder<'a> {
         if !self.params.contains(&&bind_param.name) {
             self.params.push(&bind_param.name);
         }
+        visit_bind_param(self, bind_param);
     }
 }
 

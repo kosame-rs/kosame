@@ -12,10 +12,6 @@ pub struct TablePath {
 }
 
 impl TablePath {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        visitor.visit_table_path(self);
-    }
-
     #[must_use]
     pub fn get_ident(&self) -> Option<&Ident> {
         self.path.get_ident()
@@ -26,6 +22,8 @@ impl TablePath {
         &self.path
     }
 }
+
+pub fn visit_table_path<'a>(_visit: &mut (impl Visit<'a> + ?Sized), _table_path: &'a TablePath) {}
 
 impl Parse for TablePath {
     fn parse(input: ParseStream) -> syn::Result<Self> {

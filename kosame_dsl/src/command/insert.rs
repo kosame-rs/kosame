@@ -23,13 +23,13 @@ impl Insert {
     pub fn peek(input: ParseStream) -> bool {
         input.peek(keyword::insert)
     }
+}
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.target_table.accept(visitor);
-        self.values.accept(visitor);
-        if let Some(inner) = &self.returning {
-            inner.accept(visitor);
-        }
+pub fn visit_insert<'a>(visit: &mut (impl Visit<'a> + ?Sized), insert: &'a Insert) {
+    visit.visit_target_table(&insert.target_table);
+    visit.visit_values(&insert.values);
+    if let Some(inner) = &insert.returning {
+        visit.visit_returning(inner);
     }
 }
 

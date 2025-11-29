@@ -30,10 +30,6 @@ impl Cast {
         input.peek(keyword::cast)
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.value.accept(visitor);
-    }
-
     #[must_use]
     pub fn infer_name(&self) -> Option<&Ident> {
         self.value.infer_name()
@@ -54,6 +50,10 @@ impl Cast {
             .join(self.paren.span.span())
             .unwrap_or(self.cast_kw.span)
     }
+}
+
+pub fn visit_cast<'a>(visit: &mut (impl Visit<'a> + ?Sized), cast: &'a Cast) {
+    visit.visit_expr(&cast.value);
 }
 
 impl Parse for Cast {

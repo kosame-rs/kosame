@@ -4,6 +4,7 @@ mod node_path;
 mod star;
 
 pub use field::*;
+pub use node::visit_node;
 pub use node::*;
 pub use node_path::*;
 
@@ -22,6 +23,7 @@ use crate::{
     part::{Alias, TablePath},
     path_ext::PathExt,
     scopes::{ScopeId, Scopes},
+    visit::Visit,
 };
 
 pub struct Query {
@@ -63,7 +65,7 @@ impl ToTokens for Query {
 
         let bind_params = {
             let mut builder = BindParamsBuilder::new();
-            self.body.accept(&mut builder);
+            builder.visit_node(&self.body);
             builder.build()
         };
         let correlations = Correlations::from(self);

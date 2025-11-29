@@ -24,16 +24,19 @@ impl Update {
     pub fn peek(input: ParseStream) -> bool {
         input.peek(keyword::update)
     }
+}
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.target_table.accept(visitor);
-        self.set.accept(visitor);
-        if let Some(inner) = &self.r#where {
-            inner.accept(visitor);
-        }
-        if let Some(inner) = &self.returning {
-            inner.accept(visitor);
-        }
+pub fn visit_update<'a>(visit: &mut (impl Visit<'a> + ?Sized), update: &'a Update) {
+    visit.visit_target_table(&update.target_table);
+    visit.visit_set(&update.set);
+    if let Some(inner) = &update.from {
+        visit.visit_from(inner);
+    }
+    if let Some(inner) = &update.r#where {
+        visit.visit_where(inner);
+    }
+    if let Some(inner) = &update.returning {
+        visit.visit_returning(inner);
     }
 }
 

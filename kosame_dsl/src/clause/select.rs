@@ -16,10 +16,8 @@ pub struct Select {
     pub fields: Fields,
 }
 
-impl Select {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.fields.accept(visitor);
-    }
+pub fn visit_select<'a>(visit: &mut (impl Visit<'a> + ?Sized), select: &'a Select) {
+    visit.visit_fields(&select.fields);
 }
 
 impl Parse for Select {
@@ -56,21 +54,19 @@ pub struct SelectCore {
     pub having: Option<Having>,
 }
 
-impl SelectCore {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.select.accept(visitor);
-        if let Some(inner) = self.from.as_ref() {
-            inner.accept(visitor);
-        }
-        if let Some(inner) = self.r#where.as_ref() {
-            inner.accept(visitor);
-        }
-        if let Some(inner) = self.group_by.as_ref() {
-            inner.accept(visitor);
-        }
-        if let Some(inner) = self.having.as_ref() {
-            inner.accept(visitor);
-        }
+pub fn visit_select_core<'a>(visit: &mut (impl Visit<'a> + ?Sized), select_core: &'a SelectCore) {
+    visit.visit_select(&select_core.select);
+    if let Some(inner) = select_core.from.as_ref() {
+        visit.visit_from(inner);
+    }
+    if let Some(inner) = select_core.r#where.as_ref() {
+        visit.visit_where(inner);
+    }
+    if let Some(inner) = select_core.group_by.as_ref() {
+        visit.visit_group_by(inner);
+    }
+    if let Some(inner) = select_core.having.as_ref() {
+        visit.visit_having(inner);
     }
 }
 

@@ -15,10 +15,8 @@ impl ParseOption for Returning {
     }
 }
 
-impl Returning {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.fields.accept(visitor);
-    }
+pub fn visit_returning<'a>(visit: &mut (impl Visit<'a> + ?Sized), returning: &'a Returning) {
+    visit.visit_fields(&returning.fields);
 }
 
 impl Parse for Returning {

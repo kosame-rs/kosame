@@ -30,11 +30,6 @@ impl Binary {
         }
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.lhs.accept(visitor);
-        self.rhs.accept(visitor);
-    }
-
     #[inline]
     #[must_use]
     pub fn infer_name(&self) -> Option<&Ident> {
@@ -55,6 +50,11 @@ impl Binary {
             .join(self.rhs.span())
             .unwrap_or(self.lhs.span())
     }
+}
+
+pub fn visit_binary<'a>(visit: &mut (impl Visit<'a> + ?Sized), binary: &'a Binary) {
+    visit.visit_expr(&binary.lhs);
+    visit.visit_expr(&binary.rhs);
 }
 
 impl ToTokens for Binary {

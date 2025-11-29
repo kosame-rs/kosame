@@ -18,8 +18,6 @@ pub struct Raw {
 }
 
 impl Raw {
-    pub fn accept<'a>(&'a self, _visitor: &mut impl Visit<'a>) {}
-
     #[must_use]
     pub fn infer_name(&self) -> Option<&Ident> {
         None
@@ -42,6 +40,8 @@ impl Raw {
             .unwrap_or(self.string.span())
     }
 }
+
+pub fn visit_raw<'a>(_visit: &mut (impl Visit<'a> + ?Sized), _raw: &'a Raw) {}
 
 impl Parse for Raw {
     fn parse(input: ParseStream) -> syn::Result<Self> {

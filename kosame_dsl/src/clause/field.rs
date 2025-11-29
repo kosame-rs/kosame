@@ -59,10 +59,6 @@ impl Field {
         ))
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.expr.accept(visitor);
-    }
-
     #[must_use]
     pub fn infer_name(&self) -> Option<&Ident> {
         self.alias
@@ -78,6 +74,10 @@ impl Field {
             .map(|type_override| InferredType::RustType(&type_override.type_path))
             .or_else(|| self.expr.infer_type(scope_id))
     }
+}
+
+pub fn visit_field<'a>(visit: &mut (impl Visit<'a> + ?Sized), field: &'a Field) {
+    visit.visit_expr(&field.expr);
 }
 
 impl Parse for Field {
@@ -109,15 +109,15 @@ impl Fields {
         self.0.iter()
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        for field in self.iter() {
-            field.accept(visitor);
-        }
-    }
-
     #[must_use]
     pub fn columns(&self) -> Vec<&Ident> {
         self.iter().filter_map(|field| field.infer_name()).collect()
+    }
+}
+
+pub fn visit_fields<'a>(visit: &mut (impl Visit<'a> + ?Sized), fields: &'a Fields) {
+    for field in fields.iter() {
+        visit.visit_field(field);
     }
 }
 

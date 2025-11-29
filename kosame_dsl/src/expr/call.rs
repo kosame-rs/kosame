@@ -35,18 +35,18 @@ impl Call {
         None
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        for param in &self.params {
-            param.accept(visitor);
-        }
-    }
-
     #[must_use]
     pub fn span(&self) -> Span {
         self.function
             .span()
             .join(self.paren.span.span())
             .unwrap_or(self.function.span())
+    }
+}
+
+pub fn visit_call<'a>(visit: &mut (impl Visit<'a> + ?Sized), call: &'a Call) {
+    for param in &call.params {
+        visit.visit_expr(param);
     }
 }
 

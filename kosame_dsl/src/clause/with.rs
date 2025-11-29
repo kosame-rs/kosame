@@ -26,11 +26,9 @@ impl ParseOption for With {
     }
 }
 
-impl With {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        for item in &self.items {
-            item.accept(visitor);
-        }
+pub fn visit_with<'a>(visit: &mut (impl Visit<'a> + ?Sized), with: &'a With) {
+    for item in &with.items {
+        visit.visit_with_item(item);
     }
 }
 
@@ -75,10 +73,6 @@ pub struct WithItem {
 }
 
 impl WithItem {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.command.accept(visitor);
-    }
-
     #[must_use]
     pub fn columns(&self) -> Vec<&Ident> {
         match &self.alias.columns {
@@ -91,6 +85,10 @@ impl WithItem {
                 .collect(),
         }
     }
+}
+
+pub fn visit_with_item<'a>(visit: &mut (impl Visit<'a> + ?Sized), with_item: &'a WithItem) {
+    visit.visit_command(&with_item.command);
 }
 
 impl Parse for WithItem {

@@ -20,11 +20,9 @@ impl ParseOption for OrderBy {
     }
 }
 
-impl OrderBy {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        for item in &self.items {
-            item.expr.accept(visitor);
-        }
+pub fn visit_order_by<'a>(visit: &mut (impl Visit<'a> + ?Sized), order_by: &'a OrderBy) {
+    for item in &order_by.items {
+        visit.visit_expr(&item.expr);
     }
 }
 

@@ -29,10 +29,8 @@ impl ParseOption for From {
     }
 }
 
-impl From {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.chain.accept(visitor);
-    }
+pub fn visit_from<'a>(visit: &mut (impl Visit<'a> + ?Sized), from: &'a From) {
+    visit.visit_from_chain(&from.chain);
 }
 
 impl Parse for From {
@@ -57,13 +55,6 @@ pub struct FromChain {
 }
 
 impl FromChain {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.start.accept(visitor);
-        for combinator in &self.combinators {
-            combinator.accept(visitor);
-        }
-    }
-
     #[must_use]
     pub fn len(&self) -> usize {
         self.combinators.len() + 1
@@ -108,6 +99,13 @@ impl FromChain {
     }
 }
 
+pub fn visit_from_chain<'a>(visit: &mut (impl Visit<'a> + ?Sized), from_chain: &'a FromChain) {
+    visit.visit_from_item(&from_chain.start);
+    for combinator in &from_chain.combinators {
+        visit.visit_from_combinator(combinator);
+    }
+}
+
 impl Parse for FromChain {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
@@ -144,17 +142,6 @@ pub enum FromItem {
 }
 
 impl FromItem {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        match self {
-            Self::Table { table_path, .. } => {
-                table_path.accept(visitor);
-            }
-            Self::Subquery { command, .. } => {
-                command.accept(visitor);
-            }
-        }
-    }
-
     #[must_use]
     pub fn name(&self) -> Option<&Ident> {
         match self {
@@ -204,6 +191,17 @@ impl FromItem {
                 .into_iter()
                 .flat_map(|fields| fields.columns())
                 .collect(),
+        }
+    }
+}
+
+pub fn visit_from_item<'a>(visit: &mut (impl Visit<'a> + ?Sized), from_item: &'a FromItem) {
+    match from_item {
+        FromItem::Table { table_path, .. } => {
+            visit.visit_table_path(table_path);
+        }
+        FromItem::Subquery { command, .. } => {
+            visit.visit_command(command);
         }
     }
 }
@@ -380,21 +378,6 @@ pub enum FromCombinator {
 }
 
 impl FromCombinator {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        match self {
-            Self::Join { right, on, .. } => {
-                right.accept(visitor);
-                on.expr.accept(visitor);
-            }
-            Self::NaturalJoin { right, .. } => {
-                right.accept(visitor);
-            }
-            Self::CrossJoin { right, .. } => {
-                right.accept(visitor);
-            }
-        }
-    }
-
     pub fn peek(input: ParseStream) -> bool {
         JoinType::peek(input) || input.peek(keyword::natural) || input.peek(keyword::cross)
     }
@@ -413,6 +396,21 @@ impl FromCombinator {
             Self::Join { right, .. } => right,
             Self::NaturalJoin { right, .. } => right,
             Self::CrossJoin { right, .. } => right,
+        }
+    }
+}
+
+pub fn visit_from_combinator<'a>(visit: &mut (impl Visit<'a> + ?Sized), from_combinator: &'a FromCombinator) {
+    match from_combinator {
+        FromCombinator::Join { right, on, .. } => {
+            visit.visit_from_item(right);
+            visit.visit_expr(&on.expr);
+        }
+        FromCombinator::NaturalJoin { right, .. } => {
+            visit.visit_from_item(right);
+        }
+        FromCombinator::CrossJoin { right, .. } => {
+            visit.visit_from_item(right);
         }
     }
 }

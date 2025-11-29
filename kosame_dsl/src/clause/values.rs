@@ -17,11 +17,11 @@ impl Values {
     pub fn peek(input: ParseStream) -> bool {
         input.peek(keyword::values)
     }
+}
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        for row in &self.rows {
-            row.accept(visitor);
-        }
+pub fn visit_values<'a>(visit: &mut (impl Visit<'a> + ?Sized), values: &'a Values) {
+    for row in &values.rows {
+        visit.visit_values_row(row);
     }
 }
 
@@ -59,11 +59,9 @@ pub struct ValuesRow {
     items: Punctuated<ValuesItem, Token![,]>,
 }
 
-impl ValuesRow {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        for item in &self.items {
-            item.accept(visitor);
-        }
+pub fn visit_values_row<'a>(visit: &mut (impl Visit<'a> + ?Sized), values_row: &'a ValuesRow) {
+    for item in &values_row.items {
+        visit.visit_values_item(item);
     }
 }
 
@@ -90,12 +88,10 @@ pub enum ValuesItem {
     Expr(Expr),
 }
 
-impl ValuesItem {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        match self {
-            Self::Default(..) => {}
-            Self::Expr(expr) => expr.accept(visitor),
-        }
+pub fn visit_values_item<'a>(visit: &mut (impl Visit<'a> + ?Sized), values_item: &'a ValuesItem) {
+    match values_item {
+        ValuesItem::Default(..) => {}
+        ValuesItem::Expr(expr) => visit.visit_expr(expr),
     }
 }
 

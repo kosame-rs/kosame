@@ -18,10 +18,6 @@ pub struct BindParam {
 }
 
 impl BindParam {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        visitor.visit_bind_param(self);
-    }
-
     #[must_use]
     pub fn infer_name(&self) -> Option<&Ident> {
         Some(&self.name)
@@ -44,6 +40,8 @@ impl BindParam {
             .unwrap_or(self.name.span())
     }
 }
+
+pub fn visit_bind_param<'a>(_visit: &mut (impl Visit<'a> + ?Sized), _bind_param: &'a BindParam) {}
 
 impl Parse for BindParam {
     fn parse(input: ParseStream) -> syn::Result<Self> {

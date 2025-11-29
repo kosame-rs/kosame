@@ -19,10 +19,6 @@ pub struct TargetTable {
 }
 
 impl TargetTable {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        visitor.visit_table_path(&self.table);
-    }
-
     #[must_use]
     pub fn name(&self) -> &Ident {
         self.alias.as_ref().map_or_else(
@@ -38,6 +34,10 @@ impl TargetTable {
             |alias| &alias.ident,
         )
     }
+}
+
+pub fn visit_target_table<'a>(visit: &mut (impl Visit<'a> + ?Sized), target_table: &'a TargetTable) {
+    visit.visit_table_path(&target_table.table);
 }
 
 impl Parse for TargetTable {

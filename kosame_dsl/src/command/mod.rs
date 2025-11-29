@@ -15,6 +15,12 @@ pub use insert::*;
 pub use select::*;
 pub use update::*;
 
+// Re-export visit functions
+pub use delete::{visit_delete, visit_using};
+pub use insert::visit_insert;
+pub use select::{visit_select_chain, visit_select_combinator, visit_select_command, visit_select_item};
+pub use update::visit_update;
+
 use crate::{
     clause::{Fields, FromChain, With},
     correlations::CorrelationId,
@@ -35,20 +41,17 @@ pub struct Command {
 }
 
 impl Command {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        visitor.visit_command(self);
-        {
-            if let Some(inner) = &self.with {
-                inner.accept(visitor);
-            }
-            self.command_type.accept(visitor);
-        }
-    }
-
     #[must_use]
     pub fn fields(&self) -> Option<&Fields> {
         self.command_type.fields()
     }
+}
+
+pub fn visit_command<'a>(visit: &mut (impl Visit<'a> + ?Sized), command: &'a Command) {
+    if let Some(inner) = &command.with {
+        visit.visit_with(inner);
+    }
+    visit.visit_command_type(&command.command_type);
 }
 
 impl Scoped for Command {
@@ -117,15 +120,6 @@ impl CommandType {
         Delete::peek(input) || Insert::peek(input) || Select::peek(input) || Update::peek(input)
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        match self {
-            Self::Delete(inner) => inner.accept(visitor),
-            Self::Insert(inner) => inner.accept(visitor),
-            Self::Select(inner) => inner.accept(visitor),
-            Self::Update(inner) => inner.accept(visitor),
-        }
-    }
-
     #[must_use]
     pub fn fields(&self) -> Option<&Fields> {
         match self {
@@ -155,6 +149,15 @@ impl CommandType {
             Self::Select(select) => select.from_chain(),
             Self::Update(update) => update.from.as_ref().map(|from| &from.chain),
         }
+    }
+}
+
+pub fn visit_command_type<'a>(visit: &mut (impl Visit<'a> + ?Sized), command_type: &'a CommandType) {
+    match command_type {
+        CommandType::Delete(inner) => visit.visit_delete(inner),
+        CommandType::Insert(inner) => visit.visit_insert(inner),
+        CommandType::Select(inner) => visit.visit_select_command(inner),
+        CommandType::Update(inner) => visit.visit_update(inner),
     }
 }
 

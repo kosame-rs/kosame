@@ -19,8 +19,6 @@ pub struct Paren {
 }
 
 impl Paren {
-    pub fn accept<'a>(&'a self, _visitor: &mut impl Visit<'a>) {}
-
     #[must_use]
     pub fn span(&self) -> Span {
         self.paren.span.span()
@@ -35,6 +33,10 @@ impl Paren {
     pub fn infer_type(&self, scope_id: ScopeId) -> Option<InferredType<'_>> {
         self.expr.infer_type(scope_id)
     }
+}
+
+pub fn visit_paren<'a>(visit: &mut (impl Visit<'a> + ?Sized), paren: &'a Paren) {
+    visit.visit_expr(&paren.expr);
 }
 
 impl Parse for Paren {

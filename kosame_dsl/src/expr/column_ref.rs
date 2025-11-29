@@ -18,8 +18,6 @@ pub struct ColumnRef {
 }
 
 impl ColumnRef {
-    pub fn accept<'a>(&'a self, _visitor: &mut impl Visit<'a>) {}
-
     #[must_use]
     pub fn infer_name(&self) -> Option<&Ident> {
         Some(&self.name)
@@ -50,6 +48,8 @@ impl ColumnRef {
         }
     }
 }
+
+pub fn visit_column_ref<'a>(_visit: &mut (impl Visit<'a> + ?Sized), _column_ref: &'a ColumnRef) {}
 
 impl Parse for ColumnRef {
     fn parse(input: ParseStream) -> syn::Result<Self> {

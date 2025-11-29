@@ -30,10 +30,10 @@ impl Statement {
         CustomMeta::parse_attrs(&self.inner_attrs, MetaLocation::StatementInner)
             .expect("custom meta should be checked during parsing")
     }
+}
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.command.accept(visitor);
-    }
+pub fn visit_statement<'a>(visit: &mut (impl Visit<'a> + ?Sized), statement: &'a Statement) {
+    visit.visit_command(&statement.command);
 }
 
 impl Parse for Statement {
@@ -122,7 +122,7 @@ impl ToTokens for Statement {
 
         let bind_params = {
             let mut builder = BindParamsBuilder::new();
-            self.accept(&mut builder);
+            builder.visit_statement(self);
             builder.build()
         };
         let correlations = Correlations::from(&self.command);

@@ -18,10 +18,8 @@ impl ParseOption for Where {
     }
 }
 
-impl Where {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.expr.accept(visitor);
-    }
+pub fn visit_where<'a>(visit: &mut (impl Visit<'a> + ?Sized), r#where: &'a Where) {
+    visit.visit_expr(&r#where.expr);
 }
 
 impl Parse for Where {

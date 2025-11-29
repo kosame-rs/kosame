@@ -15,10 +15,8 @@ impl ParseOption for Limit {
     }
 }
 
-impl Limit {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.expr.accept(visitor);
-    }
+pub fn visit_limit<'a>(visit: &mut (impl Visit<'a> + ?Sized), limit: &'a Limit) {
+    visit.visit_expr(&limit.expr);
 }
 
 impl Parse for Limit {

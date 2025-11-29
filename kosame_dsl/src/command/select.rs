@@ -43,18 +43,18 @@ impl Select {
     pub fn peek(input: ParseStream) -> bool {
         SelectItem::peek(input)
     }
+}
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.chain.accept(visitor);
-        if let Some(inner) = self.order_by.as_ref() {
-            inner.accept(visitor);
-        }
-        if let Some(inner) = self.limit.as_ref() {
-            inner.accept(visitor);
-        }
-        if let Some(inner) = self.offset.as_ref() {
-            inner.accept(visitor);
-        }
+pub fn visit_select_command<'a>(visit: &mut (impl Visit<'a> + ?Sized), select: &'a Select) {
+    visit.visit_select_chain(&select.chain);
+    if let Some(inner) = select.order_by.as_ref() {
+        visit.visit_order_by(inner);
+    }
+    if let Some(inner) = select.limit.as_ref() {
+        visit.visit_limit(inner);
+    }
+    if let Some(inner) = select.offset.as_ref() {
+        visit.visit_offset(inner);
     }
 }
 
@@ -99,16 +99,16 @@ pub struct SelectChain {
 }
 
 impl SelectChain {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.start.accept(visitor);
-        for combinator in &self.combinators {
-            combinator.accept(visitor);
-        }
-    }
-
     #[must_use]
     pub fn iter(&self) -> SelectIter<'_> {
         self.into_iter()
+    }
+}
+
+pub fn visit_select_chain<'a>(visit: &mut (impl Visit<'a> + ?Sized), select_chain: &'a SelectChain) {
+    visit.visit_select_item(&select_chain.start);
+    for combinator in &select_chain.combinators {
+        visit.visit_select_combinator(combinator);
     }
 }
 
@@ -153,12 +153,12 @@ impl SelectItem {
     pub fn peek(input: ParseStream) -> bool {
         clause::SelectCore::peek(input) || input.peek(syn::token::Paren)
     }
+}
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        match self {
-            Self::Core(core) => core.accept(visitor),
-            Self::Paren(select) => select.accept(visitor),
-        }
+pub fn visit_select_item<'a>(visit: &mut (impl Visit<'a> + ?Sized), select_item: &'a SelectItem) {
+    match select_item {
+        SelectItem::Core(core) => visit.visit_select_core(core),
+        SelectItem::Paren(command) => visit.visit_command(command),
     }
 }
 
@@ -200,10 +200,8 @@ pub struct SelectCombinator {
     pub right: SelectItem,
 }
 
-impl SelectCombinator {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        self.right.accept(visitor);
-    }
+pub fn visit_select_combinator<'a>(visit: &mut (impl Visit<'a> + ?Sized), select_combinator: &'a SelectCombinator) {
+    visit.visit_select_item(&select_combinator.right);
 }
 
 impl Parse for SelectCombinator {

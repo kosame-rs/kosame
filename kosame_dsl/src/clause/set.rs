@@ -17,11 +17,11 @@ impl Set {
     pub fn peek(input: ParseStream) -> bool {
         input.peek(keyword::set)
     }
+}
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        for item in &self.items {
-            item.accept(visitor);
-        }
+pub fn visit_set<'a>(visit: &mut (impl Visit<'a> + ?Sized), set: &'a Set) {
+    for item in &set.items {
+        visit.visit_set_item(item);
     }
 }
 
@@ -73,13 +73,11 @@ pub enum SetItem {
     },
 }
 
-impl SetItem {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
-        match self {
-            Self::Default { .. } => {}
-            Self::Expr { expr, .. } => {
-                expr.accept(visitor);
-            }
+pub fn visit_set_item<'a>(visit: &mut (impl Visit<'a> + ?Sized), set_item: &'a SetItem) {
+    match set_item {
+        SetItem::Default { .. } => {}
+        SetItem::Expr { expr, .. } => {
+            visit.visit_expr(expr);
         }
     }
 }
