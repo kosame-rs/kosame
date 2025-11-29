@@ -243,9 +243,7 @@ impl<'a> From<&'a Command> for Scopes<'a> {
                 let mut shadow = HashSet::new();
 
                 if let Some(with) = command.with() {
-                    for with_item in &with.items {
-                        self.visit_command(&with_item.command);
-                    }
+                    self.visit_with(with);
                 }
 
                 if let Some(target_table) = command.target_table() {
