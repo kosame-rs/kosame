@@ -1,5 +1,5 @@
-use kosame::{pg_statement, sql::FmtSql, statement::Statement};
-
+// use kosame::{pg_statement, sql::FmtSql, statement::Statement};
+//
 // #[test]
 // fn basic_select() {
 //     let statement = pg_statement! {

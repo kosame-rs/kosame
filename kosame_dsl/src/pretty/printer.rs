@@ -45,7 +45,6 @@ enum Token<'a> {
 #[derive(Debug)]
 struct PrintFrame {
     group_break: bool,
-    content_break: bool,
 }
 
 pub struct Printer<'a> {
@@ -265,11 +264,7 @@ impl<'a> Printer<'a> {
             Token::Begin { mode, len, .. } => {
                 self.print_indent();
                 let group_break = *len >= self.space && *mode == BreakMode::Consistent;
-                let content_break = *len >= self.space;
-                self.print_frames.push(PrintFrame {
-                    group_break,
-                    content_break,
-                });
+                self.print_frames.push(PrintFrame { group_break });
             }
             Token::End => {
                 self.print_frames.pop();

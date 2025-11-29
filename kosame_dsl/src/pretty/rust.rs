@@ -62,7 +62,7 @@ impl PrettyPrint for syn::AngleBracketedGenericArguments {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         self.lt_token.pretty_print(printer);
 
-        for (index, pair) in self.args.pairs().enumerate() {
+        for pair in self.args.pairs() {
             pair.value().pretty_print(printer);
 
             if let Some(punct) = pair.punct() {
