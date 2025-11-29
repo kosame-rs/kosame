@@ -5,7 +5,7 @@ use syn::{
     parse::{Parse, ParseStream},
 };
 
-use crate::{expr::Expr, parse_option::ParseOption, visitor::Visitor};
+use crate::{expr::Expr, parse_option::ParseOption, visit::Visit};
 
 pub struct Where {
     pub where_token: Token![where],
@@ -19,7 +19,7 @@ impl ParseOption for Where {
 }
 
 impl Where {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.expr.accept(visitor);
     }
 }

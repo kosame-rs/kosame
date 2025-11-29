@@ -6,7 +6,7 @@ use syn::{
     punctuated::Punctuated,
 };
 
-use crate::{clause::peek_clause, expr::Expr, keyword, visitor::Visitor};
+use crate::{clause::peek_clause, expr::Expr, keyword, visit::Visit};
 
 pub struct Set {
     _set_keyword: keyword::set,
@@ -18,7 +18,7 @@ impl Set {
         input.peek(keyword::set)
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         for item in &self.items {
             item.accept(visitor);
         }
@@ -74,7 +74,7 @@ pub enum SetItem {
 }
 
 impl SetItem {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         match self {
             Self::Default { .. } => {}
             Self::Expr { expr, .. } => {

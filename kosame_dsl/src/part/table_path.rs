@@ -3,7 +3,7 @@ use syn::{
     parse::{Parse, ParseStream},
 };
 
-use crate::{correlations::CorrelationId, visitor::Visitor};
+use crate::{correlations::CorrelationId, visit::Visit};
 
 #[derive(Debug)]
 pub struct TablePath {
@@ -12,7 +12,7 @@ pub struct TablePath {
 }
 
 impl TablePath {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         visitor.visit_table_path(self);
     }
 

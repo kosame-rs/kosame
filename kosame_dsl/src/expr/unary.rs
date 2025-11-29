@@ -12,7 +12,7 @@ use crate::{
     scopes::ScopeId,
 };
 
-use super::{Expr, Visitor};
+use super::{Expr, Visit};
 
 pub struct Unary {
     pub op: UnOp,
@@ -28,7 +28,7 @@ impl Unary {
         }
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.operand.accept(visitor);
     }
 

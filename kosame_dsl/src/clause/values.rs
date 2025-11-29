@@ -6,7 +6,7 @@ use syn::{
     punctuated::Punctuated,
 };
 
-use crate::{expr::Expr, keyword, visitor::Visitor};
+use crate::{expr::Expr, keyword, visit::Visit};
 
 pub struct Values {
     pub values_keyword: keyword::values,
@@ -18,7 +18,7 @@ impl Values {
         input.peek(keyword::values)
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         for row in &self.rows {
             row.accept(visitor);
         }
@@ -60,7 +60,7 @@ pub struct ValuesRow {
 }
 
 impl ValuesRow {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         for item in &self.items {
             item.accept(visitor);
         }
@@ -91,7 +91,7 @@ pub enum ValuesItem {
 }
 
 impl ValuesItem {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         match self {
             Self::Default(..) => {}
             Self::Expr(expr) => expr.accept(visitor),

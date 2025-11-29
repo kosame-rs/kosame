@@ -15,7 +15,7 @@ use crate::{
     scopes::ScopeId,
 };
 
-use super::{Expr, Visitor};
+use super::{Expr, Visit};
 
 pub struct Cast {
     pub cast_kw: keyword::cast,
@@ -30,7 +30,7 @@ impl Cast {
         input.peek(keyword::cast)
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.value.accept(visitor);
     }
 

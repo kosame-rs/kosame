@@ -4,7 +4,7 @@ use crate::{
     scopes::ScopeId,
 };
 
-use super::{Expr, Visitor};
+use super::{Expr, Visit};
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, quote};
 use syn::{
@@ -35,7 +35,7 @@ impl Call {
         None
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         for param in &self.params {
             param.accept(visitor);
         }

@@ -17,7 +17,7 @@ use crate::{
     quote_option::QuoteOption,
     row::RowField,
     scopes::{ScopeId, Scopes},
-    visitor::Visitor,
+    visit::Visit,
 };
 
 pub struct Field {
@@ -59,7 +59,7 @@ impl Field {
         ))
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.expr.accept(visitor);
     }
 
@@ -109,7 +109,7 @@ impl Fields {
         self.0.iter()
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         for field in self.iter() {
             field.accept(visitor);
         }

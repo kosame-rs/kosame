@@ -14,7 +14,7 @@ use crate::{
     part::Alias,
     row::Row,
     scopes::{ScopeId, Scopes},
-    visitor::Visitor,
+    visit::Visit,
 };
 
 pub struct Statement {
@@ -31,7 +31,7 @@ impl Statement {
             .expect("custom meta should be checked during parsing")
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.command.accept(visitor);
     }
 }

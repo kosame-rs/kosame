@@ -15,7 +15,7 @@ use crate::{
     part::{TableAlias, TablePath},
     quote_option::QuoteOption,
     scopes::ScopeId,
-    visitor::Visitor,
+    visit::Visit,
 };
 
 pub struct From {
@@ -30,7 +30,7 @@ impl ParseOption for From {
 }
 
 impl From {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.chain.accept(visitor);
     }
 }
@@ -57,7 +57,7 @@ pub struct FromChain {
 }
 
 impl FromChain {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.start.accept(visitor);
         for combinator in &self.combinators {
             combinator.accept(visitor);
@@ -144,7 +144,7 @@ pub enum FromItem {
 }
 
 impl FromItem {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         match self {
             Self::Table { table_path, .. } => {
                 table_path.accept(visitor);
@@ -380,7 +380,7 @@ pub enum FromCombinator {
 }
 
 impl FromCombinator {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         match self {
             Self::Join { right, on, .. } => {
                 right.accept(visitor);

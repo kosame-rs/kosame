@@ -3,7 +3,7 @@ use crate::pretty::{BreakMode, Delim, PrettyPrint, Printer};
 use crate::scopes::ScopeId;
 
 use super::Expr;
-use super::Visitor;
+use super::Visit;
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::Ident;
@@ -19,7 +19,7 @@ pub struct Paren {
 }
 
 impl Paren {
-    pub fn accept<'a>(&'a self, _visitor: &mut impl Visitor<'a>) {}
+    pub fn accept<'a>(&'a self, _visitor: &mut impl Visit<'a>) {}
 
     #[must_use]
     pub fn span(&self) -> Span {

@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
-use crate::{clause::Fields, keyword, parse_option::ParseOption, visitor::Visitor};
+use crate::{clause::Fields, keyword, parse_option::ParseOption, visit::Visit};
 
 pub struct Returning {
     pub returning: keyword::returning,
@@ -16,7 +16,7 @@ impl ParseOption for Returning {
 }
 
 impl Returning {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.fields.accept(visitor);
     }
 }

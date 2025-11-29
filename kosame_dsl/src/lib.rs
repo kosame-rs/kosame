@@ -19,4 +19,4 @@ pub mod schema;
 pub mod scopes;
 pub mod statement;
 pub mod unique_macro;
-pub mod visitor;
+pub mod visit;

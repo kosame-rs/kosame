@@ -8,7 +8,7 @@ use crate::{
     parse_option::ParseOption,
     part::TargetTable,
     quote_option::QuoteOption,
-    visitor::Visitor,
+    visit::Visit,
 };
 
 pub struct Delete {
@@ -25,7 +25,7 @@ impl Delete {
         input.peek(keyword::delete)
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.target_table.accept(visitor);
         if let Some(inner) = &self.using {
             inner.accept(visitor);
@@ -83,7 +83,7 @@ impl ParseOption for Using {
 }
 
 impl Using {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.chain.accept(visitor);
     }
 }

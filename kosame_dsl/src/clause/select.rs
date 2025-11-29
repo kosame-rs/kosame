@@ -8,7 +8,7 @@ use crate::{
     parse_option::ParseOption,
     quote_option::QuoteOption,
     scopes::{ScopeId, Scoped},
-    visitor::Visitor,
+    visit::Visit,
 };
 
 pub struct Select {
@@ -17,7 +17,7 @@ pub struct Select {
 }
 
 impl Select {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.fields.accept(visitor);
     }
 }
@@ -57,7 +57,7 @@ pub struct SelectCore {
 }
 
 impl SelectCore {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.select.accept(visitor);
         if let Some(inner) = self.from.as_ref() {
             inner.accept(visitor);

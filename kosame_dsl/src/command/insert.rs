@@ -8,7 +8,7 @@ use crate::{
     parse_option::ParseOption,
     part::TargetTable,
     quote_option::QuoteOption,
-    visitor::Visitor,
+    visit::Visit,
 };
 
 pub struct Insert {
@@ -24,7 +24,7 @@ impl Insert {
         input.peek(keyword::insert)
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.target_table.accept(visitor);
         self.values.accept(visitor);
         if let Some(inner) = &self.returning {

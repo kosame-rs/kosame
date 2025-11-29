@@ -23,7 +23,7 @@ use crate::{
     part::TargetTable,
     quote_option::QuoteOption,
     scopes::{ScopeId, Scoped},
-    visitor::Visitor,
+    visit::Visit,
 };
 
 pub struct Command {
@@ -35,7 +35,7 @@ pub struct Command {
 }
 
 impl Command {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         visitor.visit_command(self);
         {
             if let Some(inner) = &self.with {
@@ -117,7 +117,7 @@ impl CommandType {
         Delete::peek(input) || Insert::peek(input) || Select::peek(input) || Update::peek(input)
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         match self {
             Self::Delete(inner) => inner.accept(visitor),
             Self::Insert(inner) => inner.accept(visitor),

@@ -4,7 +4,7 @@ use crate::{
     parse_option::ParseOption,
     quote_option::QuoteOption,
     row::Row,
-    visitor::Visitor,
+    visit::Visit,
 };
 
 use super::star::Star;
@@ -30,7 +30,7 @@ pub struct Node {
 }
 
 impl Node {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         for field in &self.fields {
             match field {
                 Field::Relation { node, .. } => node.accept(visitor),

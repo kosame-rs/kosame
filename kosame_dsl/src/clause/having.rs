@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
-use crate::{expr::Expr, keyword, parse_option::ParseOption, visitor::Visitor};
+use crate::{expr::Expr, keyword, parse_option::ParseOption, visit::Visit};
 
 pub struct Having {
     pub having: keyword::having,
@@ -16,7 +16,7 @@ impl ParseOption for Having {
 }
 
 impl Having {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.expr.accept(visitor);
     }
 }

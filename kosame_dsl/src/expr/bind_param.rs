@@ -4,7 +4,7 @@ use crate::{
     scopes::ScopeId,
 };
 
-use super::Visitor;
+use super::Visit;
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, quote};
 use syn::{
@@ -18,7 +18,7 @@ pub struct BindParam {
 }
 
 impl BindParam {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         visitor.visit_bind_param(self);
     }
 

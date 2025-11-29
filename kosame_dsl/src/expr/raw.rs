@@ -4,7 +4,7 @@ use crate::{
     scopes::ScopeId,
 };
 
-use super::Visitor;
+use super::Visit;
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, quote};
 use syn::{
@@ -18,7 +18,7 @@ pub struct Raw {
 }
 
 impl Raw {
-    pub fn accept<'a>(&'a self, _visitor: &mut impl Visitor<'a>) {}
+    pub fn accept<'a>(&'a self, _visitor: &mut impl Visit<'a>) {}
 
     #[must_use]
     pub fn infer_name(&self) -> Option<&Ident> {

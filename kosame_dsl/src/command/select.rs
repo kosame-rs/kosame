@@ -9,7 +9,7 @@ use crate::{
     parse_option::ParseOption,
     quote_option::QuoteOption,
     scopes::Scoped,
-    visitor::Visitor,
+    visit::Visit,
 };
 
 pub struct Select {
@@ -44,7 +44,7 @@ impl Select {
         SelectItem::peek(input)
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.chain.accept(visitor);
         if let Some(inner) = self.order_by.as_ref() {
             inner.accept(visitor);
@@ -99,7 +99,7 @@ pub struct SelectChain {
 }
 
 impl SelectChain {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.start.accept(visitor);
         for combinator in &self.combinators {
             combinator.accept(visitor);
@@ -154,7 +154,7 @@ impl SelectItem {
         clause::SelectCore::peek(input) || input.peek(syn::token::Paren)
     }
 
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         match self {
             Self::Core(core) => core.accept(visitor),
             Self::Paren(select) => select.accept(visitor),
@@ -201,7 +201,7 @@ pub struct SelectCombinator {
 }
 
 impl SelectCombinator {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.right.accept(visitor);
     }
 }

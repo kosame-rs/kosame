@@ -10,7 +10,7 @@ use crate::{
     part::{Alias, TablePath},
     path_ext::PathExt,
     quote_option::QuoteOption,
-    visitor::Visitor,
+    visit::Visit,
 };
 
 pub struct TargetTable {
@@ -19,7 +19,7 @@ pub struct TargetTable {
 }
 
 impl TargetTable {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         visitor.visit_table_path(&self.table);
     }
 

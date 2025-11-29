@@ -30,7 +30,7 @@ use crate::{
     inferred_type::InferredType,
     pretty::{PrettyPrint, Printer},
     scopes::ScopeId,
-    visitor::Visitor,
+    visit::Visit,
 };
 
 pub enum Expr {
@@ -62,7 +62,7 @@ macro_rules! variants {
 }
 
 impl Expr {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         macro_rules! branches {
             ($($variant:ident)*) => {
                 match self {

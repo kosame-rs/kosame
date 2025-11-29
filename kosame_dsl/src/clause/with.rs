@@ -12,7 +12,7 @@ use crate::{
     keyword,
     parse_option::ParseOption,
     part::TableAlias,
-    visitor::Visitor,
+    visit::Visit,
 };
 
 pub struct With {
@@ -27,7 +27,7 @@ impl ParseOption for With {
 }
 
 impl With {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         for item in &self.items {
             item.accept(visitor);
         }
@@ -75,7 +75,7 @@ pub struct WithItem {
 }
 
 impl WithItem {
-    pub fn accept<'a>(&'a self, visitor: &mut impl Visitor<'a>) {
+    pub fn accept<'a>(&'a self, visitor: &mut impl Visit<'a>) {
         self.command.accept(visitor);
     }
 
