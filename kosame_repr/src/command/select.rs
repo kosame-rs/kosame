@@ -1,6 +1,9 @@
 use std::fmt::Write;
 
-use crate::clause::{Limit, Offset, OrderBy, SelectCore};
+use crate::{
+    clause::{Limit, Offset, OrderBy, SelectCore},
+    command::Command,
+};
 
 pub struct Select<'a> {
     chain: SelectChain<'a>,
@@ -93,7 +96,7 @@ impl kosame_sql::FmtSql for SelectChain<'_> {
 
 pub enum SelectItem<'a> {
     Core(SelectCore<'a>),
-    Paren(&'a Select<'a>),
+    Paren(&'a Command<'a>),
 }
 
 impl kosame_sql::FmtSql for SelectItem<'_> {

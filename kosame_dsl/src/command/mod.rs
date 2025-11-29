@@ -22,16 +22,16 @@ use crate::{
     parse_option::ParseOption,
     part::TargetTable,
     quote_option::QuoteOption,
-    scopes::ScopeId,
+    scopes::{ScopeId, Scoped},
     visitor::Visitor,
 };
 
 pub struct Command {
+    pub scope_id: ScopeId,
     pub attrs: Vec<Attribute>,
     pub with: Option<With>,
     pub command_type: CommandType,
     pub correlation_id: CorrelationId,
-    pub scope_id: ScopeId,
 }
 
 impl Command {
@@ -49,15 +49,35 @@ impl Command {
     pub fn fields(&self) -> Option<&Fields> {
         self.command_type.fields()
     }
+}
 
-    #[must_use]
-    pub fn target_table(&self) -> Option<&TargetTable> {
+impl Scoped for Command {
+    #[inline]
+    fn scope_id(&self) -> ScopeId {
+        self.scope_id
+    }
+
+    #[inline]
+    fn with(&self) -> Option<&With> {
+        self.with.as_ref()
+    }
+
+    #[inline]
+    fn target_table(&self) -> Option<&TargetTable> {
         self.command_type.target_table()
     }
 
-    #[must_use]
+    #[inline]
+    fn select_chain(&self) -> Option<&SelectChain> {
+        match &self.command_type {
+            CommandType::Select(select) => Some(&select.chain),
+            _ => None,
+        }
+    }
+
+    #[inline]
     #[allow(clippy::wrong_self_convention)]
-    pub fn from_chain(&self) -> Option<&FromChain> {
+    fn from_chain(&self) -> Option<&FromChain> {
         self.command_type.from_chain()
     }
 }
@@ -65,11 +85,11 @@ impl Command {
 impl Parse for Command {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
+            scope_id: ScopeId::new(),
             attrs: input.call(Attribute::parse_outer)?,
             with: input.call(With::parse_option)?,
             command_type: input.parse()?,
             correlation_id: CorrelationId::new(),
-            scope_id: ScopeId::new(),
         })
     }
 }

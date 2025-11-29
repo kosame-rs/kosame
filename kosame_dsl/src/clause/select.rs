@@ -3,10 +3,11 @@ use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
 use crate::{
-    clause::{Fields, From, GroupBy, Having, Where},
+    clause::{Fields, From, FromChain, GroupBy, Having, Where},
     keyword,
     parse_option::ParseOption,
     quote_option::QuoteOption,
+    scopes::{ScopeId, Scoped},
     visitor::Visitor,
 };
 
@@ -47,6 +48,7 @@ impl ToTokens for Select {
 }
 
 pub struct SelectCore {
+    pub scope_id: ScopeId,
     pub select: Select,
     pub from: Option<From>,
     pub r#where: Option<Where>,
@@ -72,9 +74,22 @@ impl SelectCore {
     }
 }
 
+impl Scoped for SelectCore {
+    #[inline]
+    fn scope_id(&self) -> ScopeId {
+        self.scope_id
+    }
+
+    #[inline]
+    fn from_chain(&self) -> Option<&FromChain> {
+        self.from.as_ref().map(|from| &from.chain)
+    }
+}
+
 impl Parse for SelectCore {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
+            scope_id: ScopeId::new(),
             select: input.parse()?,
             from: input.call(From::parse_option)?,
             r#where: input.call(Where::parse_option)?,
@@ -92,6 +107,7 @@ impl ParseOption for SelectCore {
 
 impl ToTokens for SelectCore {
     fn to_tokens(&self, tokens: &mut TokenStream) {
+        // self.scope_id.scope(|| {
         let select = &self.select;
         let from = QuoteOption::from(&self.from);
         let r#where = QuoteOption::from(&self.r#where);
@@ -108,5 +124,6 @@ impl ToTokens for SelectCore {
             )
         }
         .to_tokens(tokens);
+        // });
     }
 }

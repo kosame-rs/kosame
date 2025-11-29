@@ -4,9 +4,11 @@ use syn::parse::{Parse, ParseStream};
 
 use crate::{
     clause::{self, Fields, FromChain, Limit, Offset, OrderBy},
+    command::Command,
     keyword,
     parse_option::ParseOption,
     quote_option::QuoteOption,
+    scopes::Scoped,
     visitor::Visitor,
 };
 
@@ -22,7 +24,7 @@ impl Select {
     pub fn fields(&self) -> &Fields {
         match &self.chain.start {
             SelectItem::Core(core) => &core.select.fields,
-            SelectItem::Paren(select) => select.fields(),
+            SelectItem::Paren(paren) => paren.fields().expect("nested select must have fields"),
         }
     }
 
@@ -34,7 +36,7 @@ impl Select {
         }
         match &self.chain.start {
             SelectItem::Core(core) => core.from.as_ref().map(|from| &from.chain),
-            SelectItem::Paren(select) => select.from_chain(),
+            SelectItem::Paren(paren) => paren.from_chain(),
         }
     }
 
@@ -103,6 +105,11 @@ impl SelectChain {
             combinator.accept(visitor);
         }
     }
+
+    #[must_use]
+    pub fn iter(&self) -> SelectIter<'_> {
+        self.into_iter()
+    }
 }
 
 impl Parse for SelectChain {
@@ -138,8 +145,8 @@ impl ToTokens for SelectChain {
 }
 
 pub enum SelectItem {
-    Core(clause::SelectCore),
-    Paren(Box<Select>),
+    Core(Box<clause::SelectCore>),
+    Paren(Box<Command>),
 }
 
 impl SelectItem {
@@ -160,8 +167,7 @@ impl Parse for SelectItem {
         if input.peek(syn::token::Paren) {
             let content;
             syn::parenthesized!(content in input);
-            let select = content.parse()?;
-            Ok(Self::Paren(Box::new(select)))
+            Ok(Self::Paren(content.parse()?))
         } else {
             let core = input.parse()?;
             Ok(Self::Core(core))
@@ -178,9 +184,9 @@ impl ToTokens for SelectItem {
                 }
                 .to_tokens(tokens);
             }
-            Self::Paren(select) => {
+            Self::Paren(paren) => {
                 quote! {
-                    ::kosame::repr::command::SelectItem::Paren(&#select)
+                    ::kosame::repr::command::SelectItem::Paren(&#paren)
                 }
                 .to_tokens(tokens);
             }
@@ -299,5 +305,41 @@ impl ToTokens for SetQuantifier {
             }
         }
         .to_tokens(tokens);
+    }
+}
+
+pub struct SelectIter<'a> {
+    chain: &'a SelectChain,
+    index: i32,
+}
+
+impl<'a> Iterator for SelectIter<'a> {
+    type Item = &'a SelectItem;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let item = match self.index {
+            -1 => &self.chain.start,
+            _ => {
+                &self
+                    .chain
+                    .combinators
+                    .get::<usize>(self.index.try_into().unwrap())?
+                    .right
+            }
+        };
+        self.index += 1;
+        Some(item)
+    }
+}
+
+impl<'a> IntoIterator for &'a SelectChain {
+    type IntoIter = SelectIter<'a>;
+    type Item = &'a SelectItem;
+
+    fn into_iter(self) -> Self::IntoIter {
+        SelectIter {
+            index: -1,
+            chain: self,
+        }
     }
 }

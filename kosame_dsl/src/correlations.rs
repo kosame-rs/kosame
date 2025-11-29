@@ -11,6 +11,7 @@ use crate::{
     part::TablePath,
     path_ext::PathExt,
     query::{self, Query, QueryNodePath},
+    scopes::Scoped,
 };
 
 thread_local! {

@@ -5,8 +5,8 @@ use quote::{ToTokens, format_ident, quote};
 use syn::Ident;
 
 use crate::{
-    clause::FromItem,
-    command::Command,
+    clause::{FromChain, FromItem, With},
+    command::{Command, SelectChain, SelectItem},
     correlations::CorrelationId,
     inferred_type::InferredType,
     part::TargetTable,
@@ -57,6 +57,30 @@ impl ToTokens for ScopeId {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         format_ident!("scope_{}", self.0).to_tokens(tokens);
     }
+}
+
+pub trait Scoped {
+    #[must_use]
+    fn scope_id(&self) -> ScopeId;
+
+    #[must_use]
+    fn with(&self) -> Option<&With> {
+        None
+    }
+
+    #[must_use]
+    fn target_table(&self) -> Option<&TargetTable> {
+        None
+    }
+
+    #[must_use]
+    fn select_chain(&self) -> Option<&SelectChain> {
+        None
+    }
+
+    #[must_use]
+    #[allow(clippy::wrong_self_convention)]
+    fn from_chain(&self) -> Option<&FromChain>;
 }
 
 pub struct Scopes<'a> {
@@ -204,28 +228,41 @@ impl ScopeItem<'_> {
 impl<'a> From<&'a Command> for Scopes<'a> {
     fn from(value: &'a Command) -> Self {
         fn inner<'a>(
-            scopes: &mut Vec<Scope<'a>>,
-            command: &'a Command,
+            result: &mut Vec<Scope<'a>>,
+            scoped: &'a dyn Scoped,
             inherited_from_items: &mut Vec<(ScopeId, &'a FromItem)>,
         ) {
-            let scope_id = command.scope_id;
+            let scope_id = scoped.scope_id();
             let from_items_truncate = inherited_from_items.len();
 
             let mut items = Vec::new();
             let mut shadow = HashSet::new();
 
-            if let Some(with) = &command.with {
+            if let Some(with) = &scoped.with() {
                 for with_item in &with.items {
-                    inner(scopes, &with_item.command, inherited_from_items);
+                    inner(result, &with_item.command, inherited_from_items);
                 }
             }
 
-            if let Some(target_table) = command.target_table() {
+            // if let Some(chain) = &scoped.select_chain() {
+            //     for select_item in *chain {
+            //         match select_item {
+            //             SelectItem::Core(core) => {
+            //                 inner(result, core.as_ref(), inherited_from_items);
+            //             }
+            //             SelectItem::Paren(paren) => {
+            //                 inner(result, paren.as_ref(), inherited_from_items);
+            //             }
+            //         }
+            //     }
+            // }
+
+            if let Some(target_table) = scoped.target_table() {
                 shadow.insert(target_table.name());
                 items.push(ScopeItem::TargetTable { target_table });
             }
 
-            if let Some(from_chain) = command.from_chain() {
+            if let Some(from_chain) = scoped.from_chain() {
                 let nullables = from_chain.nullables();
 
                 for (from_item, nullable) in from_chain.into_iter().zip(nullables.into_iter()) {
@@ -236,7 +273,7 @@ impl<'a> From<&'a Command> for Scopes<'a> {
                     }
 
                     if let FromItem::Subquery { command, .. } = from_item {
-                        inner(scopes, command, inherited_from_items);
+                        inner(result, command.as_ref(), inherited_from_items);
                     }
 
                     items.push(ScopeItem::FromItem {
@@ -261,7 +298,7 @@ impl<'a> From<&'a Command> for Scopes<'a> {
                 }
             }
 
-            scopes.push(Scope::new(scope_id, items));
+            result.push(Scope::new(scope_id, items));
         }
 
         let mut scopes = Vec::new();
