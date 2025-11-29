@@ -23,6 +23,10 @@ impl QueryNodePath {
         self
     }
 
+    pub fn pop(&mut self) -> Option<Ident> {
+        self.segments.pop()
+    }
+
     #[must_use]
     pub fn to_struct_name(&self, prefix: &str) -> Ident {
         let mut struct_name = prefix.to_string();

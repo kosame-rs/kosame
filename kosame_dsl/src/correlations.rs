@@ -10,7 +10,7 @@ use crate::{
     inferred_type::InferredType,
     part::TablePath,
     path_ext::PathExt,
-    query::{self, Query, QueryNodePath},
+    query::{self, Query, QueryNodePath, visit_node},
     scopes::Scoped,
     visit::Visit,
 };
@@ -344,32 +344,38 @@ impl<'a> From<&'a Command> for Correlations<'a> {
 
 impl<'a> From<&'a Query> for Correlations<'a> {
     fn from(value: &'a Query) -> Self {
-        fn inner<'a>(
-            correlations: &mut Vec<Correlation<'a>>,
+        struct Visitor<'a> {
+            correlations: Vec<Correlation<'a>>,
             query: &'a Query,
-            node: &'a query::Node,
             node_path: QueryNodePath,
-        ) {
-            for field in &node.fields {
-                if let query::Field::Relation { node, name, .. } = field {
-                    inner(
-                        correlations,
-                        query,
-                        node,
-                        node_path.clone().appended(name.clone()),
-                    );
-                }
-            }
-
-            correlations.push(Correlation::QueryNodePath {
-                node,
-                table_path: &query.table,
-                node_path,
-            });
         }
 
-        let mut correlations = Vec::new();
-        inner(&mut correlations, value, &value.body, QueryNodePath::new());
-        Correlations { correlations }
+        impl<'a> Visit<'a> for Visitor<'a> {
+            fn visit_node(&mut self, node: &'a query::Node) {
+                for field in &node.fields {
+                    if let query::Field::Relation { node, name, .. } = field {
+                        self.node_path.append(name.clone());
+                        self.visit_node(node);
+                        self.node_path.pop();
+                    }
+                }
+
+                self.correlations.push(Correlation::QueryNodePath {
+                    node,
+                    table_path: &self.query.table,
+                    node_path: self.node_path.clone(),
+                });
+            }
+        }
+
+        let mut visitor = Visitor {
+            correlations: Vec::new(),
+            query: value,
+            node_path: QueryNodePath::new(),
+        };
+        visitor.visit_node(&value.body);
+        Correlations {
+            correlations: visitor.correlations,
+        }
     }
 }
