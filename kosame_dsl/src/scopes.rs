@@ -11,6 +11,7 @@ use crate::{
     inferred_type::InferredType,
     part::TargetTable,
     query::{self, Query},
+    visit::Visit,
 };
 
 thread_local! {
@@ -227,115 +228,112 @@ impl ScopeItem<'_> {
 
 impl<'a> From<&'a Command> for Scopes<'a> {
     fn from(value: &'a Command) -> Self {
-        fn inner<'a>(
-            result: &mut Vec<Scope<'a>>,
-            scoped: &'a dyn Scoped,
-            inherited_from_items: &mut Vec<(ScopeId, &'a FromItem)>,
-        ) {
-            let scope_id = scoped.scope_id();
-            let from_items_truncate = inherited_from_items.len();
-
-            let mut items = Vec::new();
-            let mut shadow = HashSet::new();
-
-            if let Some(with) = &scoped.with() {
-                for with_item in &with.items {
-                    inner(result, &with_item.command, inherited_from_items);
-                }
-            }
-
-            // if let Some(chain) = &scoped.select_chain() {
-            //     for select_item in *chain {
-            //         match select_item {
-            //             SelectItem::Core(core) => {
-            //                 inner(result, core.as_ref(), inherited_from_items);
-            //             }
-            //             SelectItem::Paren(paren) => {
-            //                 inner(result, paren.as_ref(), inherited_from_items);
-            //             }
-            //         }
-            //     }
-            // }
-
-            if let Some(target_table) = scoped.target_table() {
-                shadow.insert(target_table.name());
-                items.push(ScopeItem::TargetTable { target_table });
-            }
-
-            if let Some(from_chain) = scoped.from_chain() {
-                let nullables = from_chain.nullables();
-
-                for (from_item, nullable) in from_chain.into_iter().zip(nullables.into_iter()) {
-                    inherited_from_items.push((scope_id, from_item));
-
-                    if let Some(name) = from_item.name() {
-                        shadow.insert(name);
-                    }
-
-                    if let FromItem::Subquery { command, .. } = from_item {
-                        inner(result, command.as_ref(), inherited_from_items);
-                    }
-
-                    items.push(ScopeItem::FromItem {
-                        from_item,
-                        inherited_from: None,
-                        nullable,
-                    });
-                }
-            }
-
-            inherited_from_items.truncate(from_items_truncate);
-
-            for (inherited_from, from_item) in inherited_from_items.iter() {
-                if let Some(name) = from_item.name()
-                    && !shadow.contains(name)
-                {
-                    items.push(ScopeItem::FromItem {
-                        from_item,
-                        inherited_from: Some(*inherited_from),
-                        nullable: false,
-                    });
-                }
-            }
-
-            result.push(Scope::new(scope_id, items));
+        #[derive(Default)]
+        struct Visitor<'a> {
+            scopes: Vec<Scope<'a>>,
+            inherited_from_items: Vec<(ScopeId, &'a FromItem)>,
         }
 
-        let mut scopes = Vec::new();
-        inner(&mut scopes, value, &mut Vec::new());
-        scopes.sort_by_key(|v| v.id);
-        Scopes { scopes }
+        impl<'a> Visit<'a> for Visitor<'a> {
+            fn visit_command(&mut self, command: &'a Command) {
+                let scope_id = command.scope_id();
+                let from_items_truncate = self.inherited_from_items.len();
+
+                let mut items = Vec::new();
+                let mut shadow = HashSet::new();
+
+                if let Some(with) = command.with() {
+                    for with_item in &with.items {
+                        self.visit_command(&with_item.command);
+                    }
+                }
+
+                if let Some(target_table) = command.target_table() {
+                    shadow.insert(target_table.name());
+                    items.push(ScopeItem::TargetTable { target_table });
+                }
+
+                if let Some(from_chain) = command.from_chain() {
+                    let nullables = from_chain.nullables();
+
+                    for (from_item, nullable) in from_chain.into_iter().zip(nullables.into_iter()) {
+                        self.inherited_from_items.push((scope_id, from_item));
+
+                        if let Some(name) = from_item.name() {
+                            shadow.insert(name);
+                        }
+
+                        if let FromItem::Subquery { command, .. } = from_item {
+                            self.visit_command(command);
+                        }
+
+                        items.push(ScopeItem::FromItem {
+                            from_item,
+                            inherited_from: None,
+                            nullable,
+                        });
+                    }
+                }
+
+                self.inherited_from_items.truncate(from_items_truncate);
+
+                for (inherited_from, from_item) in &self.inherited_from_items {
+                    if let Some(name) = from_item.name()
+                        && !shadow.contains(name)
+                    {
+                        items.push(ScopeItem::FromItem {
+                            from_item,
+                            inherited_from: Some(*inherited_from),
+                            nullable: false,
+                        });
+                    }
+                }
+
+                self.scopes.push(Scope::new(scope_id, items));
+            }
+        }
+
+        let mut visitor = Visitor::default();
+        visitor.visit_command(value);
+        Scopes {
+            scopes: visitor.scopes,
+        }
     }
 }
 
 impl<'a> From<&'a Query> for Scopes<'a> {
     fn from(value: &'a Query) -> Self {
-        fn inner<'a>(scopes: &mut Vec<Scope<'a>>, node: &'a query::Node, name: &'a Ident) {
-            let scope_id = node.scope_id;
-            let items = vec![ScopeItem::QueryNode { node, name }];
-
-            for field in &node.fields {
-                if let query::Field::Relation { node, name, .. } = field {
-                    inner(scopes, node, name);
-                }
-            }
-
-            scopes.push(Scope::new(scope_id, items));
+        struct Visitor<'a> {
+            scopes: Vec<Scope<'a>>,
+            name: &'a Ident,
         }
 
-        let mut scopes = Vec::new();
-        inner(
-            &mut scopes,
-            &value.body,
-            &value
-                .table
-                .as_path()
-                .segments
-                .last()
-                .expect("path cannot be empty")
-                .ident,
-        );
-        scopes.sort_by_key(|v| v.id);
-        Scopes { scopes }
+        impl<'a> Visit<'a> for Visitor<'a> {
+            fn visit_node(&mut self, node: &'a query::Node) {
+                let scope_id = node.scope_id;
+                let items = vec![ScopeItem::QueryNode {
+                    node,
+                    name: self.name,
+                }];
+
+                for field in &node.fields {
+                    if let query::Field::Relation { node, name, .. } = field {
+                        self.name = name;
+                        self.visit_node(node);
+                    }
+                }
+
+                self.scopes.push(Scope::new(scope_id, items));
+            }
+        }
+
+        let mut visitor = Visitor {
+            scopes: Vec::new(),
+            name: &value.table.as_path().segments.last().unwrap().ident,
+        };
+        visitor.visit_node(&value.body);
+        Scopes {
+            scopes: visitor.scopes,
+        }
     }
 }
