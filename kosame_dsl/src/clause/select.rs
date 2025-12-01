@@ -103,23 +103,23 @@ impl ParseOption for SelectCore {
 
 impl ToTokens for SelectCore {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        // self.scope_id.scope(|| {
-        let select = &self.select;
-        let from = QuoteOption::from(&self.from);
-        let r#where = QuoteOption::from(&self.r#where);
-        let group_by = QuoteOption::from(&self.group_by);
-        let having = QuoteOption::from(&self.having);
+        self.scope_id.scope(|| {
+            let select = &self.select;
+            let from = QuoteOption::from(&self.from);
+            let r#where = QuoteOption::from(&self.r#where);
+            let group_by = QuoteOption::from(&self.group_by);
+            let having = QuoteOption::from(&self.having);
 
-        quote! {
-            ::kosame::repr::clause::SelectCore::new(
-                #select,
-                #from,
-                #r#where,
-                #group_by,
-                #having,
-            )
-        }
-        .to_tokens(tokens);
-        // });
+            quote! {
+                ::kosame::repr::clause::SelectCore::new(
+                    #select,
+                    #from,
+                    #r#where,
+                    #group_by,
+                    #having,
+                )
+            }
+            .to_tokens(tokens);
+        });
     }
 }

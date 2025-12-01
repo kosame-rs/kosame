@@ -229,9 +229,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // [{"id":0,"top_comment_id":null,"total_upvotes":0,"raw_sql":true},{"id":1,"top_comment_id":2,"total_upvotes":1,"raw_sql":true}]
 
     let rows = kosame::pg_statement! {
-            select 5 as pip: i32, 6 as lel: i32
+        select 5 as pip: i32, 6 as lel: i32
         union all
-            select 7, 8
+        select posts.id, 8
+        from schema::posts
         order by 1 desc
         limit 2
     }
