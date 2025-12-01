@@ -41,6 +41,7 @@ impl ToTokens for DataType {
             // Crates
             "uuid" => quote! { ::uuid::Uuid },
             "json" | "jsonb" => quote! { ::serde_json::Value },
+            "numeric" => quote! { ::rust_decimal::Decimal },
             _ => {
                 abort!(
                     self.name.span(),
