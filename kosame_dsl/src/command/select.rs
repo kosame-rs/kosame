@@ -119,15 +119,9 @@ impl Parse for SelectChain {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let start = input.parse()?;
         let mut combinators = Vec::new();
-
-        // Parse set operations (UNION, INTERSECT, EXCEPT)
-        while input.peek(keyword::union)
-            || input.peek(keyword::intersect)
-            || input.peek(keyword::except)
-        {
-            combinators.push(input.parse()?);
+        while let Some(combinator) = input.call(SelectCombinator::parse_option)? {
+            combinators.push(combinator);
         }
-
         Ok(Self { start, combinators })
     }
 }
@@ -213,11 +207,7 @@ pub fn visit_select_combinator<'a>(
 impl Parse for SelectCombinator {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let op = input.parse()?;
-        let quantifier = if input.peek(keyword::all) {
-            input.parse()?
-        } else {
-            SetQuantifier::Distinct
-        };
+        let quantifier = input.parse()?;
         let right = input.parse()?;
 
         Ok(Self {
@@ -225,6 +215,12 @@ impl Parse for SelectCombinator {
             quantifier,
             right,
         })
+    }
+}
+
+impl ParseOption for SelectCombinator {
+    fn peek(input: ParseStream) -> bool {
+        input.peek(keyword::union) || input.peek(keyword::intersect) || input.peek(keyword::except)
     }
 }
 

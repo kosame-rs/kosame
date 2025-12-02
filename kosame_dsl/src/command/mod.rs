@@ -148,7 +148,7 @@ impl CommandType {
         match self {
             Self::Delete(delete) => delete.using.as_ref().map(|using| &using.chain),
             Self::Insert(..) => None,
-            Self::Select(select) => select.from_chain(),
+            Self::Select(..) => None,
             Self::Update(update) => update.from.as_ref().map(|from| &from.chain),
         }
     }

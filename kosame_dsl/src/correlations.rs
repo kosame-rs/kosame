@@ -326,6 +326,10 @@ impl<'a> From<&'a Command> for Correlations<'a> {
                     self.visit_target_table(target_table);
                 }
 
+                if let Some(select_chain) = command.select_chain() {
+                    self.visit_select_chain(select_chain);
+                }
+
                 if let Some(from_chain) = command.from_chain() {
                     self.visit_from_chain(from_chain);
                 }

@@ -5,7 +5,7 @@ use quote::{ToTokens, format_ident, quote};
 use syn::Ident;
 
 use crate::{
-    clause::{FromChain, FromItem, With},
+    clause::{FromChain, FromItem, SelectCore, With},
     command::{Command, SelectChain},
     correlations::CorrelationId,
     inferred_type::InferredType,
@@ -236,22 +236,36 @@ impl<'a> From<&'a Command> for Scopes<'a> {
 
         impl<'a> Visit<'a> for Visitor<'a> {
             fn visit_command(&mut self, command: &'a Command) {
-                let scope_id = command.scope_id();
+                self.visit_scoped(command);
+            }
+
+            fn visit_select_core(&mut self, select_core: &'a SelectCore) {
+                self.visit_scoped(select_core);
+            }
+        }
+
+        impl<'a> Visitor<'a> {
+            fn visit_scoped(&mut self, scoped: &'a dyn Scoped) {
+                let scope_id = scoped.scope_id();
                 let from_items_truncate = self.inherited_from_items.len();
 
                 let mut items = Vec::new();
                 let mut shadow = HashSet::new();
 
-                if let Some(with) = command.with() {
+                if let Some(with) = scoped.with() {
                     self.visit_with(with);
                 }
 
-                if let Some(target_table) = command.target_table() {
+                if let Some(select_chain) = scoped.select_chain() {
+                    self.visit_select_chain(select_chain);
+                }
+
+                if let Some(target_table) = scoped.target_table() {
                     shadow.insert(target_table.name());
                     items.push(ScopeItem::TargetTable { target_table });
                 }
 
-                if let Some(from_chain) = command.from_chain() {
+                if let Some(from_chain) = scoped.from_chain() {
                     let nullables = from_chain.nullables();
 
                     for (from_item, nullable) in from_chain.into_iter().zip(nullables.into_iter()) {

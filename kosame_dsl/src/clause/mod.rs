@@ -26,7 +26,7 @@ pub use values::*;
 pub use r#where::*;
 pub use with::*;
 
-use crate::parse_option::ParseOption;
+use crate::{command::SelectCombinator, parse_option::ParseOption};
 
 pub fn peek_clause(input: syn::parse::ParseStream) -> bool {
     With::peek(input)
@@ -40,4 +40,5 @@ pub fn peek_clause(input: syn::parse::ParseStream) -> bool {
         || Returning::peek(input)
         || Set::peek(input)
         || Values::peek(input)
+        || SelectCombinator::peek(input)
 }
