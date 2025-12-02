@@ -4,6 +4,7 @@ use crate::{
     parse_option::ParseOption,
     part::{Alias, TypeOverride},
     path_ext::PathExt,
+    pretty::{PrettyPrint, Printer},
     query::node_path::QueryNodePath,
     row::RowField,
 };
@@ -157,6 +158,46 @@ impl Parse for Field {
                 alias: input.parse()?,
                 type_override: input.parse()?,
             })
+        }
+    }
+}
+
+impl PrettyPrint for Field {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        match self {
+            Self::Column {
+                attrs,
+                name,
+                alias,
+                type_override,
+            } => {
+                attrs.pretty_print(printer);
+                name.pretty_print(printer);
+                alias.pretty_print(printer);
+                type_override.pretty_print(printer);
+            }
+            Self::Relation {
+                attrs,
+                name,
+                node,
+                alias,
+            } => {
+                attrs.pretty_print(printer);
+                name.pretty_print(printer);
+                node.pretty_print(printer);
+                alias.pretty_print(printer);
+            }
+            Self::Expr {
+                attrs,
+                expr,
+                alias,
+                type_override,
+            } => {
+                attrs.pretty_print(printer);
+                expr.pretty_print(printer);
+                alias.pretty_print(printer);
+                type_override.pretty_print(printer);
+            }
         }
     }
 }

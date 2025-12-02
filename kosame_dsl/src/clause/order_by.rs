@@ -6,7 +6,14 @@ use syn::{
     punctuated::Punctuated,
 };
 
-use crate::{clause::peek_clause, expr::Expr, keyword, parse_option::ParseOption, visit::Visit};
+use crate::{
+    clause::peek_clause,
+    expr::Expr,
+    keyword,
+    parse_option::ParseOption,
+    pretty::{PrettyPrint, Printer},
+    visit::Visit,
+};
 
 pub struct OrderBy {
     pub order: keyword::order,
@@ -62,6 +69,17 @@ impl ToTokens for OrderBy {
     }
 }
 
+impl PrettyPrint for OrderBy {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        " ".pretty_print(printer);
+        self.order.pretty_print(printer);
+        " ".pretty_print(printer);
+        self.by.pretty_print(printer);
+        " ".pretty_print(printer);
+        self.items.pretty_print(printer);
+    }
+}
+
 pub struct OrderByItem {
     pub expr: Expr,
     pub dir: Option<OrderByDir>,
@@ -100,6 +118,14 @@ impl ToTokens for OrderByItem {
     }
 }
 
+impl PrettyPrint for OrderByItem {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.expr.pretty_print(printer);
+        self.dir.pretty_print(printer);
+        self.nulls.pretty_print(printer);
+    }
+}
+
 #[allow(unused)]
 pub enum OrderByDir {
     Asc(keyword::asc),
@@ -121,6 +147,23 @@ impl Parse for OrderByDir {
             Ok(Self::Desc(input.parse()?))
         } else {
             keyword::group_order_by_dir::error(input);
+        }
+    }
+}
+
+impl PrettyPrint for OrderByDir {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        match self {
+            Self::Asc(asc) => {
+                printer.scan_break(false);
+                " ".pretty_print(printer);
+                asc.pretty_print(printer);
+            }
+            Self::Desc(desc) => {
+                printer.scan_break(false);
+                " ".pretty_print(printer);
+                desc.pretty_print(printer);
+            }
         }
     }
 }
@@ -147,6 +190,27 @@ impl Parse for OrderByNulls {
             Ok(Self::Last(nulls, input.parse()?))
         } else {
             keyword::group_order_by_nulls::error(input);
+        }
+    }
+}
+
+impl PrettyPrint for OrderByNulls {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        match self {
+            Self::First(nulls, first) => {
+                printer.scan_break(false);
+                " ".pretty_print(printer);
+                nulls.pretty_print(printer);
+                " ".pretty_print(printer);
+                first.pretty_print(printer);
+            }
+            Self::Last(nulls, last) => {
+                printer.scan_break(false);
+                " ".pretty_print(printer);
+                nulls.pretty_print(printer);
+                " ".pretty_print(printer);
+                last.pretty_print(printer);
+            }
         }
     }
 }

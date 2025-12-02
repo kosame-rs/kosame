@@ -6,7 +6,12 @@ use syn::{
     parse_quote,
 };
 
-use crate::{parse_option::ParseOption, part::Alias, row::RowField};
+use crate::{
+    parse_option::ParseOption,
+    part::Alias,
+    pretty::{PrettyPrint, Printer},
+    row::RowField,
+};
 
 pub struct Star {
     pub attrs: Vec<Attribute>,
@@ -45,5 +50,13 @@ impl Parse for Star {
             star_token: input.parse()?,
             alias: input.call(Alias::parse_option)?,
         })
+    }
+}
+
+impl PrettyPrint for Star {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.attrs.pretty_print(printer);
+        self.star_token.pretty_print(printer);
+        self.alias.pretty_print(printer);
     }
 }

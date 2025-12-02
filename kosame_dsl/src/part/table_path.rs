@@ -3,7 +3,11 @@ use syn::{
     parse::{Parse, ParseStream},
 };
 
-use crate::{correlations::CorrelationId, visit::Visit};
+use crate::{
+    correlations::CorrelationId,
+    pretty::{PrettyPrint, Printer},
+    visit::Visit,
+};
 
 #[derive(Debug)]
 pub struct TablePath {
@@ -31,5 +35,11 @@ impl Parse for TablePath {
             path: input.parse()?,
             correlation_id: CorrelationId::new(),
         })
+    }
+}
+
+impl PrettyPrint for TablePath {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.path.pretty_print(printer);
     }
 }

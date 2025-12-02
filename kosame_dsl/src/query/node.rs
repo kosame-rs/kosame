@@ -1,4 +1,5 @@
 use crate::clause::peek_clause;
+use crate::pretty::{BreakMode, Delim, PrettyPrint, Printer};
 use crate::{
     clause::{Limit, Offset, OrderBy, Where},
     parse_option::ParseOption,
@@ -283,5 +284,23 @@ impl Parse for Node {
             limit: content.call(Limit::parse_option)?,
             offset: content.call(Offset::parse_option)?,
         })
+    }
+}
+
+impl PrettyPrint for Node {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.brace_token
+            .pretty_print(printer, Some(BreakMode::Consistent), |printer| {
+                if let Some(star) = &self.star {
+                    star.pretty_print(printer);
+                    ",".pretty_print(printer);
+                }
+
+                self.fields.pretty_print(printer);
+                self.r#where.pretty_print(printer);
+                self.order_by.pretty_print(printer);
+                self.limit.pretty_print(printer);
+                self.offset.pretty_print(printer);
+            });
     }
 }

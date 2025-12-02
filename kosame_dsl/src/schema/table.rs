@@ -192,12 +192,8 @@ impl ToTokens for Table {
 
 impl PrettyPrint for Table {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        for attr in &self.inner_attrs {
-            attr.pretty_print(printer);
-        }
-        for attr in &self.outer_attrs {
-            attr.pretty_print(printer);
-        }
+        self.inner_attrs.pretty_print(printer);
+        self.outer_attrs.pretty_print(printer);
         self.create_kw.pretty_print(printer);
         " ".pretty_print(printer);
         self.table_kw.pretty_print(printer);

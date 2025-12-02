@@ -14,6 +14,7 @@ use crate::{
     inferred_type::{InferredType, resolve_type},
     parse_option::ParseOption,
     part::{Alias, TypeOverride},
+    pretty::{PrettyPrint, Printer},
     quote_option::QuoteOption,
     row::RowField,
     scopes::{ScopeId, Scopes},
@@ -102,6 +103,15 @@ impl ToTokens for Field {
     }
 }
 
+impl PrettyPrint for Field {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.attrs.pretty_print(printer);
+        self.expr.pretty_print(printer);
+        self.alias.pretty_print(printer);
+        self.type_override.pretty_print(printer);
+    }
+}
+
 pub struct Fields(pub Punctuated<Field, Token![,]>);
 
 impl Fields {
@@ -151,5 +161,11 @@ impl ToTokens for Fields {
             ])
         }
         .to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for Fields {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.0.pretty_print(printer);
     }
 }

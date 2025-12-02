@@ -2,7 +2,13 @@ use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
-use crate::{expr::Expr, keyword, parse_option::ParseOption, visit::Visit};
+use crate::{
+    expr::Expr,
+    keyword,
+    parse_option::ParseOption,
+    pretty::{PrettyPrint, Printer},
+    visit::Visit,
+};
 
 pub struct Limit {
     pub limit: keyword::limit,
@@ -32,5 +38,14 @@ impl ToTokens for Limit {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let expr = &self.expr;
         quote! { ::kosame::repr::clause::Limit::new(#expr) }.to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for Limit {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        " ".pretty_print(printer);
+        self.limit.pretty_print(printer);
+        " ".pretty_print(printer);
+        self.expr.pretty_print(printer);
     }
 }

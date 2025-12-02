@@ -77,6 +77,7 @@ impl_token!($, "$");
 impl_token!(as, "as");
 impl_token!(=>, "=>");
 impl_token!(<=, "<=");
+impl_token!(where, "where");
 
 macro_rules! impl_has_token {
     ($($for:tt)*) => {

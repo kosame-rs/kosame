@@ -47,6 +47,17 @@ where
     }
 }
 
+impl<T> PrettyPrint for [T]
+where
+    T: PrettyPrint,
+{
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        for item in self {
+            item.pretty_print(printer);
+        }
+    }
+}
+
 impl<T> PrettyPrint for syn::punctuated::Punctuated<T, syn::Token![,]>
 where
     T: PrettyPrint,

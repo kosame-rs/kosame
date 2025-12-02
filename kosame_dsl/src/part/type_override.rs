@@ -3,7 +3,10 @@ use syn::{
     parse::{Parse, ParseStream},
 };
 
-use crate::parse_option::ParseOption;
+use crate::{
+    parse_option::ParseOption,
+    pretty::{PrettyPrint, Printer},
+};
 
 pub struct TypeOverride {
     pub colon_token: Token![:],
@@ -22,5 +25,13 @@ impl Parse for TypeOverride {
             colon_token: input.parse()?,
             type_path: input.parse()?,
         })
+    }
+}
+
+impl PrettyPrint for TypeOverride {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.colon_token.pretty_print(printer);
+        " ".pretty_print(printer);
+        self.type_path.pretty_print(printer);
     }
 }

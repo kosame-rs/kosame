@@ -22,6 +22,7 @@ use crate::{
     parse_option::ParseOption,
     part::{Alias, TablePath},
     path_ext::PathExt,
+    pretty::{PrettyPrint, Printer},
     scopes::{ScopeId, Scopes},
 };
 
@@ -126,5 +127,15 @@ impl ToTokens for Query {
             }
             .to_tokens(tokens);
         }
+    }
+}
+
+impl PrettyPrint for Query {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.inner_attrs.pretty_print(printer);
+        self.outer_attrs.pretty_print(printer);
+        self.table.pretty_print(printer);
+        self.body.pretty_print(printer);
+        self.alias.pretty_print(printer);
     }
 }
