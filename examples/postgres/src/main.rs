@@ -197,7 +197,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // We can access `posts_with_content` from the higher up scope here.
                     post_id = posts_with_content.id
                 order by
-                        upvotes desc
+                        1 desc
                 limit 1
             ) as top_comment on true
         group by
@@ -229,13 +229,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // [{"id":0,"top_comment_id":null,"total_upvotes":0,"raw_sql":true},{"id":1,"top_comment_id":2,"total_upvotes":1,"raw_sql":true}]
 
     let rows = kosame::pg_statement! {
-        select post_id
+        select comments.content
         from schema::comments
         union all
-        select id
+        select posts.renamed_title
         from schema::posts
         order by 1 desc
-        limit 2
+        limit 20
     }
     .query_vec_sync(&mut client)?;
     println!("{rows:#?}");

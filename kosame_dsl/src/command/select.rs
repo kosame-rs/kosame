@@ -8,7 +8,7 @@ use crate::{
     keyword,
     parse_option::ParseOption,
     quote_option::QuoteOption,
-    scopes::Scoped,
+    scopes::{ScopeId, Scoped},
     visit::Visit,
 };
 
@@ -147,8 +147,12 @@ pub enum SelectItem {
 }
 
 impl SelectItem {
-    pub fn peek(input: ParseStream) -> bool {
-        clause::SelectCore::peek(input) || input.peek(syn::token::Paren)
+    #[must_use]
+    pub fn scope_id(&self) -> ScopeId {
+        match self {
+            Self::Core(inner) => inner.scope_id,
+            Self::Paren(inner) => inner.scope_id,
+        }
     }
 }
 
@@ -169,6 +173,12 @@ impl Parse for SelectItem {
             let core = input.parse()?;
             Ok(Self::Core(core))
         }
+    }
+}
+
+impl ParseOption for SelectItem {
+    fn peek(input: ParseStream) -> bool {
+        clause::SelectCore::peek(input) || input.peek(syn::token::Paren)
     }
 }
 

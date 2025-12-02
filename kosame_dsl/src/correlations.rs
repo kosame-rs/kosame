@@ -146,7 +146,10 @@ impl<'a> Correlation<'a> {
                     .fields()?
                     .iter()
                     .find(|field| field.infer_name() == Some(column))?;
-                field.infer_type(command.scope_id)
+                match command.select_chain() {
+                    Some(select_chain) => field.infer_type(select_chain.start.scope_id()),
+                    None => field.infer_type(command.scope_id),
+                }
             }
             Self::WithItem(with_item) => Some(InferredType::Correlation {
                 correlation_id: with_item.command.correlation_id,
