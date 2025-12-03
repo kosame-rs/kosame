@@ -45,7 +45,7 @@ impl<'a> Printer<'a> {
         self.cursor = cursor;
     }
 
-    fn advance_cursor(&mut self, string: &str) {
+    pub fn advance_cursor(&mut self, string: &str) {
         for char in string.chars() {
             match char {
                 '\n' => {
@@ -59,7 +59,6 @@ impl<'a> Printer<'a> {
 
     pub fn scan_text(&mut self, string: Cow<'static, str>, mode: TextMode) {
         self.tokens.push_len(string.len().try_into().unwrap());
-        self.advance_cursor(&string);
         let token = Token::Text(TextToken::new(string, mode));
         self.tokens.push_back(token);
     }
@@ -102,31 +101,39 @@ impl<'a> Printer<'a> {
                 TriviaKind::BlockComment => {
                     self.scan_text(" ".into(), TextMode::Always);
                     self.scan_text(trivia.content.to_string().into(), TextMode::Always);
+                    self.pop_trivia();
                 }
                 TriviaKind::LineComment => {
-                    self.scan_text(" ".into(), TextMode::Always);
-                    self.scan_text(trivia.content.to_string().into(), TextMode::Always);
-                    self.scan_break(true);
+                    // Line comments are banned in no-break areas.
+                    break;
                 }
-                TriviaKind::Whitespace => {}
+                TriviaKind::Whitespace => {
+                    self.pop_trivia();
+                }
             }
         }
     }
 
     pub fn scan_trivia(&mut self) {
-        let mut queued_newlines = 0;
         while let Some(trivia) = self.ready_trivia() {
             match trivia.kind {
-                TriviaKind::LineComment | TriviaKind::BlockComment => {
-                    for _ in 0..queued_newlines {
-                        self.scan_break(false);
-                    }
-                    queued_newlines = 0;
+                TriviaKind::BlockComment => {
                     self.scan_text(" ".into(), TextMode::Always);
                     self.scan_text(trivia.content.to_string().into(), TextMode::Always);
+                    self.scan_break(false);
+                    self.pop_trivia();
+                }
+                TriviaKind::LineComment => {
+                    self.scan_text(" ".into(), TextMode::Always);
+                    self.scan_text(trivia.content.to_string().into(), TextMode::Always);
+                    self.scan_break(true);
+                    self.pop_trivia();
                 }
                 TriviaKind::Whitespace => {
-                    queued_newlines += trivia.newlines();
+                    for _ in 0..trivia.newlines() {
+                        self.scan_break(false);
+                    }
+                    self.pop_trivia();
                 }
             }
         }
@@ -136,11 +143,14 @@ impl<'a> Printer<'a> {
         if let Some(trivia) = self.trivia.first()
             && trivia.span.start() <= self.cursor
         {
-            self.trivia = &self.trivia[1..];
-            self.cursor = trivia.span.end();
             return Some(trivia);
         }
         None
+    }
+
+    fn pop_trivia(&mut self) {
+        self.move_cursor(self.trivia[0].span.end());
+        self.trivia = &self.trivia[1..];
     }
 
     fn line_dirty(&self) -> bool {
@@ -203,27 +213,6 @@ impl<'a> Printer<'a> {
             }
             Token::End => {
                 self.print_frames.pop();
-            }
-        }
-    }
-
-    /// Flushes all trivia that appears before the given token span.
-    /// This should be called before structural operations like `scan_begin` to ensure
-    /// comments appear in the right place.
-    pub fn flush_trivia(&mut self) {
-        while let Some(trivia) = self.ready_trivia() {
-            match trivia.kind {
-                TriviaKind::BlockComment => {
-                    self.scan_text(trivia.content.to_string().into(), TextMode::Always);
-                    self.scan_break(false);
-                    self.scan_text(" ".into(), TextMode::Always);
-                }
-                TriviaKind::LineComment => {
-                    self.scan_text(" ".into(), TextMode::Always);
-                    self.scan_text(trivia.content.to_string().into(), TextMode::Always);
-                    self.scan_break(true);
-                }
-                TriviaKind::Whitespace => {}
             }
         }
     }

@@ -104,8 +104,6 @@ impl ToTokens for Column {
 impl PrettyPrint for Column {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         self.attrs.pretty_print(printer);
-        printer.move_cursor(self.name.span().start());
-        printer.flush_trivia();
         printer.scan_begin(BreakMode::Inconsistent);
         self.name.pretty_print(printer);
         printer.scan_break(false);

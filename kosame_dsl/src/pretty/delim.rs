@@ -10,22 +10,29 @@ pub trait Delim {
         f: impl FnOnce(&mut Printer<'_>),
     ) {
         printer.move_cursor(self.span().open().start());
-        printer.flush_trivia();
         self.open_text().pretty_print(printer);
+        printer.move_cursor(self.span().open().end());
+
         if let Some(break_mode) = break_mode {
             printer.scan_begin(break_mode);
         }
         printer.scan_indent(1);
         printer.scan_break(false);
+        printer.scan_trivia();
+
         f(printer);
+
         printer.move_cursor(self.span().close().start());
-        printer.flush_trivia();
+        printer.scan_trivia();
+
         printer.scan_indent(-1);
         printer.scan_break(false);
         if break_mode.is_some() {
             printer.scan_end();
         }
+
         self.close_text().pretty_print(printer);
+        printer.move_cursor(self.span().close().end());
     }
 
     #[must_use]

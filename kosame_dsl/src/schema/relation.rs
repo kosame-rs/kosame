@@ -100,7 +100,6 @@ impl ToTokens for Relation {
 impl PrettyPrint for Relation {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         printer.move_cursor(self.name.span().start());
-        printer.flush_trivia();
         printer.scan_begin(BreakMode::Consistent);
 
         self.name.pretty_print(printer);
