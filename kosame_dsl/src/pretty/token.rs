@@ -19,6 +19,7 @@ pub enum BreakMode {
 pub(super) enum Token<'a> {
     Text(TextToken<'a>),
     Break(BreakToken),
+    ForceBreak,
     Begin(BeginToken),
     End,
 }
@@ -47,12 +48,11 @@ impl<'a> TextToken<'a> {
 pub(super) struct BreakToken {
     len: isize,
     indent: isize,
-    force: bool,
 }
 
 impl BreakToken {
-    pub(super) fn new(len: isize, indent: isize, force: bool) -> Self {
-        Self { len, indent, force }
+    pub(super) fn new(len: isize, indent: isize) -> Self {
+        Self { len, indent }
     }
 
     pub fn push_len(&mut self, len: isize) {
@@ -65,10 +65,6 @@ impl BreakToken {
 
     pub(super) fn indent(&self) -> isize {
         self.indent
-    }
-
-    pub(super) fn force(&self) -> bool {
-        self.force
     }
 }
 
@@ -146,6 +142,7 @@ impl<'a> TokenBuffer<'a> {
         match &token {
             Token::Text(_) => {}
             Token::Break(_) => self.last_break = Some(self.tokens.next_index()),
+            Token::ForceBreak => {}
             Token::Begin(_) => self.begin_stack.push(self.tokens.next_index()),
             Token::End => {
                 self.begin_stack.pop();

@@ -23,6 +23,7 @@ pub struct Printer<'a> {
     scan_indent: isize,
     print_indent: isize,
     print_frames: Vec<PrintFrame>,
+    pending_break: bool,
     cursor: LineColumn,
 }
 
@@ -37,6 +38,7 @@ impl<'a> Printer<'a> {
             print_indent: 0,
             tokens: TokenBuffer::new(),
             print_frames: Vec::new(),
+            pending_break: false,
             cursor: LineColumn { line: 1, column: 0 },
         }
     }
@@ -70,13 +72,12 @@ impl<'a> Printer<'a> {
 
     pub fn scan_break(&mut self) {
         self.tokens
-            .push_back(Token::Break(BreakToken::new(0, self.scan_indent, false)));
+            .push_back(Token::Break(BreakToken::new(0, self.scan_indent)));
     }
 
     pub fn scan_force_break(&mut self) {
         let len = MARGIN;
-        self.tokens
-            .push_back(Token::Break(BreakToken::new(len, self.scan_indent, true)));
+        self.tokens.push_back(Token::ForceBreak);
         self.tokens.push_len(len);
     }
 
@@ -136,6 +137,7 @@ impl<'a> Printer<'a> {
                 TriviaKind::LineComment => {
                     self.scan_text(" ".into(), TextMode::Always);
                     self.scan_text(trivia.content.to_string().into(), TextMode::Always);
+                    self.scan_force_break();
                     self.pop_trivia();
                     break;
                 }
@@ -161,7 +163,7 @@ impl<'a> Printer<'a> {
                 TriviaKind::LineComment => {
                     self.scan_text(" ".into(), TextMode::Always);
                     self.scan_text(trivia.content.to_string().into(), TextMode::Always);
-                    self.scan_break();
+                    self.scan_force_break();
                     self.pop_trivia();
                 }
                 TriviaKind::Whitespace => {
@@ -174,20 +176,13 @@ impl<'a> Printer<'a> {
         }
     }
 
-    #[must_use]
-    pub fn scan_trivia_no_trailing_newlines(&mut self) -> bool {
+    pub fn scan_trivia_no_trailing_newlines(&mut self) {
         let mut pending_newlines = 0;
-        let mut pending_force = false;
         while let Some(trivia) = self.ready_trivia() {
             match trivia.kind {
                 TriviaKind::BlockComment => {
                     for _ in 0..pending_newlines {
-                        if pending_force {
-                            self.scan_force_break();
-                        } else {
-                            self.scan_break();
-                        }
-                        pending_force = false;
+                        self.scan_break();
                     }
                     self.scan_text(" ".into(), TextMode::Always);
                     self.scan_text(trivia.content.to_string().into(), TextMode::Always);
@@ -196,17 +191,12 @@ impl<'a> Printer<'a> {
                 }
                 TriviaKind::LineComment => {
                     for _ in 0..pending_newlines {
-                        if pending_force {
-                            self.scan_force_break();
-                        } else {
-                            self.scan_break();
-                        }
-                        pending_force = false;
+                        self.scan_break();
                     }
                     self.scan_text(" ".into(), TextMode::Always);
                     self.scan_text(trivia.content.to_string().into(), TextMode::Always);
+                    self.scan_force_break();
                     pending_newlines = 1;
-                    pending_force = true;
                     self.pop_trivia();
                 }
                 TriviaKind::Whitespace => {
@@ -217,7 +207,6 @@ impl<'a> Printer<'a> {
                 }
             }
         }
-        pending_force
     }
 
     fn ready_trivia(&mut self) -> Option<&'a Trivia<'a>> {
@@ -244,6 +233,9 @@ impl<'a> Printer<'a> {
     }
 
     fn print_string(&mut self, mut string: &str) {
+        if self.pending_break {
+            self.print_break();
+        }
         if !self.line_dirty() {
             string = string.trim_start();
         }
@@ -255,6 +247,7 @@ impl<'a> Printer<'a> {
     fn print_break(&mut self) {
         self.output.push('\n');
         self.space = MARGIN;
+        self.pending_break = false;
     }
 
     fn print_indent(&mut self) {
@@ -284,10 +277,13 @@ impl<'a> Printer<'a> {
                 }
             }
             Token::Break(break_token) => {
-                if group_break || break_token.len() >= self.space || break_token.force() {
+                if group_break || break_token.len() >= self.space {
                     self.print_break();
                     self.print_indent = break_token.indent();
                 }
+            }
+            Token::ForceBreak => {
+                self.pending_break = true;
             }
             Token::Begin(begin_token) => {
                 let group_break =
