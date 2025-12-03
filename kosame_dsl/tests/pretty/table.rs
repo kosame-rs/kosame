@@ -90,3 +90,24 @@ create  table test ( /*1*/col int /*2*/,/*3*/ col2 int not null/*4*/
 }"
     );
 }
+
+#[test]
+fn block_comments_break() {
+    assert_pretty!(Table:
+        "{
+create  table test (
+/*1*/my_column_1 int
+/*2*/,/*3*/
+/*4*/ my_column_2 int not null/*5*/ /*6*/
+);
+}",
+        "{
+    create table test (
+        /*1*/
+        my_column_1 int /*2*/, /*3*/
+        /*4*/ my_column_2 int not null, /*5*/
+        /*6*/
+    );
+}"
+    );
+}
