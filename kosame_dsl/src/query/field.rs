@@ -184,6 +184,7 @@ impl PrettyPrint for Field {
             } => {
                 attrs.pretty_print(printer);
                 name.pretty_print(printer);
+                " ".pretty_print(printer);
                 node.pretty_print(printer);
                 alias.pretty_print(printer);
             }

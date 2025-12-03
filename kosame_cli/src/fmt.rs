@@ -61,6 +61,11 @@ impl Fmt {
                     >(
                         &source_text, initial_space, initial_indent
                     )),
+                    "query" | "pg_query" => Some(pretty_print_macro_str::<
+                        Macro<kosame_dsl::query::Query>,
+                    >(
+                        &source_text, initial_space, initial_indent
+                    )),
                     _ => None,
                 };
 

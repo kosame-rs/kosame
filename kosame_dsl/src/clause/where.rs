@@ -45,6 +45,7 @@ impl ToTokens for Where {
 
 impl PrettyPrint for Where {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
+        printer.scan_break(false);
         " ".pretty_print(printer);
         self.where_token.pretty_print(printer);
         " ".pretty_print(printer);

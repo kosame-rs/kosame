@@ -10,7 +10,7 @@ use crate::{
     inferred_type::InferredType,
     part::TablePath,
     path_ext::PathExt,
-    query::{self, Query, QueryNodePath, visit_node},
+    query::{self, Query, QueryNodePath},
     scopes::Scoped,
     visit::Visit,
 };

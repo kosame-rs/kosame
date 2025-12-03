@@ -135,6 +135,7 @@ impl PrettyPrint for Query {
         self.inner_attrs.pretty_print(printer);
         self.outer_attrs.pretty_print(printer);
         self.table.pretty_print(printer);
+        " ".pretty_print(printer);
         self.body.pretty_print(printer);
         self.alias.pretty_print(printer);
     }

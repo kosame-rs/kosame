@@ -43,6 +43,7 @@ impl ToTokens for Limit {
 
 impl PrettyPrint for Limit {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
+        printer.scan_break(false);
         " ".pretty_print(printer);
         self.limit.pretty_print(printer);
         " ".pretty_print(printer);

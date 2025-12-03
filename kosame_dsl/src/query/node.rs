@@ -291,11 +291,7 @@ impl PrettyPrint for Node {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         self.brace_token
             .pretty_print(printer, Some(BreakMode::Consistent), |printer| {
-                if let Some(star) = &self.star {
-                    star.pretty_print(printer);
-                    ",".pretty_print(printer);
-                }
-
+                self.star.pretty_print(printer);
                 self.fields.pretty_print(printer);
                 self.r#where.pretty_print(printer);
                 self.order_by.pretty_print(printer);

@@ -98,7 +98,6 @@ impl<'a> Printer<'a> {
     }
 
     pub fn move_cursor(&mut self, cursor: LineColumn) {
-        assert!(cursor >= self.cursor);
         self.cursor = cursor;
     }
 
