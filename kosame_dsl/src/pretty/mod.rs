@@ -76,7 +76,7 @@ where
             } else {
                 item.punct().unwrap().pretty_print(printer);
                 printer.scan_same_line_trivia();
-                printer.scan_break(false);
+                printer.scan_break();
                 printer.scan_trivia();
             }
         }

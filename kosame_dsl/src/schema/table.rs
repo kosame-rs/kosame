@@ -210,7 +210,7 @@ impl PrettyPrint for Table {
         printer.scan_same_line_trivia();
 
         if !self.relations.is_empty() {
-            printer.scan_break(false);
+            printer.scan_break();
             printer.scan_trivia();
             " ".pretty_print(printer);
             self.relations.pretty_print(printer);

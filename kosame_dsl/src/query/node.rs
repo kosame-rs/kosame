@@ -302,7 +302,7 @@ impl PrettyPrint for Node {
                 {
                     ",".pretty_print(printer);
                     printer.scan_same_line_trivia();
-                    printer.scan_break(false);
+                    printer.scan_break();
                     " ".pretty_print(printer);
                     printer.scan_trivia();
                 }

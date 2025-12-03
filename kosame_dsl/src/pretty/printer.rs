@@ -68,10 +68,15 @@ impl<'a> Printer<'a> {
         self.tokens.push_back(token);
     }
 
-    pub fn scan_break(&mut self, force: bool) {
-        let len = if force { MARGIN } else { 0 };
+    pub fn scan_break(&mut self) {
         self.tokens
-            .push_back(Token::Break(BreakToken::new(len, self.scan_indent, force)));
+            .push_back(Token::Break(BreakToken::new(0, self.scan_indent, false)));
+    }
+
+    pub fn scan_force_break(&mut self) {
+        let len = MARGIN;
+        self.tokens
+            .push_back(Token::Break(BreakToken::new(len, self.scan_indent, true)));
         self.tokens.push_len(len);
     }
 
@@ -150,18 +155,18 @@ impl<'a> Printer<'a> {
                 TriviaKind::BlockComment => {
                     self.scan_text(" ".into(), TextMode::Always);
                     self.scan_text(trivia.content.to_string().into(), TextMode::Always);
-                    self.scan_break(false);
+                    self.scan_break();
                     self.pop_trivia();
                 }
                 TriviaKind::LineComment => {
                     self.scan_text(" ".into(), TextMode::Always);
                     self.scan_text(trivia.content.to_string().into(), TextMode::Always);
-                    self.scan_break(true);
+                    self.scan_break();
                     self.pop_trivia();
                 }
                 TriviaKind::Whitespace => {
                     if trivia.newlines() > 1 {
-                        self.scan_break(false);
+                        self.scan_break();
                     }
                     self.pop_trivia();
                 }
@@ -177,7 +182,11 @@ impl<'a> Printer<'a> {
             match trivia.kind {
                 TriviaKind::BlockComment => {
                     for _ in 0..pending_newlines {
-                        self.scan_break(pending_force);
+                        if pending_force {
+                            self.scan_force_break();
+                        } else {
+                            self.scan_break();
+                        }
                         pending_force = false;
                     }
                     self.scan_text(" ".into(), TextMode::Always);
@@ -187,7 +196,11 @@ impl<'a> Printer<'a> {
                 }
                 TriviaKind::LineComment => {
                     for _ in 0..pending_newlines {
-                        self.scan_break(pending_force);
+                        if pending_force {
+                            self.scan_force_break();
+                        } else {
+                            self.scan_break();
+                        }
                         pending_force = false;
                     }
                     self.scan_text(" ".into(), TextMode::Always);

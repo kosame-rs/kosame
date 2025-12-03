@@ -71,14 +71,14 @@ impl ToTokens for OrderBy {
 
 impl PrettyPrint for OrderBy {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        printer.scan_break(false);
+        printer.scan_break();
         printer.scan_trivia();
         " ".pretty_print(printer);
         self.order.pretty_print(printer);
         " ".pretty_print(printer);
         self.by.pretty_print(printer);
         printer.scan_indent(1);
-        printer.scan_break(false);
+        printer.scan_break();
         " ".pretty_print(printer);
         self.items.pretty_print(printer);
         printer.scan_indent(-1);
@@ -162,12 +162,12 @@ impl PrettyPrint for OrderByDir {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         match self {
             Self::Asc(asc) => {
-                printer.scan_break(false);
+                printer.scan_break();
                 " ".pretty_print(printer);
                 asc.pretty_print(printer);
             }
             Self::Desc(desc) => {
-                printer.scan_break(false);
+                printer.scan_break();
                 " ".pretty_print(printer);
                 desc.pretty_print(printer);
             }
@@ -205,14 +205,14 @@ impl PrettyPrint for OrderByNulls {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         match self {
             Self::First(nulls, first) => {
-                printer.scan_break(false);
+                printer.scan_break();
                 " ".pretty_print(printer);
                 nulls.pretty_print(printer);
                 " ".pretty_print(printer);
                 first.pretty_print(printer);
             }
             Self::Last(nulls, last) => {
-                printer.scan_break(false);
+                printer.scan_break();
                 " ".pretty_print(printer);
                 nulls.pretty_print(printer);
                 " ".pretty_print(printer);

@@ -106,7 +106,7 @@ impl PrettyPrint for Column {
         self.attrs.pretty_print(printer);
         printer.scan_begin(BreakMode::Inconsistent);
         self.name.pretty_print(printer);
-        printer.scan_break(false);
+        printer.scan_break();
         " ".pretty_print(printer);
         self.data_type.pretty_print(printer);
         self.constraints.pretty_print(printer);

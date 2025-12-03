@@ -45,12 +45,12 @@ impl ToTokens for Where {
 
 impl PrettyPrint for Where {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        printer.scan_break(false);
+        printer.scan_break();
         printer.scan_trivia();
         " ".pretty_print(printer);
         self.where_token.pretty_print(printer);
         printer.scan_indent(1);
-        printer.scan_break(false);
+        printer.scan_break();
         " ".pretty_print(printer);
         printer.scan_begin(BreakMode::Inconsistent);
         self.expr.pretty_print(printer);

@@ -49,7 +49,7 @@ impl Parse for ColumnConstraints {
 impl PrettyPrint for ColumnConstraints {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         for constraint in &self.0 {
-            printer.scan_break(false);
+            printer.scan_break();
             " ".pretty_print(printer);
             constraint.pretty_print(printer);
         }

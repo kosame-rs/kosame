@@ -17,7 +17,7 @@ impl PrettyPrint for syn::Attribute {
         if let Some(source_text) = self.bracket_token.span.span().source_text() {
             source_text.pretty_print(printer);
         }
-        printer.scan_break(false);
+        printer.scan_break();
         " ".pretty_print(printer);
     }
 }
