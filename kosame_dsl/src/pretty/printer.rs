@@ -3,8 +3,7 @@ use std::borrow::Cow;
 use proc_macro2::LineColumn;
 
 use crate::pretty::{
-    BeginToken, BreakMode, BreakToken, PrettyPrint, TextMode, TextToken, Token, TokenBuffer,
-    Trivia, TriviaKind,
+    BeginToken, BreakMode, BreakToken, TextMode, TextToken, Token, TokenBuffer, Trivia, TriviaKind,
 };
 
 pub const MARGIN: isize = 89;
@@ -186,10 +185,8 @@ impl<'a> Printer<'a> {
                     encountered_comment = true;
                 }
                 TriviaKind::Whitespace => {
-                    if leading_whitespace || encountered_comment {
-                        if trivia.newlines() > 1 {
-                            pending_newlines += 1;
-                        }
+                    if (leading_whitespace || encountered_comment) && trivia.newlines() > 1 {
+                        pending_newlines += 1;
                     }
                     self.pop_trivia();
                 }
