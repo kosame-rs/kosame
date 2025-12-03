@@ -60,7 +60,6 @@ impl PrettyPrint for Star {
         self.alias.pretty_print(printer);
 
         ",".pretty_print(printer);
-        printer.advance_cursor();
         printer.scan_trivia();
         printer.scan_break(false);
         " ".pretty_print(printer);

@@ -101,15 +101,17 @@ impl<'a> Printer<'a> {
         self.cursor = cursor;
     }
 
-    pub fn advance_cursor(&mut self) {
-        self.move_cursor(LineColumn {
-            line: self.cursor.line,
-            column: self.cursor.column + 1,
-        });
-    }
-
     pub fn scan_text(&mut self, string: Cow<'static, str>, mode: TextMode) {
         self.push_len(string.len().try_into().unwrap());
+        for char in string.chars() {
+            match char {
+                '\n' => {
+                    self.cursor.line += 1;
+                    self.cursor.column = 0;
+                }
+                _ => self.cursor.column += 1,
+            }
+        }
         let token = Token::Text { string, mode };
         self.tokens.push_back(token);
     }

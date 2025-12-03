@@ -70,7 +70,6 @@ where
             }
             if index == self.len() - 1 {
                 printer.scan_text(",".into(), TextMode::Break);
-                printer.advance_cursor();
                 printer.scan_trivia();
             } else {
                 item.punct().unwrap().pretty_print(printer);
