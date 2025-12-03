@@ -74,3 +74,19 @@ col int primary key,
 }"
     );
 }
+
+#[test]
+fn block_comments() {
+    assert_pretty!(Table:
+        "{
+create  table test ( /*1*/col int /*2*/,/*3*/ col2 int not null/*4*/
+
+);
+
+
+}",
+        "{
+    create table test (/*1*/ col int /*2*/, /*3*/ col2 int not null /*4*/);
+}"
+    );
+}

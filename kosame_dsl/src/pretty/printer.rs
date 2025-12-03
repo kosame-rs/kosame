@@ -3,7 +3,8 @@ use std::borrow::Cow;
 use proc_macro2::LineColumn;
 
 use crate::pretty::{
-    BeginToken, BreakMode, BreakToken, TextMode, TextToken, Token, TokenBuffer, Trivia, TriviaKind,
+    BeginToken, BreakMode, BreakToken, PrettyPrint, TextMode, TextToken, Token, TokenBuffer,
+    Trivia, TriviaKind,
 };
 
 pub const MARGIN: isize = 89;
@@ -152,6 +153,7 @@ impl<'a> Printer<'a> {
     }
 
     pub fn scan_trivia(&mut self, leading_whitespace: bool, trailing_whitespace: bool) {
+        // let break_mode = self.tokens.current_begin_mut().unwrap().mode();
         let mut encountered_comment = false;
         let mut pending_newlines = 0;
         while let Some(trivia) = self.ready_trivia() {
@@ -159,8 +161,11 @@ impl<'a> Printer<'a> {
                 TriviaKind::BlockComment => {
                     for _ in 0..pending_newlines {
                         self.scan_break();
+                        self.scan_text(" ".into(), TextMode::Always);
                     }
-                    self.scan_text(" ".into(), TextMode::Always);
+                    if leading_whitespace || encountered_comment {
+                        self.scan_text(" ".into(), TextMode::Always);
+                    }
                     self.scan_text(trivia.content.to_string().into(), TextMode::Always);
                     pending_newlines = 1;
                     self.pop_trivia();
@@ -169,8 +174,11 @@ impl<'a> Printer<'a> {
                 TriviaKind::LineComment => {
                     for _ in 0..pending_newlines {
                         self.scan_break();
+                        self.scan_text(" ".into(), TextMode::Always);
                     }
-                    self.scan_text(" ".into(), TextMode::Always);
+                    if leading_whitespace || encountered_comment {
+                        self.scan_text(" ".into(), TextMode::Always);
+                    }
                     self.scan_text(trivia.content.to_string().into(), TextMode::Always);
                     self.scan_force_break();
                     pending_newlines = 1;
@@ -190,6 +198,7 @@ impl<'a> Printer<'a> {
         if trailing_whitespace {
             for _ in 0..pending_newlines {
                 self.scan_break();
+                self.scan_text(" ".into(), TextMode::Always);
             }
         }
     }
@@ -223,6 +232,9 @@ impl<'a> Printer<'a> {
         }
         if !self.line_dirty() {
             string = string.trim_start();
+        }
+        if string.is_empty() {
+            return;
         }
         self.print_indent();
         self.output.push_str(string);
@@ -263,8 +275,8 @@ impl<'a> Printer<'a> {
             }
             Token::Break(break_token) => {
                 if group_break || break_token.len() >= self.space {
-                    self.print_break();
                     self.print_indent = break_token.indent();
+                    self.print_break();
                 }
             }
             Token::ForceBreak => {
