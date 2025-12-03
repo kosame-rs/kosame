@@ -211,7 +211,8 @@ impl PrettyPrint for Table {
 
         if !self.relations.is_empty() {
             printer.scan_break();
-            printer.scan_trivia(true, true);
+            printer.scan_break();
+            printer.scan_trivia(false, true);
             " ".pretty_print(printer);
             self.relations.pretty_print(printer);
         }

@@ -37,15 +37,15 @@ fn multi_column() {
 create  table test (
 
 col int primary key,
-
-    col2 int not null default 5 + 5
+#[test] 
+    col2 int default 5 + 5
 
 );
 
 
 }",
         "{
-    create table test (col int primary key, col2 int not null default 5 + 5);
+    create table test (col int primary key, #[test] col2 int default 5 + 5);
 }"
     );
 }
@@ -58,6 +58,7 @@ create  table test (
 
 col int primary key,
 
+#[test] 
     col2 int not null default 5
 + 5 + (now() + 9
             / 5 = 5 and false)
@@ -69,8 +70,58 @@ col int primary key,
         "{
     create table test (
         col int primary key,
+        #[test]
         col2 int not null default 5 + 5 + (now() + 9 / 5 = 5 and false),
     );
+}"
+    );
+}
+
+#[test]
+fn relations() {
+    assert_pretty!(Table:
+        "{
+create table test ( col int primary key);
+rel1 : (col) =>test(col2),
+rel2 : (col,col,col,col,col,col,col,col,col,col,col,col,col,col,col,) =>test(col,col,col,col,col,col,col,col,col,col,col,col,col,col,col,),
+}",
+        "{
+    create table test (col int primary key);
+
+    rel1: (col) => test (col2),
+    rel2: (
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+    ) => test (
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+        col,
+    ),
 }"
     );
 }
