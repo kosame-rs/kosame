@@ -72,7 +72,7 @@ impl ToTokens for OrderBy {
 impl PrettyPrint for OrderBy {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         printer.scan_break();
-        printer.scan_trivia();
+        printer.scan_trivia(true, true);
         " ".pretty_print(printer);
         self.order.pretty_print(printer);
         " ".pretty_print(printer);

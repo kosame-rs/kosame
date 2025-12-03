@@ -58,7 +58,9 @@ create  table test (
 
 col int primary key,
 
-    col2 int not null default 5 + 5 + (now() + 9 / 5 = 5 and false)
+    col2 int not null default 5
++ 5 + (now() + 9
+            / 5 = 5 and false)
 
 );
 

@@ -67,7 +67,7 @@ impl PrettyPrint for syn::AngleBracketedGenericArguments {
             if let Some(punct) = pair.punct() {
                 printer.scan_no_break_trivia();
                 punct.pretty_print(printer);
-                printer.scan_trivia();
+                printer.scan_trivia(true, true);
                 " ".pretty_print(printer);
             }
         }
@@ -96,7 +96,7 @@ impl PrettyPrint for syn::ParenthesizedGenericArguments {
                 if let Some(punct) = pair.punct() {
                     printer.scan_no_break_trivia();
                     punct.pretty_print(printer);
-                    printer.scan_trivia();
+                    printer.scan_trivia(true, true);
                     " ".pretty_print(printer);
                 }
             }

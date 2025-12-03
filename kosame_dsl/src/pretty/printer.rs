@@ -151,32 +151,8 @@ impl<'a> Printer<'a> {
         }
     }
 
-    pub fn scan_trivia(&mut self) {
-        while let Some(trivia) = self.ready_trivia() {
-            match trivia.kind {
-                TriviaKind::BlockComment => {
-                    self.scan_text(" ".into(), TextMode::Always);
-                    self.scan_text(trivia.content.to_string().into(), TextMode::Always);
-                    self.scan_break();
-                    self.pop_trivia();
-                }
-                TriviaKind::LineComment => {
-                    self.scan_text(" ".into(), TextMode::Always);
-                    self.scan_text(trivia.content.to_string().into(), TextMode::Always);
-                    self.scan_force_break();
-                    self.pop_trivia();
-                }
-                TriviaKind::Whitespace => {
-                    if trivia.newlines() > 1 {
-                        self.scan_break();
-                    }
-                    self.pop_trivia();
-                }
-            }
-        }
-    }
-
-    pub fn scan_trivia_no_trailing_newlines(&mut self) {
+    pub fn scan_trivia(&mut self, leading_whitespace: bool, trailing_whitespace: bool) {
+        let mut encountered_comment = false;
         let mut pending_newlines = 0;
         while let Some(trivia) = self.ready_trivia() {
             match trivia.kind {
@@ -188,6 +164,7 @@ impl<'a> Printer<'a> {
                     self.scan_text(trivia.content.to_string().into(), TextMode::Always);
                     pending_newlines = 1;
                     self.pop_trivia();
+                    encountered_comment = true;
                 }
                 TriviaKind::LineComment => {
                     for _ in 0..pending_newlines {
@@ -198,13 +175,21 @@ impl<'a> Printer<'a> {
                     self.scan_force_break();
                     pending_newlines = 1;
                     self.pop_trivia();
+                    encountered_comment = true;
                 }
                 TriviaKind::Whitespace => {
-                    if trivia.newlines() > 1 {
-                        pending_newlines += 1;
+                    if leading_whitespace || encountered_comment {
+                        if trivia.newlines() > 1 {
+                            pending_newlines += 1;
+                        }
                     }
                     self.pop_trivia();
                 }
+            }
+        }
+        if trailing_whitespace {
+            for _ in 0..pending_newlines {
+                self.scan_break();
             }
         }
     }

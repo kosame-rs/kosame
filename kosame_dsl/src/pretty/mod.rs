@@ -78,7 +78,7 @@ where
                 printer.scan_same_line_trivia();
                 printer.scan_break();
                 " ".pretty_print(printer);
-                printer.scan_trivia();
+                printer.scan_trivia(true, true);
             }
         }
     }

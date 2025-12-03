@@ -18,12 +18,12 @@ pub trait Delim {
         }
         printer.scan_indent(1);
         printer.scan_break();
-        printer.scan_trivia();
+        printer.scan_trivia(false, true);
 
         f(printer);
 
         printer.move_cursor(self.span().close().start());
-        printer.scan_trivia_no_trailing_newlines();
+        printer.scan_trivia(true, false);
         printer.scan_indent(-1);
         printer.scan_break();
 
