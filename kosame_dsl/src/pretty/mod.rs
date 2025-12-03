@@ -5,6 +5,7 @@ mod ring_buffer;
 mod rust;
 mod span;
 mod text;
+mod token;
 mod trivia;
 
 pub use delim::*;
@@ -12,6 +13,7 @@ pub use r#macro::*;
 pub use printer::*;
 pub use ring_buffer::*;
 pub use span::*;
+pub use token::*;
 pub use trivia::*;
 
 use syn::parse::Parse;

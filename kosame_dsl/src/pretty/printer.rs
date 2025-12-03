@@ -2,43 +2,13 @@ use std::borrow::Cow;
 
 use proc_macro2::LineColumn;
 
-use crate::pretty::TriviaKind;
-
-use super::{RingBuffer, Trivia};
+use crate::pretty::{
+    BeginToken, BreakMode, BreakToken, TextMode, TextToken, Token, TokenBuffer, Trivia, TriviaKind,
+};
 
 pub const MARGIN: isize = 89;
 pub const INDENT: isize = 4;
 pub const MIN_SPACE: isize = 60;
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum TextMode {
-    Always,
-    NoBreak,
-    Break,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum BreakMode {
-    Consistent,
-    Inconsistent,
-}
-
-enum Token<'a> {
-    Text {
-        string: Cow<'a, str>,
-        mode: TextMode,
-    },
-    Break {
-        len: isize,
-        indent: isize,
-        force: bool,
-    },
-    Begin {
-        mode: BreakMode,
-        len: isize,
-    },
-    End,
-}
 
 #[derive(Debug)]
 struct PrintFrame {
@@ -47,13 +17,11 @@ struct PrintFrame {
 
 pub struct Printer<'a> {
     trivia: &'a [Trivia<'a>],
+    tokens: TokenBuffer<'a>,
     output: String,
     space: isize,
     scan_indent: isize,
     print_indent: isize,
-    tokens: RingBuffer<Token<'a>>,
-    last_break: Option<usize>,
-    begin_stack: Vec<usize>,
     print_frames: Vec<PrintFrame>,
     cursor: LineColumn,
 }
@@ -67,31 +35,9 @@ impl<'a> Printer<'a> {
             space: initial_space.max(MIN_SPACE),
             scan_indent: initial_indent,
             print_indent: 0,
-            tokens: RingBuffer::new(),
-            last_break: None,
-            begin_stack: Vec::new(),
+            tokens: TokenBuffer::new(),
             print_frames: Vec::new(),
             cursor: LineColumn { line: 1, column: 0 },
-        }
-    }
-
-    /// Registers a new token length to be tracked in the previous break and the surrounding
-    /// begin/end frame.
-    fn push_len(&mut self, token_len: isize) {
-        // Track the length that the previous break token has to have available to not break.
-        if let Some(break_index) = self.last_break {
-            match &mut self.tokens[break_index] {
-                Token::Break { len, .. } => *len += token_len,
-                _ => unreachable!(),
-            }
-        }
-
-        // Track the length of the entire begin/end block.
-        if let Some(begin_index) = self.begin_stack.last() {
-            match &mut self.tokens[*begin_index] {
-                Token::Begin { len, .. } => *len += token_len,
-                _ => unreachable!(),
-            }
         }
     }
 
@@ -100,7 +46,7 @@ impl<'a> Printer<'a> {
     }
 
     pub fn scan_text(&mut self, string: Cow<'static, str>, mode: TextMode) {
-        self.push_len(string.len().try_into().unwrap());
+        self.tokens.push_len(string.len().try_into().unwrap());
         for char in string.chars() {
             match char {
                 '\n' => {
@@ -110,19 +56,15 @@ impl<'a> Printer<'a> {
                 _ => self.cursor.column += 1,
             }
         }
-        let token = Token::Text { string, mode };
+        let token = Token::Text(TextToken::new(string, mode));
         self.tokens.push_back(token);
     }
 
     pub fn scan_break(&mut self, force: bool) {
-        self.last_break = Some(self.tokens.len());
         let len = if force { MARGIN } else { 0 };
-        self.tokens.push_back(Token::Break {
-            len,
-            indent: self.scan_indent,
-            force,
-        });
-        self.push_len(len);
+        self.tokens
+            .push_back(Token::Break(BreakToken::new(len, self.scan_indent, force)));
+        self.tokens.push_len(len);
     }
 
     pub fn scan_indent(&mut self, indent: isize) {
@@ -130,32 +72,24 @@ impl<'a> Printer<'a> {
     }
 
     pub fn scan_begin(&mut self, mode: BreakMode) {
-        self.begin_stack.push(self.tokens.len());
-        self.tokens.push_back(Token::Begin { mode, len: 0 });
+        self.tokens
+            .push_back(Token::Begin(BeginToken::new(mode, 0)));
     }
 
     /// # Panics
     ///
     /// Panics if there was no matching call to [`scan_begin`] prior to running this function.
     pub fn scan_end(&mut self) {
-        let begin_index = self
-            .begin_stack
-            .pop()
-            .expect("printed end without matching begin");
-        let Token::Begin { len: begin_len, .. } = self.tokens[begin_index] else {
-            unreachable!()
-        };
-
-        // Add the length of this begin/end block to its parent.
-        if let Some(begin_index) = self.begin_stack.last() {
-            match &mut self.tokens[*begin_index] {
-                Token::Begin { len, .. } => *len += begin_len,
-                _ => unreachable!(),
-            }
-        }
-
-        self.last_break = None;
+        let len = self
+            .tokens
+            .current_begin_mut()
+            .expect("scanned end without matching begin")
+            .len();
         self.tokens.push_back(Token::End);
+        // Add child block length to parent.
+        if let Some(parent) = self.tokens.current_begin_mut() {
+            parent.push_len(len);
+        }
     }
 
     pub fn scan_no_break_trivia(&mut self) {
@@ -243,23 +177,24 @@ impl<'a> Printer<'a> {
             .is_some_and(|frame| frame.group_break);
 
         match &token {
-            Token::Text { string, mode } => {
+            Token::Text(text_token) => {
                 let should_print = matches!(
-                    (mode, group_break),
+                    (text_token.mode(), group_break),
                     (TextMode::Always, _) | (TextMode::Break, true) | (TextMode::NoBreak, false)
                 );
                 if should_print {
-                    self.print_string(string);
+                    self.print_string(text_token.string());
                 }
             }
-            Token::Break { len, indent, force } => {
-                if group_break || *len >= self.space || *force {
+            Token::Break(break_token) => {
+                if group_break || break_token.len() >= self.space || break_token.force() {
                     self.print_break();
-                    self.print_indent = *indent;
+                    self.print_indent = break_token.indent();
                 }
             }
-            Token::Begin { mode, len, .. } => {
-                let group_break = *len >= self.space && *mode == BreakMode::Consistent;
+            Token::Begin(begin_token) => {
+                let group_break =
+                    begin_token.len() >= self.space && begin_token.mode() == BreakMode::Consistent;
                 self.print_frames.push(PrintFrame { group_break });
             }
             Token::End => {

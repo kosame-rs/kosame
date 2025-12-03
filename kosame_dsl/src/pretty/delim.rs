@@ -12,19 +12,19 @@ pub trait Delim {
         printer.move_cursor(self.span().open().start());
         printer.flush_trivia();
         self.open_text().pretty_print(printer);
-        printer.scan_indent(1);
         if let Some(break_mode) = break_mode {
             printer.scan_begin(break_mode);
         }
+        printer.scan_indent(1);
         printer.scan_break(false);
         f(printer);
         printer.move_cursor(self.span().close().start());
         printer.flush_trivia();
+        printer.scan_indent(-1);
         printer.scan_break(false);
         if break_mode.is_some() {
             printer.scan_end();
         }
-        printer.scan_indent(-1);
         self.close_text().pretty_print(printer);
     }
 

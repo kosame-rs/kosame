@@ -82,6 +82,12 @@ impl<T> RingBuffer<T> {
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
+
+    /// Returns the index of the next element that is inserted into the buffer.
+    #[must_use]
+    pub fn next_index(&self) -> usize {
+        self.len() + self.offset
+    }
 }
 
 impl<T> Default for RingBuffer<T> {

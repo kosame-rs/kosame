@@ -187,14 +187,10 @@ impl PrettyPrint for Field {
                 alias,
             } => {
                 attrs.pretty_print(printer);
-                printer.scan_indent(1);
-                printer.scan_begin(BreakMode::Inconsistent);
                 name.pretty_print(printer);
                 " ".pretty_print(printer);
                 node.pretty_print(printer);
                 alias.pretty_print(printer);
-                printer.scan_end();
-                printer.scan_indent(-1);
             }
             Self::Expr {
                 attrs,
