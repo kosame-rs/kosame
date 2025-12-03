@@ -41,6 +41,11 @@ impl<'a> Printer<'a> {
         }
     }
 
+    #[must_use]
+    pub fn cursor(&self) -> LineColumn {
+        self.cursor
+    }
+
     pub fn move_cursor(&mut self, cursor: LineColumn) {
         self.cursor = cursor;
     }
@@ -130,7 +135,7 @@ impl<'a> Printer<'a> {
                     self.pop_trivia();
                 }
                 TriviaKind::Whitespace => {
-                    for _ in 0..trivia.newlines() {
+                    if trivia.newlines() > 1 {
                         self.scan_break(false);
                     }
                     self.pop_trivia();
@@ -149,7 +154,9 @@ impl<'a> Printer<'a> {
     }
 
     fn pop_trivia(&mut self) {
-        self.move_cursor(self.trivia[0].span.end());
+        if self.cursor < self.trivia[0].span.end() {
+            self.move_cursor(self.trivia[0].span.end());
+        }
         self.trivia = &self.trivia[1..];
     }
 
