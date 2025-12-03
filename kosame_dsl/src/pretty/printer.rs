@@ -30,10 +30,8 @@ enum Token<'a> {
     },
     Break {
         len: isize,
-        force: bool,
-    },
-    Indent {
         indent: isize,
+        force: bool,
     },
     Begin {
         mode: BreakMode,
@@ -51,13 +49,13 @@ pub struct Printer<'a> {
     trivia: &'a [Trivia<'a>],
     output: String,
     space: isize,
-    indent: isize,
+    scan_indent: isize,
+    print_indent: isize,
     tokens: RingBuffer<Token<'a>>,
     last_break: Option<usize>,
     begin_stack: Vec<usize>,
     print_frames: Vec<PrintFrame>,
     cursor: LineColumn,
-    pending_break: bool,
 }
 
 impl<'a> Printer<'a> {
@@ -67,13 +65,13 @@ impl<'a> Printer<'a> {
             trivia,
             output: String::new(),
             space: initial_space.max(MIN_SPACE),
-            indent: initial_indent,
+            scan_indent: initial_indent,
+            print_indent: 0,
             tokens: RingBuffer::new(),
             last_break: None,
             begin_stack: Vec::new(),
             print_frames: Vec::new(),
             cursor: LineColumn { line: 1, column: 0 },
-            pending_break: false,
         }
     }
 
@@ -119,12 +117,16 @@ impl<'a> Printer<'a> {
     pub fn scan_break(&mut self, force: bool) {
         self.last_break = Some(self.tokens.len());
         let len = if force { MARGIN } else { 0 };
-        self.tokens.push_back(Token::Break { len, force });
+        self.tokens.push_back(Token::Break {
+            len,
+            indent: self.scan_indent,
+            force,
+        });
         self.push_len(len);
     }
 
     pub fn scan_indent(&mut self, indent: isize) {
-        self.tokens.push_back(Token::Indent { indent });
+        self.scan_indent += indent;
     }
 
     pub fn scan_begin(&mut self, mode: BreakMode) {
@@ -211,9 +213,6 @@ impl<'a> Printer<'a> {
     }
 
     fn print_string(&mut self, mut string: &str) {
-        if self.pending_break {
-            self.print_break();
-        }
         if !self.line_dirty() {
             string = string.trim_start();
         }
@@ -224,15 +223,14 @@ impl<'a> Printer<'a> {
 
     fn print_break(&mut self) {
         self.output.push('\n');
-        self.pending_break = false;
         self.space = MARGIN;
     }
 
     fn print_indent(&mut self) {
         if !self.line_dirty() {
             self.output
-                .push_str(&" ".repeat((self.indent * INDENT).try_into().unwrap()));
-            self.space = (self.space - self.indent * INDENT).max(MIN_SPACE);
+                .push_str(&" ".repeat((self.print_indent * INDENT).try_into().unwrap()));
+            self.space = (self.space - self.print_indent * INDENT).max(MIN_SPACE);
         }
     }
 
@@ -254,16 +252,13 @@ impl<'a> Printer<'a> {
                     self.print_string(string);
                 }
             }
-            Token::Break { len, force } => {
+            Token::Break { len, indent, force } => {
                 if group_break || *len >= self.space || *force {
                     self.print_break();
+                    self.print_indent = *indent;
                 }
             }
-            Token::Indent { indent } => {
-                self.indent += indent;
-            }
             Token::Begin { mode, len, .. } => {
-                self.print_indent();
                 let group_break = *len >= self.space && *mode == BreakMode::Consistent;
                 self.print_frames.push(PrintFrame { group_break });
             }
