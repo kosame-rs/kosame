@@ -45,8 +45,7 @@ impl<'a> Printer<'a> {
         self.cursor = cursor;
     }
 
-    pub fn scan_text(&mut self, string: Cow<'static, str>, mode: TextMode) {
-        self.tokens.push_len(string.len().try_into().unwrap());
+    fn advance_cursor(&mut self, string: &str) {
         for char in string.chars() {
             match char {
                 '\n' => {
@@ -56,6 +55,11 @@ impl<'a> Printer<'a> {
                 _ => self.cursor.column += 1,
             }
         }
+    }
+
+    pub fn scan_text(&mut self, string: Cow<'static, str>, mode: TextMode) {
+        self.tokens.push_len(string.len().try_into().unwrap());
+        self.advance_cursor(&string);
         let token = Token::Text(TextToken::new(string, mode));
         self.tokens.push_back(token);
     }

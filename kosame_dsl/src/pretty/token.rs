@@ -144,23 +144,19 @@ impl<'a> TokenBuffer<'a> {
 
     pub fn push_back(&mut self, token: Token<'a>) {
         match &token {
+            Token::Text(_) => {}
             Token::Break(_) => self.last_break = Some(self.tokens.next_index()),
             Token::Begin(_) => self.begin_stack.push(self.tokens.next_index()),
             Token::End => {
                 self.begin_stack.pop();
                 self.last_break = None;
             }
-            _ => {}
         }
         self.tokens.push_back(token);
     }
 
     pub fn pop_front(&mut self) -> Option<Token<'a>> {
         self.tokens.pop_front()
-    }
-
-    pub fn len(&self) -> usize {
-        self.tokens.len()
     }
 
     pub fn is_empty(&self) -> bool {
