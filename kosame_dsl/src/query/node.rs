@@ -292,6 +292,21 @@ impl PrettyPrint for Node {
         self.brace_token
             .pretty_print(printer, Some(BreakMode::Consistent), |printer| {
                 self.star.pretty_print(printer);
+
+                if self.star.is_some()
+                    && (!self.fields.is_empty()
+                        || self.r#where.is_some()
+                        || self.order_by.is_some()
+                        || self.limit.is_some()
+                        || self.offset.is_some())
+                {
+                    ",".pretty_print(printer);
+                    printer.scan_same_line_trivia();
+                    printer.scan_break(false);
+                    " ".pretty_print(printer);
+                    printer.scan_trivia();
+                }
+
                 self.fields.pretty_print(printer);
                 self.r#where.pretty_print(printer);
                 self.order_by.pretty_print(printer);

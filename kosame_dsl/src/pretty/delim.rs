@@ -23,10 +23,10 @@ pub trait Delim {
         f(printer);
 
         printer.move_cursor(self.span().close().start());
-        printer.scan_trivia();
-
+        let force = printer.scan_trivia_no_trailing_newlines();
         printer.scan_indent(-1);
-        printer.scan_break(false);
+        printer.scan_break(force);
+
         if break_mode.is_some() {
             printer.scan_end();
         }

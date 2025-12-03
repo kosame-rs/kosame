@@ -44,6 +44,7 @@ impl ToTokens for Offset {
 impl PrettyPrint for Offset {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         printer.scan_break(false);
+        printer.scan_trivia();
         " ".pretty_print(printer);
         self.offset.pretty_print(printer);
         printer.scan_indent(1);

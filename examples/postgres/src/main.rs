@@ -19,6 +19,7 @@ mod schema {
             // rename them or specify a different type if you prefer.
             #[kosame(rename = renamed_title, ty = ::std::string::String)]
             title text not null,
+
             content text, // Trailing commas are allowed.
         );
 

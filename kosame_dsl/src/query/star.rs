@@ -58,10 +58,5 @@ impl PrettyPrint for Star {
         self.attrs.pretty_print(printer);
         self.star_token.pretty_print(printer);
         self.alias.pretty_print(printer);
-
-        ",".pretty_print(printer);
-        printer.scan_trivia();
-        printer.scan_break(false);
-        " ".pretty_print(printer);
     }
 }

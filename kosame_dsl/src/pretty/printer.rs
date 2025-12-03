@@ -119,6 +119,31 @@ impl<'a> Printer<'a> {
         }
     }
 
+    pub fn scan_same_line_trivia(&mut self) {
+        while let Some(trivia) = self.ready_trivia() {
+            match trivia.kind {
+                TriviaKind::BlockComment => {
+                    self.scan_text(" ".into(), TextMode::Always);
+                    self.scan_text(trivia.content.to_string().into(), TextMode::Always);
+                    self.pop_trivia();
+                    break;
+                }
+                TriviaKind::LineComment => {
+                    self.scan_text(" ".into(), TextMode::Always);
+                    self.scan_text(trivia.content.to_string().into(), TextMode::Always);
+                    self.pop_trivia();
+                    break;
+                }
+                TriviaKind::Whitespace => {
+                    if trivia.newlines() > 0 {
+                        break;
+                    }
+                    self.pop_trivia();
+                }
+            }
+        }
+    }
+
     pub fn scan_trivia(&mut self) {
         while let Some(trivia) = self.ready_trivia() {
             match trivia.kind {
@@ -142,6 +167,44 @@ impl<'a> Printer<'a> {
                 }
             }
         }
+    }
+
+    #[must_use]
+    pub fn scan_trivia_no_trailing_newlines(&mut self) -> bool {
+        let mut pending_newlines = 0;
+        let mut pending_force = false;
+        while let Some(trivia) = self.ready_trivia() {
+            match trivia.kind {
+                TriviaKind::BlockComment => {
+                    for _ in 0..pending_newlines {
+                        self.scan_break(pending_force);
+                        pending_force = false;
+                    }
+                    self.scan_text(" ".into(), TextMode::Always);
+                    self.scan_text(trivia.content.to_string().into(), TextMode::Always);
+                    pending_newlines = 1;
+                    self.pop_trivia();
+                }
+                TriviaKind::LineComment => {
+                    for _ in 0..pending_newlines {
+                        self.scan_break(pending_force);
+                        pending_force = false;
+                    }
+                    self.scan_text(" ".into(), TextMode::Always);
+                    self.scan_text(trivia.content.to_string().into(), TextMode::Always);
+                    pending_newlines = 1;
+                    pending_force = true;
+                    self.pop_trivia();
+                }
+                TriviaKind::Whitespace => {
+                    if trivia.newlines() > 1 {
+                        pending_newlines += 1;
+                    }
+                    self.pop_trivia();
+                }
+            }
+        }
+        pending_force
     }
 
     fn ready_trivia(&mut self) -> Option<&'a Trivia<'a>> {

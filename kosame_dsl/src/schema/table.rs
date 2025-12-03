@@ -207,11 +207,11 @@ impl PrettyPrint for Table {
             });
         self.semi_token.pretty_print(printer);
 
-        printer.scan_trivia();
+        printer.scan_same_line_trivia();
 
         if !self.relations.is_empty() {
             printer.scan_break(false);
-            printer.scan_break(false);
+            printer.scan_trivia();
             " ".pretty_print(printer);
             self.relations.pretty_print(printer);
         }
