@@ -164,7 +164,6 @@ impl Parse for Field {
 
 impl PrettyPrint for Field {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        printer.scan_begin(BreakMode::Inconsistent);
         match self {
             Self::Column {
                 attrs,
@@ -172,11 +171,13 @@ impl PrettyPrint for Field {
                 alias,
                 type_override,
             } => {
-                printer.scan_indent(1);
                 attrs.pretty_print(printer);
+                printer.scan_indent(1);
+                printer.scan_begin(BreakMode::Inconsistent);
                 name.pretty_print(printer);
                 alias.pretty_print(printer);
                 type_override.pretty_print(printer);
+                printer.scan_end();
                 printer.scan_indent(-1);
             }
             Self::Relation {
@@ -186,10 +187,14 @@ impl PrettyPrint for Field {
                 alias,
             } => {
                 attrs.pretty_print(printer);
+                printer.scan_indent(1);
+                printer.scan_begin(BreakMode::Inconsistent);
                 name.pretty_print(printer);
                 " ".pretty_print(printer);
                 node.pretty_print(printer);
                 alias.pretty_print(printer);
+                printer.scan_end();
+                printer.scan_indent(-1);
             }
             Self::Expr {
                 attrs,
@@ -197,14 +202,15 @@ impl PrettyPrint for Field {
                 alias,
                 type_override,
             } => {
-                printer.scan_indent(1);
                 attrs.pretty_print(printer);
+                printer.scan_indent(1);
+                printer.scan_begin(BreakMode::Inconsistent);
                 expr.pretty_print(printer);
                 alias.pretty_print(printer);
                 type_override.pretty_print(printer);
+                printer.scan_end();
                 printer.scan_indent(-1);
             }
         }
-        printer.scan_end();
     }
 }

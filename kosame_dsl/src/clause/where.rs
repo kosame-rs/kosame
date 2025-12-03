@@ -8,7 +8,7 @@ use syn::{
 use crate::{
     expr::Expr,
     parse_option::ParseOption,
-    pretty::{PrettyPrint, Printer},
+    pretty::{BreakMode, PrettyPrint, Printer},
     visit::Visit,
 };
 
@@ -48,7 +48,12 @@ impl PrettyPrint for Where {
         printer.scan_break(false);
         " ".pretty_print(printer);
         self.where_token.pretty_print(printer);
+        printer.scan_indent(1);
+        printer.scan_break(false);
         " ".pretty_print(printer);
+        printer.scan_begin(BreakMode::Inconsistent);
         self.expr.pretty_print(printer);
+        printer.scan_end();
+        printer.scan_indent(-1);
     }
 }

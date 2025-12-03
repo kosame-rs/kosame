@@ -6,7 +6,7 @@ use crate::{
     expr::Expr,
     keyword,
     parse_option::ParseOption,
-    pretty::{PrettyPrint, Printer},
+    pretty::{BreakMode, PrettyPrint, Printer},
     visit::Visit,
 };
 
@@ -46,7 +46,12 @@ impl PrettyPrint for Limit {
         printer.scan_break(false);
         " ".pretty_print(printer);
         self.limit.pretty_print(printer);
+        printer.scan_indent(1);
+        printer.scan_break(false);
         " ".pretty_print(printer);
+        printer.scan_begin(BreakMode::Inconsistent);
         self.expr.pretty_print(printer);
+        printer.scan_end();
+        printer.scan_indent(-1);
     }
 }
