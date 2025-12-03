@@ -38,7 +38,7 @@ create  table test (
 
 col int primary key,
 #[test] 
-    col2 int default 5 + 5
+    col2 int default 5 + 5,
 
 );
 
@@ -57,12 +57,13 @@ fn multi_column_break() {
 create  table test (
 
 col int primary key,
-
 #[test] 
     col2 int not null default 5
 + 5 + (now() + 9
-            / 5 = 5 and false)
+            / 5 = 5 and false),
 
+
+    col3 int not null
 );
 
 
@@ -72,6 +73,8 @@ col int primary key,
         col int primary key,
         #[test]
         col2 int not null default 5 + 5 + (now() + 9 / 5 = 5 and false),
+
+        col3 int not null,
     );
 }"
     );
@@ -156,7 +159,8 @@ create  table test (
     create table test (
         /*1*/
         my_column_1 int /*2*/, /*3*/
-        /*4*/ my_column_2 int not null, /*5*/
+        /*4*/
+        my_column_2 int not null, /*5*/
         /*6*/
     );
 }"
