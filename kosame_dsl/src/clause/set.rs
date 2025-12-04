@@ -7,7 +7,7 @@ use syn::{
 };
 
 use crate::{
-    clause::peek_clause,
+    clause::{Clause, peek_clause},
     expr::ExprRoot,
     keyword,
     pretty::{PrettyPrint, Printer},
@@ -68,16 +68,7 @@ impl ToTokens for Set {
 
 impl PrettyPrint for Set {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        printer.scan_break();
-        printer.scan_trivia(true, true);
-
-        " ".pretty_print(printer);
-        self.set_keyword.pretty_print(printer);
-
-        printer.scan_indent(1);
-        printer.scan_break();
-        self.items.pretty_print(printer);
-        printer.scan_indent(-1);
+        Clause::new(&[&self.set_keyword], &self.items).pretty_print(printer);
     }
 }
 

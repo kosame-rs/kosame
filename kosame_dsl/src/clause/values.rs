@@ -7,6 +7,7 @@ use syn::{
 };
 
 use crate::{
+    clause::Clause,
     expr::Expr,
     keyword,
     pretty::{BreakMode, Delim, PrettyPrint, Printer},
@@ -61,15 +62,7 @@ impl ToTokens for Values {
 
 impl PrettyPrint for Values {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        printer.scan_break();
-        printer.scan_trivia(true, true);
-        " ".pretty_print(printer);
-        self.values_keyword.pretty_print(printer);
-        printer.scan_indent(1);
-        printer.scan_break();
-        " ".pretty_print(printer);
-        self.rows.pretty_print(printer);
-        printer.scan_indent(-1);
+        Clause::new(&[&self.values_keyword], &self.rows).pretty_print(printer);
     }
 }
 

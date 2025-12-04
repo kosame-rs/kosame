@@ -3,7 +3,7 @@ use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
 use crate::{
-    clause::Fields,
+    clause::{Clause, Fields},
     keyword,
     parse_option::ParseOption,
     pretty::{PrettyPrint, Printer},
@@ -46,15 +46,6 @@ impl ToTokens for Returning {
 
 impl PrettyPrint for Returning {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        printer.scan_break();
-        printer.scan_trivia(true, true);
-        " ".pretty_print(printer);
-        self.returning_keyword.pretty_print(printer);
-        printer.scan_indent(1);
-        printer.scan_break();
-        " ".pretty_print(printer);
-        printer.scan_trivia(false, true);
-        self.fields.pretty_print(printer);
-        printer.scan_indent(-1);
+        Clause::new(&[&self.returning_keyword], &self.fields).pretty_print(printer);
     }
 }

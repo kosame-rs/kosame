@@ -173,7 +173,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         with
             posts_with_content as (
                 select
-                    posts.id
+                    posts.id,
                 from
                     schema::posts
                 where
@@ -190,14 +190,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             coalesce(sum(comments.upvotes), 0) as total_upvotes: i64,
             // The $"..." syntax allows you inline raw SQL text into expressions, which can be
             // helpful for syntax that Kosame does not yet support.
-            $"'[1, 2, 3]'::jsonb @> '[1, 3]'::jsonb" as raw_sql: bool
+            $"'[1, 2, 3]'::jsonb @> '[1, 3]'::jsonb" as raw_sql: bool,
         from
-            posts_with_content left join schema::comments on posts_with_content.id
-            = comments.post_id
+            posts_with_content
+            left join schema::comments on posts_with_content.id = comments.post_id
             // Kosame supports subqueries, including `lateral` ones.
             left join lateral (
                 select
-                    comments.id
+                    comments.id,
                 from
                     schema::comments
                 where
@@ -239,12 +239,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let rows = kosame::pg_statement! {
         select
-            comments.content
+            comments.content,
         from
             schema::comments
         union all
             select
-                posts.renamed_title
+                posts.renamed_title,
             from
                 schema::posts
         order by

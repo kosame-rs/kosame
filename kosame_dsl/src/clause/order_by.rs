@@ -7,7 +7,7 @@ use syn::{
 };
 
 use crate::{
-    clause::peek_clause,
+    clause::{Clause, peek_clause},
     expr::ExprRoot,
     keyword,
     parse_option::ParseOption,
@@ -16,8 +16,8 @@ use crate::{
 };
 
 pub struct OrderBy {
-    pub order: keyword::order,
-    pub by: keyword::by,
+    pub order_keyword: keyword::order,
+    pub by_keyword: keyword::by,
     pub items: Punctuated<OrderByItem, Token![,]>,
 }
 
@@ -36,8 +36,8 @@ pub fn visit_order_by<'a>(visit: &mut (impl Visit<'a> + ?Sized), order_by: &'a O
 impl Parse for OrderBy {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            order: input.call(keyword::order::parse_autocomplete)?,
-            by: input.call(keyword::by::parse_autocomplete)?,
+            order_keyword: input.call(keyword::order::parse_autocomplete)?,
+            by_keyword: input.call(keyword::by::parse_autocomplete)?,
             items: {
                 let mut punctuated = Punctuated::new();
                 while !input.is_empty() {
@@ -71,17 +71,7 @@ impl ToTokens for OrderBy {
 
 impl PrettyPrint for OrderBy {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        printer.scan_break();
-        printer.scan_trivia(true, true);
-        " ".pretty_print(printer);
-        self.order.pretty_print(printer);
-        " ".pretty_print(printer);
-        self.by.pretty_print(printer);
-        printer.scan_indent(1);
-        printer.scan_break();
-        " ".pretty_print(printer);
-        self.items.pretty_print(printer);
-        printer.scan_indent(-1);
+        Clause::new(&[&self.order_keyword, &self.by_keyword], &self.items).pretty_print(printer);
     }
 }
 
@@ -160,12 +150,10 @@ impl PrettyPrint for OrderByDir {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         match self {
             Self::Asc(asc) => {
-                printer.scan_break();
                 " ".pretty_print(printer);
                 asc.pretty_print(printer);
             }
             Self::Desc(desc) => {
-                printer.scan_break();
                 " ".pretty_print(printer);
                 desc.pretty_print(printer);
             }

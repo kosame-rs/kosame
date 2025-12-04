@@ -7,7 +7,7 @@ use syn::{
 };
 
 use crate::{
-    clause::peek_clause,
+    clause::{Clause, peek_clause},
     expr::ExprRoot,
     keyword,
     parse_option::ParseOption,
@@ -71,17 +71,7 @@ impl ToTokens for GroupBy {
 
 impl PrettyPrint for GroupBy {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        printer.scan_break();
-        printer.scan_trivia(true, true);
-        " ".pretty_print(printer);
-        self.group_keyword.pretty_print(printer);
-        " ".pretty_print(printer);
-        self.by_keyword.pretty_print(printer);
-        printer.scan_indent(1);
-        printer.scan_break();
-        " ".pretty_print(printer);
-        self.items.pretty_print(printer);
-        printer.scan_indent(-1);
+        Clause::new(&[&self.group_keyword, &self.by_keyword], &self.items).pretty_print(printer);
     }
 }
 

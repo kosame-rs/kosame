@@ -3,6 +3,7 @@ use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
 use crate::{
+    clause::Clause,
     expr::ExprRoot,
     keyword,
     parse_option::ParseOption,
@@ -11,7 +12,7 @@ use crate::{
 };
 
 pub struct Having {
-    pub having: keyword::having,
+    pub having_keyword: keyword::having,
     pub expr: ExprRoot,
 }
 
@@ -28,7 +29,7 @@ pub fn visit_having<'a>(visit: &mut (impl Visit<'a> + ?Sized), having: &'a Havin
 impl Parse for Having {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            having: input.parse()?,
+            having_keyword: input.parse()?,
             expr: input.parse()?,
         })
     }
@@ -43,13 +44,6 @@ impl ToTokens for Having {
 
 impl PrettyPrint for Having {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        printer.scan_break();
-        printer.scan_trivia(true, true);
-        " ".pretty_print(printer);
-        self.having.pretty_print(printer);
-        printer.scan_indent(1);
-        printer.scan_break();
-        " ".pretty_print(printer);
-        printer.scan_indent(-1);
+        Clause::new(&[&self.having_keyword], &self.expr).pretty_print(printer);
     }
 }

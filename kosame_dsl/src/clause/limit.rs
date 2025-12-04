@@ -3,6 +3,7 @@ use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
 use crate::{
+    clause::Clause,
     expr::ExprRoot,
     keyword,
     parse_option::ParseOption,
@@ -43,14 +44,6 @@ impl ToTokens for Limit {
 
 impl PrettyPrint for Limit {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        printer.scan_break();
-        printer.scan_trivia(true, true);
-        " ".pretty_print(printer);
-        self.limit.pretty_print(printer);
-        printer.scan_indent(1);
-        printer.scan_break();
-        " ".pretty_print(printer);
-        self.expr.pretty_print(printer);
-        printer.scan_indent(-1);
+        Clause::new(&[&self.limit], &self.expr).pretty_print(printer);
     }
 }
