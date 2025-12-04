@@ -47,8 +47,8 @@ impl PrettyPrint for Having {
         printer.scan_trivia(true, true);
         " ".pretty_print(printer);
         self.having.pretty_print(printer);
-        printer.scan_break();
         printer.scan_indent(1);
+        printer.scan_break();
         " ".pretty_print(printer);
         printer.scan_begin(BreakMode::Inconsistent);
         self.expr.pretty_print(printer);

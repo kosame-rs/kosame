@@ -49,9 +49,10 @@ impl ToTokens for Select {
 impl PrettyPrint for Select {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         self.select_keyword.pretty_print(printer);
-        printer.scan_break();
         printer.scan_indent(1);
+        printer.scan_break();
         " ".pretty_print(printer);
+        printer.scan_trivia(false, true);
         self.fields.pretty_print(printer);
         printer.scan_indent(-1);
     }

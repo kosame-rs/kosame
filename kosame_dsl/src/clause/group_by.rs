@@ -77,8 +77,8 @@ impl PrettyPrint for GroupBy {
         self.group_keyword.pretty_print(printer);
         " ".pretty_print(printer);
         self.by_keyword.pretty_print(printer);
-        printer.scan_break();
         printer.scan_indent(1);
+        printer.scan_break();
         " ".pretty_print(printer);
         self.items.pretty_print(printer);
         printer.scan_indent(-1);

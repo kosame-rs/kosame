@@ -52,9 +52,11 @@ impl ToTokens for From {
 
 impl PrettyPrint for From {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        self.from_keyword.pretty_print(printer);
         printer.scan_break();
+        " ".pretty_print(printer);
+        self.from_keyword.pretty_print(printer);
         printer.scan_indent(1);
+        printer.scan_break();
         " ".pretty_print(printer);
         self.chain.pretty_print(printer);
         printer.scan_indent(-1);
@@ -140,6 +142,7 @@ impl ToTokens for FromChain {
 
 impl PrettyPrint for FromChain {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
+        printer.scan_trivia(false, true);
         self.start.pretty_print(printer);
         self.combinators.pretty_print(printer);
     }
@@ -573,6 +576,7 @@ impl PrettyPrint for FromCombinator {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         printer.scan_break();
         " ".pretty_print(printer);
+        printer.scan_trivia(false, true);
         match self {
             Self::Join {
                 join_type,

@@ -68,13 +68,16 @@ impl ToTokens for With {
 impl PrettyPrint for With {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         self.with_keyword.pretty_print(printer);
-        printer.scan_break();
         printer.scan_indent(1);
+        printer.scan_break();
         " ".pretty_print(printer);
+        printer.scan_trivia(false, true);
         printer.scan_begin(BreakMode::Consistent);
         self.items.pretty_print(printer);
         printer.scan_end();
         printer.scan_indent(-1);
+        printer.scan_break();
+        " ".pretty_print(printer);
     }
 }
 
@@ -131,10 +134,10 @@ impl PrettyPrint for WithItem {
         self.alias.pretty_print(printer);
         " ".pretty_print(printer);
         self.as_token.pretty_print(printer);
+        " ".pretty_print(printer);
         self.paren_token
             .pretty_print(printer, Some(BreakMode::Consistent), |printer| {
                 self.command.pretty_print(printer);
             });
-        " ".pretty_print(printer);
     }
 }
