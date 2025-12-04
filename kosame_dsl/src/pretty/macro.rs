@@ -89,9 +89,7 @@ where
             }
             Self::Braced { brace, inner } => {
                 brace.pretty_print(printer, Some(BreakMode::Consistent), |printer| {
-                    printer.scan_text(" ".into(), super::TextMode::NoBreak);
                     inner.pretty_print(printer);
-                    printer.scan_text(" ".into(), super::TextMode::NoBreak);
                 });
             }
             Self::Bracketed { bracket, inner } => {

@@ -303,11 +303,14 @@ impl PrettyPrint for Node {
                     ",".pretty_print(printer);
                     printer.scan_same_line_trivia();
                     printer.scan_break();
-                    " ".pretty_print(printer);
+                    if !self.fields.is_empty() {
+                        " ".pretty_print(printer);
+                    }
                     printer.scan_trivia(true, true);
                 }
 
                 self.fields.pretty_print(printer);
+                printer.scan_same_line_trivia();
                 self.r#where.pretty_print(printer);
                 self.order_by.pretty_print(printer);
                 self.limit.pretty_print(printer);

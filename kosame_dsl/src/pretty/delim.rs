@@ -18,6 +18,11 @@ pub trait Delim {
         }
         printer.scan_indent(1);
         printer.scan_break();
+
+        if self.space() {
+            " ".pretty_print(printer);
+        }
+
         printer.scan_trivia(false, true);
 
         f(printer);
@@ -27,6 +32,10 @@ pub trait Delim {
         printer.scan_indent(-1);
         printer.scan_break();
 
+        if self.space() {
+            " ".pretty_print(printer);
+        }
+
         if break_mode.is_some() {
             printer.scan_end();
         }
@@ -34,6 +43,9 @@ pub trait Delim {
         self.close_text().pretty_print(printer);
         printer.move_cursor(self.span().close().end());
     }
+
+    #[must_use]
+    fn space(&self) -> bool;
 
     #[must_use]
     fn open_text(&self) -> &'static str;
@@ -46,6 +58,10 @@ pub trait Delim {
 }
 
 impl Delim for syn::token::Paren {
+    fn space(&self) -> bool {
+        false
+    }
+
     fn open_text(&self) -> &'static str {
         "("
     }
@@ -60,6 +76,10 @@ impl Delim for syn::token::Paren {
 }
 
 impl Delim for syn::token::Bracket {
+    fn space(&self) -> bool {
+        false
+    }
+
     fn open_text(&self) -> &'static str {
         "["
     }
@@ -74,6 +94,10 @@ impl Delim for syn::token::Bracket {
 }
 
 impl Delim for syn::token::Brace {
+    fn space(&self) -> bool {
+        true
+    }
+
     fn open_text(&self) -> &'static str {
         "{"
     }
