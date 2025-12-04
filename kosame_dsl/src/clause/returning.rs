@@ -46,10 +46,14 @@ impl ToTokens for Returning {
 
 impl PrettyPrint for Returning {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        self.returning_keyword.pretty_print(printer);
         printer.scan_break();
-        printer.scan_indent(1);
+        printer.scan_trivia(true, true);
         " ".pretty_print(printer);
+        self.returning_keyword.pretty_print(printer);
+        printer.scan_indent(1);
+        printer.scan_break();
+        " ".pretty_print(printer);
+        printer.scan_trivia(false, true);
         self.fields.pretty_print(printer);
         printer.scan_indent(-1);
     }

@@ -52,6 +52,7 @@ impl PrettyPrint for Where {
         printer.scan_indent(1);
         printer.scan_break();
         " ".pretty_print(printer);
+        printer.scan_trivia(false, true);
         printer.scan_begin(BreakMode::Inconsistent);
         self.expr.pretty_print(printer);
         printer.scan_end();

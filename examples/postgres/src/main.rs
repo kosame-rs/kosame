@@ -57,7 +57,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Insert some demo data using `INSERT INTO`.
     kosame::pg_statement! {
-        insert into schema::posts
+        insert into
+            schema::posts
         values
             (0, "my post", "hi, this is a post"),
             (1, "another post", "very interesting content"),
@@ -65,7 +66,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     .exec_sync(&mut client)?;
     kosame::pg_statement! {
-        insert into schema::comments
+        insert into
+            schema::comments
         values
             (0, 2, "wow very insightful"),
             (1, 1, "nice"),
@@ -79,14 +81,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         update
             schema::comments
         set
-            upvotes = upvotes + 1
+            upvotes = upvotes + 1,
         where
             // The `comment_id` variable above is used as a bind parameter in this expression.
             id = :comment_id
         returning
             // We can return the updated value. Kosame infers the result type of this statement
             // to be `struct Row { new_upvotes: i32 }` without a database connection.
-            comments.upvotes as new_upvotes
+            comments.upvotes as new_upvotes,
     }
     // With the `RETURNING` clause we can now use `query` instead of `exec` and retrieve data.
     .query_one_sync(&mut client)?
@@ -168,14 +170,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Kosame supports an SQL-like syntax with basic type inference for this scenario.
     let rows = kosame::pg_statement! {
         // A common table expression of all posts with non-null content.
-        with posts_with_content as (
-            select
-                posts.id
-            from
-                schema::posts
-            where
-                content is not null
-        )
+        with
+            posts_with_content as (
+                select
+                    posts.id,
+                from
+                    schema::posts
+                where
+                    content is not null
+            )
         select
             // The type of this field is inferred as `i32`.
             posts_with_content.id,
@@ -194,19 +197,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // Kosame supports subqueries, including `lateral` ones.
             left join lateral (
                 select
-                    comments.id
+                    comments.id,
                 from
                     schema::comments
                 where
                     // We can access `posts_with_content` from the higher up scope here.
                     post_id = posts_with_content.id
                 order by
-                    1 desc
+                    1 desc,
                 limit
                     1
             ) as top_comment on true
         group by
-            posts_with_content.id, top_comment.id
+            posts_with_content.id,
+            top_comment.id,
     }
     .query_vec_sync(&mut client)?;
     // The query above is of course inefficient and solely meant for demonstration purposes.
@@ -234,13 +238,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // [{"id":0,"top_comment_id":null,"total_upvotes":0,"raw_sql":true},{"id":1,"top_comment_id":2,"total_upvotes":1,"raw_sql":true}]
 
     let rows = kosame::pg_statement! {
-        select comments.content
-        from schema::comments
+        select
+            comments.content,
+        from
+            schema::comments
         union all
-        select posts.renamed_title
-        from schema::posts
-        order by 1 desc
-        limit 20
+            select
+                posts.renamed_title,
+            from
+                schema::posts
+        order by
+            1 desc,
+        limit
+            20
     }
     .query_vec_sync(&mut client)?;
     println!("{rows:#?}");

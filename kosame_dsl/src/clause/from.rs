@@ -439,6 +439,7 @@ impl Parse for On {
 
 impl PrettyPrint for On {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
+        " ".pretty_print(printer);
         self.on_keyword.pretty_print(printer);
         " ".pretty_print(printer);
         printer.scan_begin(BreakMode::Inconsistent);

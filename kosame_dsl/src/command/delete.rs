@@ -77,7 +77,11 @@ impl PrettyPrint for Delete {
         self.delete_keyword.pretty_print(printer);
         " ".pretty_print(printer);
         self.from_keyword.pretty_print(printer);
+        printer.scan_indent(1);
+        printer.scan_break();
+        " ".pretty_print(printer);
         self.target_table.pretty_print(printer);
+        printer.scan_indent(-1);
         self.using.pretty_print(printer);
         self.r#where.pretty_print(printer);
         self.returning.pretty_print(printer);
