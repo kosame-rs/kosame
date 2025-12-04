@@ -296,6 +296,7 @@ impl PrettyPrint for SelectCombinator {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
         printer.scan_break();
         " ".pretty_print(printer);
+        printer.scan_trivia(false, true);
         self.op.pretty_print(printer);
         self.quantifier.pretty_print(printer);
         printer.scan_indent(1);

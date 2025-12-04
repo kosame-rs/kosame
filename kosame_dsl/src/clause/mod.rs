@@ -47,14 +47,14 @@ pub fn peek_clause(input: syn::parse::ParseStream) -> bool {
         || SelectCombinator::peek(input)
 }
 
-struct Clause<'a> {
+pub struct Clause<'a> {
     keywords: &'a [&'a dyn PrettyPrint],
     body: &'a dyn PrettyPrint,
     first: bool,
 }
 
 impl<'a> Clause<'a> {
-    fn new(keywords: &'a [&'a dyn PrettyPrint], body: &'a dyn PrettyPrint) -> Self {
+    pub fn new(keywords: &'a [&'a dyn PrettyPrint], body: &'a dyn PrettyPrint) -> Self {
         Self {
             keywords,
             body,
@@ -62,7 +62,7 @@ impl<'a> Clause<'a> {
         }
     }
 
-    fn new_first(keywords: &'a [&'a dyn PrettyPrint], body: &'a dyn PrettyPrint) -> Self {
+    pub fn new_first(keywords: &'a [&'a dyn PrettyPrint], body: &'a dyn PrettyPrint) -> Self {
         Self {
             keywords,
             body,
