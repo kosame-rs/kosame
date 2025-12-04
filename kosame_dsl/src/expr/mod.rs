@@ -246,5 +246,6 @@ impl PrettyPrint for ExprRoot {
         printer.scan_indent(1);
         self.0.pretty_print(printer);
         printer.scan_indent(-1);
+        printer.scan_end();
     }
 }

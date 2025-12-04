@@ -4,7 +4,7 @@ use crate::{
     parse_option::ParseOption,
     part::{Alias, TypeOverride},
     path_ext::PathExt,
-    pretty::{BreakMode, PrettyPrint, Printer},
+    pretty::{PrettyPrint, Printer},
     query::node_path::QueryNodePath,
     row::RowField,
 };
@@ -172,13 +172,9 @@ impl PrettyPrint for Field {
                 type_override,
             } => {
                 attrs.pretty_print(printer);
-                printer.scan_indent(1);
-                printer.scan_begin(BreakMode::Inconsistent);
                 name.pretty_print(printer);
                 alias.pretty_print(printer);
                 type_override.pretty_print(printer);
-                printer.scan_end();
-                printer.scan_indent(-1);
             }
             Self::Relation {
                 attrs,
@@ -199,13 +195,9 @@ impl PrettyPrint for Field {
                 type_override,
             } => {
                 attrs.pretty_print(printer);
-                printer.scan_indent(1);
-                printer.scan_begin(BreakMode::Inconsistent);
                 expr.pretty_print(printer);
                 alias.pretty_print(printer);
                 type_override.pretty_print(printer);
-                printer.scan_end();
-                printer.scan_indent(-1);
             }
         }
     }

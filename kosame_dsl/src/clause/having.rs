@@ -6,7 +6,7 @@ use crate::{
     expr::ExprRoot,
     keyword,
     parse_option::ParseOption,
-    pretty::{BreakMode, PrettyPrint, Printer},
+    pretty::{PrettyPrint, Printer},
     visit::Visit,
 };
 
@@ -50,9 +50,6 @@ impl PrettyPrint for Having {
         printer.scan_indent(1);
         printer.scan_break();
         " ".pretty_print(printer);
-        printer.scan_begin(BreakMode::Inconsistent);
-        self.expr.pretty_print(printer);
-        printer.scan_end();
         printer.scan_indent(-1);
     }
 }
