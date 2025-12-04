@@ -297,7 +297,11 @@ impl PrettyPrint for SelectCombinator {
         " ".pretty_print(printer);
         self.op.pretty_print(printer);
         self.quantifier.pretty_print(printer);
+        printer.scan_indent(1);
+        printer.scan_break();
+        " ".pretty_print(printer);
         self.right.pretty_print(printer);
+        printer.scan_indent(-1);
     }
 }
 
