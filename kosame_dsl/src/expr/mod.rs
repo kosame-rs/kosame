@@ -8,6 +8,8 @@ mod paren;
 mod raw;
 mod unary;
 
+use std::ops::Deref;
+
 pub use binary::*;
 pub use bind_param::*;
 pub use call::*;
@@ -39,7 +41,7 @@ use syn::{
 
 use crate::{
     inferred_type::InferredType,
-    pretty::{PrettyPrint, Printer},
+    pretty::{BreakMode, PrettyPrint, Printer},
     scopes::ScopeId,
     visit::Visit,
 };
@@ -209,5 +211,40 @@ impl PrettyPrint for Expr {
         }
 
         variants!(branches!());
+    }
+}
+
+pub struct ExprRoot(Expr);
+
+pub fn visit_expr_root<'a>(visit: &mut (impl Visit<'a> + ?Sized), expr_root: &'a ExprRoot) {
+    visit.visit_expr(&expr_root.0);
+}
+
+impl Deref for ExprRoot {
+    type Target = Expr;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Parse for ExprRoot {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        Ok(ExprRoot(input.parse()?))
+    }
+}
+
+impl ToTokens for ExprRoot {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        self.0.to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for ExprRoot {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        printer.scan_begin(BreakMode::Inconsistent);
+        printer.scan_indent(1);
+        self.0.pretty_print(printer);
+        printer.scan_indent(-1);
     }
 }

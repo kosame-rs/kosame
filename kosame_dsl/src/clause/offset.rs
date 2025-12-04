@@ -3,7 +3,7 @@ use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
 use crate::{
-    expr::Expr,
+    expr::ExprRoot,
     keyword,
     parse_option::ParseOption,
     pretty::{BreakMode, PrettyPrint, Printer},
@@ -12,7 +12,7 @@ use crate::{
 
 pub struct Offset {
     pub offset: keyword::offset,
-    pub expr: Expr,
+    pub expr: ExprRoot,
 }
 
 impl ParseOption for Offset {
@@ -22,7 +22,7 @@ impl ParseOption for Offset {
 }
 
 pub fn visit_offset<'a>(visit: &mut (impl Visit<'a> + ?Sized), offset: &'a Offset) {
-    visit.visit_expr(&offset.expr);
+    visit.visit_expr_root(&offset.expr);
 }
 
 impl Parse for Offset {

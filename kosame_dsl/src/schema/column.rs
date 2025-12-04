@@ -78,7 +78,7 @@ impl ToTokens for Column {
         let not_null = self.constraints.not_null().is_some();
         let primary_key = self.constraints.primary_key().is_some();
         let default = QuoteOption(self.constraints.default().map(|default| {
-            let expr = default.expr();
+            let expr = &default.expr;
             quote! { &#expr }
         }));
 

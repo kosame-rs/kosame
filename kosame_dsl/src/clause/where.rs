@@ -6,15 +6,16 @@ use syn::{
 };
 
 use crate::{
-    expr::Expr,
+    clause::Clause,
+    expr::ExprRoot,
     parse_option::ParseOption,
-    pretty::{BreakMode, PrettyPrint, Printer},
+    pretty::{PrettyPrint, Printer},
     visit::Visit,
 };
 
 pub struct Where {
     pub where_token: Token![where],
-    pub expr: Expr,
+    pub expr: ExprRoot,
 }
 
 impl ParseOption for Where {
@@ -24,7 +25,7 @@ impl ParseOption for Where {
 }
 
 pub fn visit_where<'a>(visit: &mut (impl Visit<'a> + ?Sized), r#where: &'a Where) {
-    visit.visit_expr(&r#where.expr);
+    visit.visit_expr_root(&r#where.expr);
 }
 
 impl Parse for Where {
@@ -45,17 +46,6 @@ impl ToTokens for Where {
 
 impl PrettyPrint for Where {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        printer.scan_break();
-        printer.scan_trivia(true, true);
-        " ".pretty_print(printer);
-        self.where_token.pretty_print(printer);
-        printer.scan_indent(1);
-        printer.scan_break();
-        " ".pretty_print(printer);
-        printer.scan_trivia(false, true);
-        printer.scan_begin(BreakMode::Inconsistent);
-        self.expr.pretty_print(printer);
-        printer.scan_end();
-        printer.scan_indent(-1);
+        Clause::new(&[&self.where_token], &self.expr).pretty_print(printer);
     }
 }

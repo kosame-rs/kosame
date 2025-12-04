@@ -6,7 +6,7 @@ use syn::{
 };
 
 use crate::{
-    expr::Expr,
+    expr::ExprRoot,
     keyword,
     pretty::{PrettyPrint, Printer},
 };
@@ -149,13 +149,7 @@ impl Parse for PrimaryKey {
 
 pub struct Default {
     pub default_kw: keyword::default,
-    pub expr: Expr,
-}
-
-impl Default {
-    pub fn expr(&self) -> &Expr {
-        &self.expr
-    }
+    pub expr: ExprRoot,
 }
 
 impl Parse for Default {

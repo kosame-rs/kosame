@@ -8,7 +8,7 @@ use syn::{
 
 use crate::{
     clause::peek_clause,
-    expr::Expr,
+    expr::ExprRoot,
     keyword,
     parse_option::ParseOption,
     pretty::{BreakMode, PrettyPrint, Printer},
@@ -29,7 +29,7 @@ impl ParseOption for OrderBy {
 
 pub fn visit_order_by<'a>(visit: &mut (impl Visit<'a> + ?Sized), order_by: &'a OrderBy) {
     for item in &order_by.items {
-        visit.visit_expr(&item.expr);
+        visit.visit_expr_root(&item.expr);
     }
 }
 
@@ -86,7 +86,7 @@ impl PrettyPrint for OrderBy {
 }
 
 pub struct OrderByItem {
-    pub expr: Expr,
+    pub expr: ExprRoot,
     pub dir: Option<OrderByDir>,
     pub nulls: Option<OrderByNulls>,
 }

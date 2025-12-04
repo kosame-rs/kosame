@@ -8,7 +8,7 @@ use syn::{
 
 use crate::{
     clause::peek_clause,
-    expr::Expr,
+    expr::ExprRoot,
     keyword,
     pretty::{BreakMode, PrettyPrint, Printer},
     visit::Visit,
@@ -90,7 +90,7 @@ pub enum SetItem {
     Expr {
         column: Ident,
         eq_token: Token![=],
-        expr: Expr,
+        expr: ExprRoot,
     },
 }
 
@@ -98,7 +98,7 @@ pub fn visit_set_item<'a>(visit: &mut (impl Visit<'a> + ?Sized), set_item: &'a S
     match set_item {
         SetItem::Default { .. } => {}
         SetItem::Expr { expr, .. } => {
-            visit.visit_expr(expr);
+            visit.visit_expr_root(expr);
         }
     }
 }

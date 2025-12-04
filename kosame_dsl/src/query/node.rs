@@ -204,7 +204,7 @@ pub fn visit_node<'a>(visit: &mut (impl Visit<'a> + ?Sized), node: &'a Node) {
     for field in &node.fields {
         match field {
             Field::Relation { node, .. } => visit.visit_node(node),
-            Field::Expr { expr, .. } => visit.visit_expr(expr),
+            Field::Expr { expr, .. } => visit.visit_expr_root(expr),
             Field::Column { .. } => {}
         }
     }

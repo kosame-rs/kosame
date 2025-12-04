@@ -3,7 +3,7 @@ use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
 use crate::{
-    clause::{Fields, From, FromChain, GroupBy, Having, Where},
+    clause::{Clause, Fields, From, FromChain, GroupBy, Having, Where},
     keyword,
     parse_option::ParseOption,
     pretty::{PrettyPrint, Printer},
@@ -48,13 +48,7 @@ impl ToTokens for Select {
 
 impl PrettyPrint for Select {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        self.select_keyword.pretty_print(printer);
-        printer.scan_indent(1);
-        printer.scan_break();
-        " ".pretty_print(printer);
-        printer.scan_trivia(false, true);
-        self.fields.pretty_print(printer);
-        printer.scan_indent(-1);
+        Clause::new_first(&[&self.select_keyword], &self.fields).pretty_print(printer);
     }
 }
 

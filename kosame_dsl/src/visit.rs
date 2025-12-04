@@ -7,7 +7,7 @@ use crate::{
         Command, CommandType, Delete, Insert, Select as SelectCommand, SelectChain,
         SelectCombinator, SelectItem, Update, Using,
     },
-    expr::{Binary, BindParam, Call, Cast, ColumnRef, Expr, Lit, Paren, Raw, Unary},
+    expr::{Binary, BindParam, Call, Cast, ColumnRef, Expr, ExprRoot, Lit, Paren, Raw, Unary},
     part::{TablePath, TargetTable},
     query::Node,
     statement::Statement,
@@ -27,7 +27,7 @@ pub use crate::{
     },
     expr::{
         visit_binary, visit_bind_param, visit_call, visit_cast, visit_column_ref, visit_expr,
-        visit_lit, visit_paren, visit_raw, visit_unary,
+        visit_expr_root, visit_lit, visit_paren, visit_raw, visit_unary,
     },
     part::{visit_table_path, visit_target_table},
     query::visit_node,
@@ -38,6 +38,10 @@ pub trait Visit<'a> {
     // Expression nodes
     fn visit_expr(&mut self, expr: &'a Expr) {
         visit_expr(self, expr);
+    }
+
+    fn visit_expr_root(&mut self, expr_root: &'a ExprRoot) {
+        visit_expr_root(self, expr_root);
     }
 
     fn visit_binary(&mut self, binary: &'a Binary) {

@@ -3,7 +3,7 @@ use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
 use crate::{
-    expr::Expr,
+    expr::ExprRoot,
     keyword,
     parse_option::ParseOption,
     pretty::{BreakMode, PrettyPrint, Printer},
@@ -12,7 +12,7 @@ use crate::{
 
 pub struct Having {
     pub having: keyword::having,
-    pub expr: Expr,
+    pub expr: ExprRoot,
 }
 
 impl ParseOption for Having {
@@ -22,7 +22,7 @@ impl ParseOption for Having {
 }
 
 pub fn visit_having<'a>(visit: &mut (impl Visit<'a> + ?Sized), having: &'a Having) {
-    visit.visit_expr(&having.expr);
+    visit.visit_expr_root(&having.expr);
 }
 
 impl Parse for Having {

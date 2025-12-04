@@ -8,7 +8,7 @@ use syn::{
 
 use crate::{
     clause::peek_clause,
-    expr::Expr,
+    expr::ExprRoot,
     keyword,
     parse_option::ParseOption,
     pretty::{BreakMode, PrettyPrint, Printer},
@@ -29,7 +29,7 @@ impl ParseOption for GroupBy {
 
 pub fn visit_group_by<'a>(visit: &mut (impl Visit<'a> + ?Sized), group_by: &'a GroupBy) {
     for item in &group_by.items {
-        visit.visit_expr(&item.expr);
+        visit.visit_expr_root(&item.expr);
     }
 }
 
@@ -86,7 +86,7 @@ impl PrettyPrint for GroupBy {
 }
 
 pub struct GroupByItem {
-    pub expr: Expr,
+    pub expr: ExprRoot,
 }
 
 impl Parse for GroupByItem {

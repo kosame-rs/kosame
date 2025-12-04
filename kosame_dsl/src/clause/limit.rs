@@ -3,7 +3,7 @@ use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
 use crate::{
-    expr::Expr,
+    expr::ExprRoot,
     keyword,
     parse_option::ParseOption,
     pretty::{BreakMode, PrettyPrint, Printer},
@@ -12,7 +12,7 @@ use crate::{
 
 pub struct Limit {
     pub limit: keyword::limit,
-    pub expr: Expr,
+    pub expr: ExprRoot,
 }
 
 impl ParseOption for Limit {
@@ -22,7 +22,7 @@ impl ParseOption for Limit {
 }
 
 pub fn visit_limit<'a>(visit: &mut (impl Visit<'a> + ?Sized), limit: &'a Limit) {
-    visit.visit_expr(&limit.expr);
+    visit.visit_expr_root(&limit.expr);
 }
 
 impl Parse for Limit {

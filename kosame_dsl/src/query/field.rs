@@ -1,6 +1,6 @@
 use super::Node;
 use crate::{
-    expr::Expr,
+    expr::ExprRoot,
     parse_option::ParseOption,
     part::{Alias, TypeOverride},
     path_ext::PathExt,
@@ -31,7 +31,7 @@ pub enum Field {
     },
     Expr {
         attrs: Vec<Attribute>,
-        expr: Expr,
+        expr: ExprRoot,
         alias: Alias,
         type_override: TypeOverride,
     },

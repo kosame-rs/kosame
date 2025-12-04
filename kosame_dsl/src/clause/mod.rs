@@ -26,7 +26,11 @@ pub use values::*;
 pub use r#where::*;
 pub use with::*;
 
-use crate::{command::SelectCombinator, parse_option::ParseOption};
+use crate::{
+    command::SelectCombinator,
+    parse_option::ParseOption,
+    pretty::{PrettyPrint, Printer},
+};
 
 pub fn peek_clause(input: syn::parse::ParseStream) -> bool {
     With::peek(input)
@@ -41,4 +45,51 @@ pub fn peek_clause(input: syn::parse::ParseStream) -> bool {
         || Set::peek(input)
         || Values::peek(input)
         || SelectCombinator::peek(input)
+}
+
+struct Clause<'a> {
+    keywords: &'a [&'a dyn PrettyPrint],
+    body: &'a dyn PrettyPrint,
+    first: bool,
+}
+
+impl<'a> Clause<'a> {
+    fn new(keywords: &'a [&'a dyn PrettyPrint], body: &'a dyn PrettyPrint) -> Self {
+        Self {
+            keywords,
+            body,
+            first: false,
+        }
+    }
+
+    fn new_first(keywords: &'a [&'a dyn PrettyPrint], body: &'a dyn PrettyPrint) -> Self {
+        Self {
+            keywords,
+            body,
+            first: true,
+        }
+    }
+}
+
+impl PrettyPrint for Clause<'_> {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        if !self.first {
+            printer.scan_break();
+            " ".pretty_print(printer);
+        }
+        printer.scan_trivia(!self.first, true);
+
+        for (index, keyword) in self.keywords.iter().enumerate() {
+            keyword.pretty_print(printer);
+            if index < self.keywords.len() - 1 {
+                " ".pretty_print(printer);
+            }
+        }
+        printer.scan_indent(1);
+        printer.scan_break();
+        " ".pretty_print(printer);
+        printer.scan_trivia(false, true);
+        self.body.pretty_print(printer);
+        printer.scan_indent(-1);
+    }
 }

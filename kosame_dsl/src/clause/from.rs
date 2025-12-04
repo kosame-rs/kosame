@@ -6,10 +6,10 @@ use syn::{
 };
 
 use crate::{
-    clause::WithItem,
+    clause::{Clause, WithItem},
     command::Command,
     correlations::CorrelationId,
-    expr::Expr,
+    expr::ExprRoot,
     keyword,
     parse_option::ParseOption,
     part::{TableAlias, TablePath},
@@ -52,14 +52,7 @@ impl ToTokens for From {
 
 impl PrettyPrint for From {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        printer.scan_break();
-        " ".pretty_print(printer);
-        self.from_keyword.pretty_print(printer);
-        printer.scan_indent(1);
-        printer.scan_break();
-        " ".pretty_print(printer);
-        self.chain.pretty_print(printer);
-        printer.scan_indent(-1);
+        Clause::new(&[&self.from_keyword], &self.chain).pretty_print(printer);
     }
 }
 
@@ -425,7 +418,7 @@ impl PrettyPrint for JoinType {
 
 pub struct On {
     pub on_keyword: keyword::on,
-    pub expr: Expr,
+    pub expr: ExprRoot,
 }
 
 impl Parse for On {
@@ -442,9 +435,7 @@ impl PrettyPrint for On {
         " ".pretty_print(printer);
         self.on_keyword.pretty_print(printer);
         " ".pretty_print(printer);
-        printer.scan_begin(BreakMode::Inconsistent);
         self.expr.pretty_print(printer);
-        printer.scan_end();
     }
 }
 
@@ -496,7 +487,7 @@ pub fn visit_from_combinator<'a>(
     match from_combinator {
         FromCombinator::Join { right, on, .. } => {
             visit.visit_from_item(right);
-            visit.visit_expr(&on.expr);
+            visit.visit_expr_root(&on.expr);
         }
         FromCombinator::NaturalJoin { right, .. } => {
             visit.visit_from_item(right);

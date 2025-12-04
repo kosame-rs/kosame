@@ -10,7 +10,7 @@ use syn::{
 use crate::{
     clause::peek_clause,
     correlations::{CorrelationId, Correlations},
-    expr::Expr,
+    expr::ExprRoot,
     inferred_type::{InferredType, resolve_type},
     parse_option::ParseOption,
     part::{Alias, TypeOverride},
@@ -23,7 +23,7 @@ use crate::{
 
 pub struct Field {
     pub attrs: Vec<Attribute>,
-    pub expr: Expr,
+    pub expr: ExprRoot,
     pub alias: Option<Alias>,
     pub type_override: Option<TypeOverride>,
 }
@@ -78,7 +78,7 @@ impl Field {
 }
 
 pub fn visit_field<'a>(visit: &mut (impl Visit<'a> + ?Sized), field: &'a Field) {
-    visit.visit_expr(&field.expr);
+    visit.visit_expr_root(&field.expr);
 }
 
 impl Parse for Field {
