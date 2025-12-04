@@ -10,7 +10,7 @@ use crate::{
     clause::peek_clause,
     expr::ExprRoot,
     keyword,
-    pretty::{BreakMode, PrettyPrint, Printer},
+    pretty::{PrettyPrint, Printer},
     visit::Visit,
 };
 
@@ -169,9 +169,7 @@ impl PrettyPrint for SetItem {
                 " ".pretty_print(printer);
 
                 printer.scan_indent(1);
-                printer.scan_begin(BreakMode::Inconsistent);
                 expr.pretty_print(printer);
-                printer.scan_end();
                 printer.scan_indent(-1);
             }
         }

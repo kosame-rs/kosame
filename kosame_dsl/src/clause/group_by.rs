@@ -11,7 +11,7 @@ use crate::{
     expr::ExprRoot,
     keyword,
     parse_option::ParseOption,
-    pretty::{BreakMode, PrettyPrint, Printer},
+    pretty::{PrettyPrint, Printer},
     visit::Visit,
 };
 
@@ -106,8 +106,6 @@ impl ToTokens for GroupByItem {
 
 impl PrettyPrint for GroupByItem {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        printer.scan_begin(BreakMode::Inconsistent);
         self.expr.pretty_print(printer);
-        printer.scan_end();
     }
 }
