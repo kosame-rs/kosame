@@ -29,6 +29,7 @@ use crate::{
     keyword,
     parse_option::ParseOption,
     part::TargetTable,
+    pretty::{PrettyPrint, Printer},
     quote_option::QuoteOption,
     scopes::{ScopeId, Scoped},
     visit::Visit,
@@ -107,6 +108,14 @@ impl ToTokens for Command {
             quote! { ::kosame::repr::command::Command::new(#with, #command_type) }
                 .to_tokens(tokens);
         });
+    }
+}
+
+impl PrettyPrint for Command {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.attrs.pretty_print(printer);
+        self.with.pretty_print(printer);
+        self.command_type.pretty_print(printer);
     }
 }
 
@@ -199,5 +208,16 @@ impl ToTokens for CommandType {
             },
         }
         .to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for CommandType {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        match self {
+            Self::Delete(inner) => inner.pretty_print(printer),
+            Self::Insert(inner) => inner.pretty_print(printer),
+            Self::Select(inner) => inner.pretty_print(printer),
+            Self::Update(inner) => inner.pretty_print(printer),
+        }
     }
 }

@@ -6,6 +6,7 @@ use crate::{
     clause::{Fields, From, FromChain, GroupBy, Having, Where},
     keyword,
     parse_option::ParseOption,
+    pretty::{PrettyPrint, Printer},
     quote_option::QuoteOption,
     scopes::{ScopeId, Scoped},
     visit::Visit,
@@ -42,6 +43,17 @@ impl ToTokens for Select {
             ::kosame::repr::clause::Select::new(#fields)
         }
         .to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for Select {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.select_keyword.pretty_print(printer);
+        printer.scan_break();
+        printer.scan_indent(1);
+        " ".pretty_print(printer);
+        self.fields.pretty_print(printer);
+        printer.scan_indent(-1);
     }
 }
 
@@ -121,5 +133,15 @@ impl ToTokens for SelectCore {
             }
             .to_tokens(tokens);
         });
+    }
+}
+
+impl PrettyPrint for SelectCore {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.select.pretty_print(printer);
+        self.from.pretty_print(printer);
+        self.r#where.pretty_print(printer);
+        self.group_by.pretty_print(printer);
+        self.having.pretty_print(printer);
     }
 }

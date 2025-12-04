@@ -12,6 +12,7 @@ use crate::{
     keyword,
     parse_option::ParseOption,
     part::TableAlias,
+    pretty::{BreakMode, Delim, PrettyPrint, Printer},
     visit::Visit,
 };
 
@@ -64,6 +65,19 @@ impl ToTokens for With {
     }
 }
 
+impl PrettyPrint for With {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.with_keyword.pretty_print(printer);
+        printer.scan_break();
+        printer.scan_indent(1);
+        " ".pretty_print(printer);
+        printer.scan_begin(BreakMode::Consistent);
+        self.items.pretty_print(printer);
+        printer.scan_end();
+        printer.scan_indent(-1);
+    }
+}
+
 pub struct WithItem {
     pub alias: TableAlias,
     pub as_token: Token![as],
@@ -109,5 +123,18 @@ impl ToTokens for WithItem {
         let alias = &self.alias;
         let command = &self.command;
         quote! { ::kosame::repr::clause::WithItem::new(#alias, #command) }.to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for WithItem {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.alias.pretty_print(printer);
+        " ".pretty_print(printer);
+        self.as_token.pretty_print(printer);
+        self.paren_token
+            .pretty_print(printer, Some(BreakMode::Consistent), |printer| {
+                self.command.pretty_print(printer);
+            });
+        " ".pretty_print(printer);
     }
 }

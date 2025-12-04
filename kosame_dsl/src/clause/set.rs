@@ -6,10 +6,16 @@ use syn::{
     punctuated::Punctuated,
 };
 
-use crate::{clause::peek_clause, expr::Expr, keyword, visit::Visit};
+use crate::{
+    clause::peek_clause,
+    expr::Expr,
+    keyword,
+    pretty::{BreakMode, PrettyPrint, Printer},
+    visit::Visit,
+};
 
 pub struct Set {
-    _set_keyword: keyword::set,
+    set_keyword: keyword::set,
     items: Punctuated<SetItem, Token![,]>,
 }
 
@@ -28,7 +34,7 @@ pub fn visit_set<'a>(visit: &mut (impl Visit<'a> + ?Sized), set: &'a Set) {
 impl Parse for Set {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            _set_keyword: input.parse()?,
+            set_keyword: input.parse()?,
             items: {
                 let mut items = Punctuated::<SetItem, _>::new();
                 while !input.is_empty() {
@@ -60,15 +66,30 @@ impl ToTokens for Set {
     }
 }
 
+impl PrettyPrint for Set {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        printer.scan_break();
+        printer.scan_trivia(true, true);
+
+        " ".pretty_print(printer);
+        self.set_keyword.pretty_print(printer);
+
+        printer.scan_indent(1);
+        printer.scan_break();
+        self.items.pretty_print(printer);
+        printer.scan_indent(-1);
+    }
+}
+
 pub enum SetItem {
     Default {
         column: Ident,
-        _eq_token: Token![=],
-        _default_keyword: keyword::default,
+        eq_token: Token![=],
+        default_keyword: keyword::default,
     },
     Expr {
         column: Ident,
-        _eq_token: Token![=],
+        eq_token: Token![=],
         expr: Expr,
     },
 }
@@ -90,13 +111,13 @@ impl Parse for SetItem {
         if input.peek(keyword::default) {
             Ok(Self::Default {
                 column,
-                _eq_token: eq_token,
-                _default_keyword: input.parse()?,
+                eq_token,
+                default_keyword: input.parse()?,
             })
         } else {
             Ok(Self::Expr {
                 column,
-                _eq_token: eq_token,
+                eq_token,
                 expr: input.parse()?,
             })
         }
@@ -120,5 +141,39 @@ impl ToTokens for SetItem {
             }
         }
         .to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for SetItem {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        match self {
+            Self::Default {
+                column,
+                eq_token,
+                default_keyword,
+            } => {
+                column.pretty_print(printer);
+                " ".pretty_print(printer);
+                eq_token.pretty_print(printer);
+                " ".pretty_print(printer);
+                default_keyword.pretty_print(printer);
+            }
+            Self::Expr {
+                column,
+                eq_token,
+                expr,
+            } => {
+                column.pretty_print(printer);
+                " ".pretty_print(printer);
+                eq_token.pretty_print(printer);
+                " ".pretty_print(printer);
+
+                printer.scan_indent(1);
+                printer.scan_begin(BreakMode::Inconsistent);
+                expr.pretty_print(printer);
+                printer.scan_end();
+                printer.scan_indent(-1);
+            }
+        }
     }
 }

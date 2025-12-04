@@ -66,6 +66,13 @@ impl Fmt {
                     >(
                         &source_text, initial_space, initial_indent
                     )),
+                    "statement" | "pg_statement" => {
+                        Some(pretty_print_macro_str::<
+                            Macro<kosame_dsl::statement::Statement>,
+                        >(
+                            &source_text, initial_space, initial_indent
+                        ))
+                    }
                     _ => None,
                 };
 

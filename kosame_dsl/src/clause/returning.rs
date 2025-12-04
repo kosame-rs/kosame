@@ -2,10 +2,16 @@ use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
-use crate::{clause::Fields, keyword, parse_option::ParseOption, visit::Visit};
+use crate::{
+    clause::Fields,
+    keyword,
+    parse_option::ParseOption,
+    pretty::{PrettyPrint, Printer},
+    visit::Visit,
+};
 
 pub struct Returning {
-    pub returning: keyword::returning,
+    pub returning_keyword: keyword::returning,
     pub fields: Fields,
 }
 
@@ -22,7 +28,7 @@ pub fn visit_returning<'a>(visit: &mut (impl Visit<'a> + ?Sized), returning: &'a
 impl Parse for Returning {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            returning: input.parse()?,
+            returning_keyword: input.parse()?,
             fields: input.parse()?,
         })
     }
@@ -35,5 +41,16 @@ impl ToTokens for Returning {
             ::kosame::repr::clause::Returning::new(#fields)
         }
         .to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for Returning {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.returning_keyword.pretty_print(printer);
+        printer.scan_break();
+        printer.scan_indent(1);
+        " ".pretty_print(printer);
+        self.fields.pretty_print(printer);
+        printer.scan_indent(-1);
     }
 }

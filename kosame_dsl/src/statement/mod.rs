@@ -12,6 +12,7 @@ use crate::{
     correlations::{CorrelationId, Correlations},
     parse_option::ParseOption,
     part::Alias,
+    pretty::{BreakMode, Delim, PrettyPrint, Printer},
     row::Row,
     scopes::{ScopeId, Scopes},
     visit::Visit,
@@ -186,5 +187,20 @@ impl ToTokens for Statement {
             }
             .to_tokens(tokens);
         }
+    }
+}
+
+impl PrettyPrint for Statement {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.inner_attrs.pretty_print(printer);
+        match self.paren_token {
+            Some(paren_token) => {
+                paren_token.pretty_print(printer, Some(BreakMode::Consistent), |printer| {
+                    self.command.pretty_print(printer);
+                });
+            }
+            None => self.command.pretty_print(printer),
+        }
+        self.alias.pretty_print(printer);
     }
 }

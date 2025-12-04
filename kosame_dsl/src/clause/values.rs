@@ -6,7 +6,12 @@ use syn::{
     punctuated::Punctuated,
 };
 
-use crate::{expr::Expr, keyword, visit::Visit};
+use crate::{
+    expr::Expr,
+    keyword,
+    pretty::{BreakMode, Delim, PrettyPrint, Printer},
+    visit::Visit,
+};
 
 pub struct Values {
     pub values_keyword: keyword::values,
@@ -54,8 +59,22 @@ impl ToTokens for Values {
     }
 }
 
+impl PrettyPrint for Values {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        printer.scan_break();
+        printer.scan_trivia(true, true);
+        " ".pretty_print(printer);
+        self.values_keyword.pretty_print(printer);
+        printer.scan_indent(1);
+        printer.scan_break();
+        " ".pretty_print(printer);
+        self.rows.pretty_print(printer);
+        printer.scan_indent(-1);
+    }
+}
+
 pub struct ValuesRow {
-    _paren_token: syn::token::Paren,
+    paren_token: syn::token::Paren,
     items: Punctuated<ValuesItem, Token![,]>,
 }
 
@@ -69,7 +88,7 @@ impl Parse for ValuesRow {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let content;
         Ok(Self {
-            _paren_token: parenthesized!(content in input),
+            paren_token: parenthesized!(content in input),
             items: content.parse_terminated(ValuesItem::parse, Token![,])?,
         })
     }
@@ -79,6 +98,15 @@ impl ToTokens for ValuesRow {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let items = self.items.iter();
         quote! { ::kosame::repr::clause::ValuesRow::new(&[#(#items),*]) }.to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for ValuesRow {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.paren_token
+            .pretty_print(printer, Some(BreakMode::Consistent), |printer| {
+                self.items.pretty_print(printer);
+            });
     }
 }
 
@@ -116,5 +144,14 @@ impl ToTokens for ValuesItem {
             },
         }
         .to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for ValuesItem {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        match self {
+            Self::Default(inner) => inner.pretty_print(printer),
+            Self::Expr(inner) => inner.pretty_print(printer),
+        }
     }
 }

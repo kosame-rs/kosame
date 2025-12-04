@@ -7,6 +7,7 @@ use crate::{
     keyword,
     parse_option::ParseOption,
     part::TargetTable,
+    pretty::{PrettyPrint, Printer},
     quote_option::QuoteOption,
     visit::Visit,
 };
@@ -71,5 +72,17 @@ impl ToTokens for Update {
             )
         }
         .to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for Update {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.update_keyword.pretty_print(printer);
+        " ".pretty_print(printer);
+        self.target_table.pretty_print(printer);
+        self.set.pretty_print(printer);
+        self.from.pretty_print(printer);
+        self.r#where.pretty_print(printer);
+        self.returning.pretty_print(printer);
     }
 }

@@ -7,7 +7,11 @@ use syn::{
 };
 
 use crate::{
-    clause::peek_clause, keyword, parse_option::ParseOption, part::ColumnList,
+    clause::peek_clause,
+    keyword,
+    parse_option::ParseOption,
+    part::ColumnList,
+    pretty::{PrettyPrint, Printer},
     quote_option::QuoteOption,
 };
 
@@ -79,5 +83,15 @@ impl ToTokens for TableAlias {
             ::kosame::repr::part::TableAlias::new(#name, #columns)
         }
         .to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for TableAlias {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        " ".pretty_print(printer);
+        self.as_token.pretty_print(printer);
+        " ".pretty_print(printer);
+        self.name.pretty_print(printer);
+        self.columns.pretty_print(printer);
     }
 }

@@ -7,6 +7,7 @@ use crate::{
     command::Command,
     keyword,
     parse_option::ParseOption,
+    pretty::{BreakMode, Delim, PrettyPrint, Printer},
     quote_option::QuoteOption,
     scopes::{ScopeId, Scoped},
     visit::Visit,
@@ -24,7 +25,9 @@ impl Select {
     pub fn fields(&self) -> &Fields {
         match &self.chain.start {
             SelectItem::Core(core) => &core.select.fields,
-            SelectItem::Paren(paren) => paren.fields().expect("nested select must have fields"),
+            SelectItem::Paren { command, .. } => {
+                command.fields().expect("nested select must have fields")
+            }
         }
     }
 
@@ -36,7 +39,7 @@ impl Select {
         }
         match &self.chain.start {
             SelectItem::Core(core) => core.from.as_ref().map(|from| &from.chain),
-            SelectItem::Paren(paren) => paren.from_chain(),
+            SelectItem::Paren { command, .. } => command.from_chain(),
         }
     }
 
@@ -93,6 +96,15 @@ impl ToTokens for Select {
     }
 }
 
+impl PrettyPrint for Select {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.chain.pretty_print(printer);
+        self.order_by.pretty_print(printer);
+        self.limit.pretty_print(printer);
+        self.offset.pretty_print(printer);
+    }
+}
+
 pub struct SelectChain {
     pub start: SelectItem,
     pub combinators: Vec<SelectCombinator>,
@@ -141,9 +153,19 @@ impl ToTokens for SelectChain {
     }
 }
 
+impl PrettyPrint for SelectChain {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.start.pretty_print(printer);
+        self.combinators.pretty_print(printer);
+    }
+}
+
 pub enum SelectItem {
     Core(Box<clause::SelectCore>),
-    Paren(Box<Command>),
+    Paren {
+        paren_token: syn::token::Paren,
+        command: Box<Command>,
+    },
 }
 
 impl SelectItem {
@@ -151,7 +173,7 @@ impl SelectItem {
     pub fn scope_id(&self) -> ScopeId {
         match self {
             Self::Core(inner) => inner.scope_id,
-            Self::Paren(inner) => inner.scope_id,
+            Self::Paren { command, .. } => command.scope_id,
         }
     }
 }
@@ -159,7 +181,7 @@ impl SelectItem {
 pub fn visit_select_item<'a>(visit: &mut (impl Visit<'a> + ?Sized), select_item: &'a SelectItem) {
     match select_item {
         SelectItem::Core(core) => visit.visit_select_core(core),
-        SelectItem::Paren(command) => visit.visit_command(command),
+        SelectItem::Paren { command, .. } => visit.visit_command(command),
     }
 }
 
@@ -167,8 +189,10 @@ impl Parse for SelectItem {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         if input.peek(syn::token::Paren) {
             let content;
-            syn::parenthesized!(content in input);
-            Ok(Self::Paren(content.parse()?))
+            Ok(Self::Paren {
+                paren_token: syn::parenthesized!(content in input),
+                command: content.parse()?,
+            })
         } else {
             let core = input.parse()?;
             Ok(Self::Core(core))
@@ -191,11 +215,27 @@ impl ToTokens for SelectItem {
                 }
                 .to_tokens(tokens);
             }
-            Self::Paren(paren) => {
+            Self::Paren { command, .. } => {
                 quote! {
-                    ::kosame::repr::command::SelectItem::Paren(&#paren)
+                    ::kosame::repr::command::SelectItem::Paren(&#command)
                 }
                 .to_tokens(tokens);
+            }
+        }
+    }
+}
+
+impl PrettyPrint for SelectItem {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        match self {
+            Self::Core(core) => core.pretty_print(printer),
+            Self::Paren {
+                paren_token,
+                command,
+            } => {
+                paren_token.pretty_print(printer, Some(BreakMode::Inconsistent), |printer| {
+                    command.pretty_print(printer);
+                });
             }
         }
     }
@@ -251,6 +291,16 @@ impl ToTokens for SelectCombinator {
     }
 }
 
+impl PrettyPrint for SelectCombinator {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        printer.scan_break();
+        " ".pretty_print(printer);
+        self.op.pretty_print(printer);
+        self.quantifier.pretty_print(printer);
+        self.right.pretty_print(printer);
+    }
+}
+
 pub enum SetOp {
     Union(keyword::union),
     Intersect(keyword::intersect),
@@ -289,6 +339,16 @@ impl ToTokens for SetOp {
     }
 }
 
+impl PrettyPrint for SetOp {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        match self {
+            Self::Union(inner) => inner.pretty_print(printer),
+            Self::Intersect(inner) => inner.pretty_print(printer),
+            Self::Except(inner) => inner.pretty_print(printer),
+        }
+    }
+}
+
 pub enum SetQuantifier {
     All(keyword::all),
     Distinct,
@@ -315,6 +375,18 @@ impl ToTokens for SetQuantifier {
             }
         }
         .to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for SetQuantifier {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        match self {
+            Self::All(all) => {
+                " ".pretty_print(printer);
+                all.pretty_print(printer);
+            }
+            Self::Distinct => {}
+        }
     }
 }
 

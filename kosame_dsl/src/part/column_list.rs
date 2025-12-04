@@ -6,6 +6,8 @@ use syn::{
     punctuated::Punctuated,
 };
 
+use crate::pretty::{BreakMode, Delim, PrettyPrint, Printer};
+
 pub struct ColumnList {
     pub paren_token: syn::token::Paren,
     pub columns: Punctuated<Ident, Token![,]>,
@@ -28,5 +30,15 @@ impl ToTokens for ColumnList {
             ::kosame::repr::part::ColumnList::new(&[#(#columns),*])
         }
         .to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for ColumnList {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        " ".pretty_print(printer);
+        self.paren_token
+            .pretty_print(printer, Some(BreakMode::Consistent), |printer| {
+                self.columns.pretty_print(printer);
+            });
     }
 }

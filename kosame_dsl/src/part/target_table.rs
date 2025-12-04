@@ -9,6 +9,7 @@ use crate::{
     parse_option::ParseOption,
     part::{Alias, TablePath},
     path_ext::PathExt,
+    pretty::{PrettyPrint, Printer},
     quote_option::QuoteOption,
     visit::Visit,
 };
@@ -60,5 +61,15 @@ impl ToTokens for TargetTable {
             ::kosame::repr::part::TargetTable::new(#table::TABLE_NAME, #alias)
         }
         .to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for TargetTable {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.table.pretty_print(printer);
+        if let Some(alias) = &self.alias {
+            " ".pretty_print(printer);
+            alias.pretty_print(printer);
+        }
     }
 }

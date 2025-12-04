@@ -13,13 +13,14 @@ use crate::{
     keyword,
     parse_option::ParseOption,
     part::{TableAlias, TablePath},
+    pretty::{BreakMode, Delim, PrettyPrint, Printer},
     quote_option::QuoteOption,
     scopes::ScopeId,
     visit::Visit,
 };
 
 pub struct From {
-    pub from: keyword::from,
+    pub from_keyword: keyword::from,
     pub chain: FromChain,
 }
 
@@ -36,7 +37,7 @@ pub fn visit_from<'a>(visit: &mut (impl Visit<'a> + ?Sized), from: &'a From) {
 impl Parse for From {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            from: input.parse()?,
+            from_keyword: input.parse()?,
             chain: input.parse()?,
         })
     }
@@ -46,6 +47,17 @@ impl ToTokens for From {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let item = &self.chain;
         quote! { ::kosame::repr::clause::From::new(#item) }.to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for From {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.from_keyword.pretty_print(printer);
+        printer.scan_break();
+        printer.scan_indent(1);
+        " ".pretty_print(printer);
+        self.chain.pretty_print(printer);
+        printer.scan_indent(-1);
     }
 }
 
@@ -123,6 +135,13 @@ impl ToTokens for FromChain {
             ::kosame::repr::clause::FromChain::new(#start, &[#(#combinators),*])
         }
         .to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for FromChain {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.start.pretty_print(printer);
+        self.combinators.pretty_print(printer);
     }
 }
 
@@ -279,6 +298,35 @@ impl ToTokens for FromItem {
     }
 }
 
+impl PrettyPrint for FromItem {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        match self {
+            Self::Table {
+                table_path, alias, ..
+            } => {
+                table_path.pretty_print(printer);
+                alias.pretty_print(printer);
+            }
+            Self::Subquery {
+                lateral_keyword,
+                paren_token,
+                command,
+                alias,
+                ..
+            } => {
+                if let Some(lateral_keyword) = lateral_keyword {
+                    lateral_keyword.pretty_print(printer);
+                    " ".pretty_print(printer);
+                }
+                paren_token.pretty_print(printer, Some(BreakMode::Consistent), |printer| {
+                    command.pretty_print(printer);
+                });
+                alias.pretty_print(printer);
+            }
+        }
+    }
+}
+
 #[allow(unused)]
 pub enum JoinType {
     Inner(keyword::inner, keyword::join),
@@ -345,6 +393,33 @@ impl ToTokens for JoinType {
     }
 }
 
+impl PrettyPrint for JoinType {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        match self {
+            Self::Inner(inner, join) => {
+                inner.pretty_print(printer);
+                " ".pretty_print(printer);
+                join.pretty_print(printer);
+            }
+            Self::Left(left, join) => {
+                left.pretty_print(printer);
+                " ".pretty_print(printer);
+                join.pretty_print(printer);
+            }
+            Self::Right(right, join) => {
+                right.pretty_print(printer);
+                " ".pretty_print(printer);
+                join.pretty_print(printer);
+            }
+            Self::Full(full, join) => {
+                full.pretty_print(printer);
+                " ".pretty_print(printer);
+                join.pretty_print(printer);
+            }
+        }
+    }
+}
+
 pub struct On {
     pub on_keyword: keyword::on,
     pub expr: Expr,
@@ -359,6 +434,16 @@ impl Parse for On {
     }
 }
 
+impl PrettyPrint for On {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        self.on_keyword.pretty_print(printer);
+        " ".pretty_print(printer);
+        printer.scan_begin(BreakMode::Inconsistent);
+        self.expr.pretty_print(printer);
+        printer.scan_end();
+    }
+}
+
 pub enum FromCombinator {
     Join {
         join_type: JoinType,
@@ -366,13 +451,13 @@ pub enum FromCombinator {
         on: On,
     },
     NaturalJoin {
-        _natural_keyword: keyword::natural,
+        natural_keyword: keyword::natural,
         join_type: JoinType,
         right: Box<FromItem>,
     },
     CrossJoin {
-        _cross_keyword: keyword::cross,
-        _join_keyword: keyword::join,
+        cross_keyword: keyword::cross,
+        join_keyword: keyword::join,
         right: Box<FromItem>,
     },
 }
@@ -428,14 +513,14 @@ impl Parse for FromCombinator {
             })
         } else if input.peek(keyword::natural) {
             Ok(Self::NaturalJoin {
-                _natural_keyword: input.call(keyword::natural::parse_autocomplete)?,
+                natural_keyword: input.call(keyword::natural::parse_autocomplete)?,
                 join_type: input.parse()?,
                 right: Box::new(input.parse()?),
             })
         } else if input.peek(keyword::cross) {
             Ok(Self::CrossJoin {
-                _cross_keyword: input.call(keyword::cross::parse_autocomplete)?,
-                _join_keyword: input.call(keyword::join::parse_autocomplete)?,
+                cross_keyword: input.call(keyword::cross::parse_autocomplete)?,
+                join_keyword: input.call(keyword::join::parse_autocomplete)?,
                 right: Box::new(input.parse()?),
             })
         } else {
@@ -481,6 +566,46 @@ impl ToTokens for FromCombinator {
             }
         }
         .to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for FromCombinator {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        printer.scan_break();
+        " ".pretty_print(printer);
+        match self {
+            Self::Join {
+                join_type,
+                right,
+                on,
+            } => {
+                join_type.pretty_print(printer);
+                " ".pretty_print(printer);
+                right.pretty_print(printer);
+                on.pretty_print(printer);
+            }
+            Self::NaturalJoin {
+                natural_keyword,
+                join_type,
+                right,
+            } => {
+                natural_keyword.pretty_print(printer);
+                join_type.pretty_print(printer);
+                " ".pretty_print(printer);
+                right.pretty_print(printer);
+            }
+            Self::CrossJoin {
+                cross_keyword,
+                join_keyword,
+                right,
+            } => {
+                cross_keyword.pretty_print(printer);
+                " ".pretty_print(printer);
+                join_keyword.pretty_print(printer);
+                " ".pretty_print(printer);
+                right.pretty_print(printer);
+            }
+        }
     }
 }
 

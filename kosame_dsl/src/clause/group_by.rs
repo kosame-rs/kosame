@@ -6,11 +6,18 @@ use syn::{
     punctuated::Punctuated,
 };
 
-use crate::{clause::peek_clause, expr::Expr, keyword, parse_option::ParseOption, visit::Visit};
+use crate::{
+    clause::peek_clause,
+    expr::Expr,
+    keyword,
+    parse_option::ParseOption,
+    pretty::{BreakMode, PrettyPrint, Printer},
+    visit::Visit,
+};
 
 pub struct GroupBy {
-    pub group: keyword::group,
-    pub by: keyword::by,
+    pub group_keyword: keyword::group,
+    pub by_keyword: keyword::by,
     pub items: Punctuated<GroupByItem, Token![,]>,
 }
 
@@ -29,8 +36,8 @@ pub fn visit_group_by<'a>(visit: &mut (impl Visit<'a> + ?Sized), group_by: &'a G
 impl Parse for GroupBy {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            group: input.call(keyword::group::parse_autocomplete)?,
-            by: input.call(keyword::by::parse_autocomplete)?,
+            group_keyword: input.call(keyword::group::parse_autocomplete)?,
+            by_keyword: input.call(keyword::by::parse_autocomplete)?,
             items: {
                 let mut punctuated = Punctuated::new();
                 while !input.is_empty() {
@@ -62,6 +69,22 @@ impl ToTokens for GroupBy {
     }
 }
 
+impl PrettyPrint for GroupBy {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        printer.scan_break();
+        printer.scan_trivia(true, true);
+        " ".pretty_print(printer);
+        self.group_keyword.pretty_print(printer);
+        " ".pretty_print(printer);
+        self.by_keyword.pretty_print(printer);
+        printer.scan_break();
+        printer.scan_indent(1);
+        " ".pretty_print(printer);
+        self.items.pretty_print(printer);
+        printer.scan_indent(-1);
+    }
+}
+
 pub struct GroupByItem {
     pub expr: Expr,
 }
@@ -78,5 +101,13 @@ impl ToTokens for GroupByItem {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let expr = &self.expr;
         quote! { ::kosame::repr::clause::GroupByItem::new(#expr) }.to_tokens(tokens);
+    }
+}
+
+impl PrettyPrint for GroupByItem {
+    fn pretty_print(&self, printer: &mut Printer<'_>) {
+        printer.scan_begin(BreakMode::Inconsistent);
+        self.expr.pretty_print(printer);
+        printer.scan_end();
     }
 }
