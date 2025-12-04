@@ -121,15 +121,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 // Relational queries also use the familiar SQL-like syntax for
                 // `where`, `order by`, `limit` and `offset`.
-                order by upvotes desc
-                limit 5
+                order by
+                    upvotes desc,
+                limit
+                    5
             },
 
             // We can also query arbitrary SQL-like expressions, but we need to specify a name and
             // Rust type at the end as they cannot be inferred by Kosame.
             content is not null as has_content: bool,
 
-            where id = :post_id
+            where
+                id = :post_id
         }
     }
     .query_opt_sync(&mut client)?;
@@ -198,8 +201,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // We can access `posts_with_content` from the higher up scope here.
                     post_id = posts_with_content.id
                 order by
-                        1 desc
-                limit 1
+                    1 desc
+                limit
+                    1
             ) as top_comment on true
         group by
             posts_with_content.id, top_comment.id

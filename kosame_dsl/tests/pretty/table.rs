@@ -166,3 +166,116 @@ create  table test (
 }"
     );
 }
+
+#[test]
+fn line_comments_simple() {
+    assert_pretty!(Table:
+        "{
+// comment at start
+create  table test (
+col int, // after first column
+ col2 int not null // after second column
+
+);
+
+
+}",
+        "{
+    // comment at start
+    create table test (
+        col int, // after first column
+        col2 int not null, // after second column
+    );
+}"
+    );
+}
+
+#[test]
+fn line_comments_multiline() {
+    assert_pretty!(Table:
+        "{
+// comment at start
+// comment at start 2
+create  table test ( // before first column
+
+// before first column 2
+col int,
+
+// after first column
+// after first column 2
+ col2 int not null // after second column
+ // end
+);
+
+
+}",
+        "{
+    // comment at start
+    // comment at start 2
+    create table test (
+        // before first column
+
+        // before first column 2
+        col int,
+
+        // after first column
+        // after first column 2
+        col2 int not null, // after second column
+        // end
+    );
+}"
+    );
+}
+
+#[test]
+fn line_comments_with_attributes() {
+    assert_pretty!(Table:
+        "{
+create  table test (
+// before attribute
+#[test] // after attribute
+    col int primary key, // after constraint
+#[kosame(rename = foo)] // after second attribute
+col2 int default 5 // after default
+);
+}",
+        "{
+    create table test (
+        // before attribute
+        #[test] // after attribute
+        col int primary key, // after constraint
+        #[kosame(rename = foo)] // after second attribute
+        col2 int default 5, // after default
+    );
+}"
+    );
+}
+
+#[test]
+fn line_comments_with_relations() {
+    assert_pretty!(Table:
+        "{
+create table test ( col int primary key);
+
+// relation comment 1
+rel1 : (col) =>test(col2), // after relation
+
+// relation comment 2
+
+// relation comment 3
+rel2 : (col) =>test(col3),
+// end comment
+}",
+        "{
+    create table test (col int primary key);
+
+    // relation comment 1
+    rel1: (col) => test (col2), // after relation
+
+    // relation comment 2
+
+    // relation comment 3
+    rel2: (col) => test (col3), // end comment
+}"
+    );
+}
