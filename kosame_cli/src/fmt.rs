@@ -1,7 +1,7 @@
 use std::io::Read;
 
 use clap::Args;
-use kosame_dsl::pretty::{MARGIN, Macro, pretty_print_macro_str};
+use kosame_dsl::pretty::{MARGIN, Macro, pretty_print_str};
 use proc_macro2::LineColumn;
 use syn::{spanned::Spanned, visit::Visit};
 
@@ -99,25 +99,24 @@ impl<'ast> Visit<'ast> for Visitor {
         let initial_space = MARGIN - isize::try_from(span.start().column).unwrap();
         let initial_indent = self.indent;
 
-        let result =
-            match name.to_string().as_ref() {
-                "table" | "pg_table" => Some(pretty_print_macro_str::<
-                    Macro<kosame_dsl::schema::Table>,
-                >(
-                    &source_text, initial_space, initial_indent
-                )),
-                "query" | "pg_query" => Some(pretty_print_macro_str::<
-                    Macro<kosame_dsl::query::Query>,
-                >(
-                    &source_text, initial_space, initial_indent
-                )),
-                "statement" | "pg_statement" => Some(pretty_print_macro_str::<
-                    Macro<kosame_dsl::statement::Statement>,
-                >(
-                    &source_text, initial_space, initial_indent
-                )),
-                _ => None,
-            };
+        let result = match name.to_string().as_ref() {
+            "table" | "pg_table" => Some(pretty_print_str::<Macro<kosame_dsl::schema::Table>>(
+                &source_text,
+                initial_space,
+                initial_indent,
+            )),
+            "query" | "pg_query" => Some(pretty_print_str::<Macro<kosame_dsl::query::Query>>(
+                &source_text,
+                initial_space,
+                initial_indent,
+            )),
+            "statement" | "pg_statement" => Some(pretty_print_str::<
+                Macro<kosame_dsl::statement::Statement>,
+            >(
+                &source_text, initial_space, initial_indent
+            )),
+            _ => None,
+        };
 
         match result {
             Some(Ok(replacement)) => self.replacements.push(Replace {

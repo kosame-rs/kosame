@@ -108,7 +108,7 @@ mod tests {
     #[test]
     fn test_parenthesized_short() {
         let source = "(foo)";
-        let result = crate::pretty::pretty_print_macro_str::<Macro<syn::Ident>>(source, 0, 0);
+        let result = crate::pretty::pretty_print_str::<Macro<syn::Ident>>(source, 0, 0);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "(foo)");
     }
@@ -116,7 +116,7 @@ mod tests {
     #[test]
     fn test_parenthesized_long() {
         let source = "(this_is_a_very_long_identifier_name_that_should_definitely_break_across_multiple_lines_when_pretty_printed)";
-        let result = crate::pretty::pretty_print_macro_str::<Macro<syn::Ident>>(source, 0, 0);
+        let result = crate::pretty::pretty_print_str::<Macro<syn::Ident>>(source, 0, 0);
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
@@ -129,7 +129,7 @@ mod tests {
     #[test]
     fn test_braced_short() {
         let source = "{ foo }";
-        let result = crate::pretty::pretty_print_macro_str::<Macro<syn::Ident>>(source, 0, 0);
+        let result = crate::pretty::pretty_print_str::<Macro<syn::Ident>>(source, 0, 0);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "{ foo }");
     }
@@ -137,7 +137,7 @@ mod tests {
     #[test]
     fn test_braced_long() {
         let source = "{ this_is_a_very_long_identifier_name_that_should_definitely_break_across_multiple_lines_when_pretty_printed }";
-        let result = crate::pretty::pretty_print_macro_str::<Macro<syn::Ident>>(source, 0, 0);
+        let result = crate::pretty::pretty_print_str::<Macro<syn::Ident>>(source, 0, 0);
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
@@ -150,7 +150,7 @@ mod tests {
     #[test]
     fn test_bracketed_short() {
         let source = "[foo]";
-        let result = crate::pretty::pretty_print_macro_str::<Macro<syn::Ident>>(source, 0, 0);
+        let result = crate::pretty::pretty_print_str::<Macro<syn::Ident>>(source, 0, 0);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "[foo]");
     }
@@ -158,7 +158,7 @@ mod tests {
     #[test]
     fn test_bracketed_long() {
         let source = "[this_is_a_very_long_identifier_name_that_should_definitely_break_across_multiple_lines_when_pretty_printed]";
-        let result = crate::pretty::pretty_print_macro_str::<Macro<syn::Ident>>(source, 0, 0);
+        let result = crate::pretty::pretty_print_str::<Macro<syn::Ident>>(source, 0, 0);
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),

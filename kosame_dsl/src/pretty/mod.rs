@@ -18,7 +18,7 @@ pub use trivia::*;
 
 use syn::parse::Parse;
 
-pub fn pretty_print_macro_str<T>(
+pub fn pretty_print_str<T>(
     source_text: &str,
     initial_space: isize,
     initial_indent: isize,
@@ -32,6 +32,15 @@ where
     let mut printer = Printer::new(&trivia, initial_space, initial_indent);
     ast.pretty_print(&mut printer);
     Ok(printer.eof())
+}
+
+pub fn pretty_print_ast<T>(ast: &T) -> String
+where
+    T: PrettyPrint,
+{
+    let mut printer = Printer::new(&[], 0, 0);
+    ast.pretty_print(&mut printer);
+    printer.eof()
 }
 
 pub trait PrettyPrint {

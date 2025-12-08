@@ -1,8 +1,9 @@
 use crate::{
     attribute::{CustomMeta, MetaLocation},
     data_type::DataType,
+    doc::Doc,
     path_ext::PathExt,
-    pretty::{BreakMode, PrettyPrint, Printer},
+    pretty::{BreakMode, PrettyPrint, Printer, pretty_print_ast, pretty_print_str},
     quote_option::QuoteOption,
 };
 
@@ -82,7 +83,10 @@ impl ToTokens for Column {
             quote! { &#expr }
         }));
 
+        let doc = Doc::new(self);
+
         quote! {
+            #doc
             pub mod #rust_name {
                 pub const COLUMN_NAME: &str = #name;
                 pub const COLUMN: ::kosame::repr::schema::Column<'_> = ::kosame::repr::schema::Column::new(

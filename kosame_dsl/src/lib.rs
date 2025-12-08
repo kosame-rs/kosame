@@ -4,6 +4,7 @@ pub mod clause;
 pub mod command;
 pub mod correlations;
 pub mod data_type;
+pub mod doc;
 pub mod driver;
 pub mod expr;
 pub mod inferred_type;
