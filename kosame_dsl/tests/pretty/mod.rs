@@ -1,6 +1,7 @@
 mod query;
 mod r#select;
 mod table;
+mod update;
 
 macro_rules! assert_pretty {
     ($ty:ty: $before:literal, $after:literal) => {{
