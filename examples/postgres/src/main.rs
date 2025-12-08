@@ -178,7 +178,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     schema::posts
                 where
                     content is not null
-            )
+            ),
         select
             // The type of this field is inferred as `i32`.
             posts_with_content.id,

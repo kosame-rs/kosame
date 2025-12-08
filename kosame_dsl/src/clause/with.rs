@@ -72,9 +72,7 @@ impl PrettyPrint for With {
         printer.scan_break();
         " ".pretty_print(printer);
         printer.scan_trivia(false, true);
-        printer.scan_begin(BreakMode::Consistent);
         self.items.pretty_print(printer);
-        printer.scan_end();
         printer.scan_indent(-1);
         printer.scan_break();
         " ".pretty_print(printer);
