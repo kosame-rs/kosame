@@ -1,3 +1,4 @@
+mod insert;
 mod query;
 mod r#select;
 mod table;
