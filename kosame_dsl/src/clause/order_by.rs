@@ -11,7 +11,7 @@ use crate::{
     expr::ExprRoot,
     keyword,
     parse_option::ParseOption,
-    pretty::{PrettyPrint, Printer},
+    pretty::{BreakMode, PrettyPrint, Printer},
     visit::Visit,
 };
 
@@ -115,9 +115,11 @@ impl ToTokens for OrderByItem {
 
 impl PrettyPrint for OrderByItem {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
+        printer.scan_begin(BreakMode::Inconsistent);
         self.expr.pretty_print(printer);
         self.dir.pretty_print(printer);
         self.nulls.pretty_print(printer);
+        printer.scan_end();
     }
 }
 

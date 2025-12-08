@@ -1,4 +1,5 @@
 mod query;
+mod r#select;
 mod table;
 
 macro_rules! assert_pretty {
