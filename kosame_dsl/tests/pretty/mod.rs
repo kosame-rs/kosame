@@ -3,9 +3,9 @@ mod table;
 
 macro_rules! assert_pretty {
     ($ty:ty: $before:literal, $after:literal) => {{
-        use kosame_dsl::pretty::{Macro, pretty_print_macro_str};
+        use kosame_dsl::pretty::{Macro, pretty_print_str};
         assert_eq!(
-            pretty_print_macro_str::<Macro<$ty>>($before, 0, 0).unwrap(),
+            pretty_print_str::<Macro<$ty>>($before, 0, 0).unwrap(),
             $after
         );
     }};

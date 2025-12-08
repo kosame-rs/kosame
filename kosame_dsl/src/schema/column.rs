@@ -3,7 +3,7 @@ use crate::{
     data_type::DataType,
     doc::Doc,
     path_ext::PathExt,
-    pretty::{BreakMode, PrettyPrint, Printer, pretty_print_ast, pretty_print_str},
+    pretty::{BreakMode, PrettyPrint, Printer},
     quote_option::QuoteOption,
 };
 
