@@ -53,7 +53,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Insert some demo data using `INSERT INTO`.
     kosame::pg_statement! {
-        insert into schema::posts
+        insert into
+            schema::posts
         values
             (0, "my post", "hi, this is a post"),
             (1, "another post", "very interesting content"),
@@ -62,7 +63,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .exec(&mut client)
     .await?;
     kosame::pg_statement! {
-        insert into schema::comments
+        insert into
+            schema::comments
         values
             (0, 2, "wow very insightful"),
             (1, 1, "nice"),
@@ -77,14 +79,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         update
             schema::comments
         set
-            upvotes = upvotes + 1
+            upvotes = upvotes + 1,
         where
             // The `comment_id` variable above is used as a bind parameter in this expression.
             id = :comment_id
         returning
             // We can return the updated value. Kosame infers the result type of this statement
             // to be `struct Row { new_upvotes: i32 }` without a database connection.
-            comments.upvotes as new_upvotes
+            comments.upvotes as new_upvotes,
     }
     // With the `RETURNING` clause we can now use `query` instead of `exec` and retrieve data.
     .query_one(&mut client)
@@ -120,15 +122,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 // Relational queries also use the familiar SQL-like syntax for
                 // `where`, `order by`, `limit` and `offset`.
-                order by upvotes desc
-                limit 5
+                order by
+                    upvotes desc,
+                limit
+                    5
             },
 
             // We can also query arbitrary SQL-like expressions, but we need to specify a name and
             // Rust type at the end as they cannot be inferred by Kosame.
             content is not null as has_content: bool,
 
-            where id = :post_id
+            where
+                id = :post_id
         }
     }
     .query_opt(&mut client)
@@ -165,14 +170,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Kosame supports an SQL-like syntax with basic type inference for this scenario.
     let rows = kosame::pg_statement! {
         // A common table expression of all posts with non-null content.
-        with posts_with_content as (
-            select
-                posts.id
-            from
-                schema::posts
-            where
-                content is not null
-        )
+        with
+            posts_with_content as (
+                select
+                    posts.id,
+                from
+                    schema::posts
+                where
+                    content is not null
+            ),
         select
             // The type of this field is inferred as `i32`.
             posts_with_content.id,
@@ -191,18 +197,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             // Kosame supports subqueries, including `lateral` ones.
             left join lateral (
                 select
-                    comments.id
+                    comments.id,
                 from
                     schema::comments
                 where
                     // We can access `posts_with_content` from the higher up scope here.
                     post_id = posts_with_content.id
                 order by
-                    upvotes desc
-                limit 1
+                    upvotes desc,
+                limit
+                    1
             ) as top_comment on true
         group by
-            posts_with_content.id, top_comment.id
+            posts_with_content.id,
+            top_comment.id,
     }
     .query_vec(&mut client)
     .await?;
