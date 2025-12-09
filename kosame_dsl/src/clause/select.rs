@@ -17,7 +17,7 @@ pub struct Select {
     pub fields: Fields,
 }
 
-pub fn visit_select<'a>(visit: &mut (impl Visit<'a> + ?Sized), select: &'a Select) {
+pub fn visit_select_clause<'a>(visit: &mut (impl Visit<'a> + ?Sized), select: &'a Select) {
     visit.visit_fields(&select.fields);
 }
 
@@ -62,7 +62,7 @@ pub struct SelectCore {
 }
 
 pub fn visit_select_core<'a>(visit: &mut (impl Visit<'a> + ?Sized), select_core: &'a SelectCore) {
-    visit.visit_select(&select_core.select);
+    visit.visit_select_clause(&select_core.select);
     if let Some(inner) = select_core.from.as_ref() {
         visit.visit_from(inner);
     }

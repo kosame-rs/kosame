@@ -17,8 +17,9 @@ pub use crate::{
     clause::{
         visit_field, visit_fields, visit_from, visit_from_chain, visit_from_combinator,
         visit_from_item, visit_group_by, visit_having, visit_limit, visit_offset, visit_order_by,
-        visit_returning, visit_select, visit_select_core, visit_set, visit_set_item, visit_values,
-        visit_values_item, visit_values_row, visit_where, visit_with, visit_with_item,
+        visit_returning, visit_select_clause, visit_select_core, visit_set, visit_set_item,
+        visit_values, visit_values_item, visit_values_row, visit_where, visit_with,
+        visit_with_item,
     },
     command::{
         visit_command, visit_command_type, visit_delete, visit_insert, visit_select_chain,
@@ -129,8 +130,8 @@ pub trait Visit<'a> {
         visit_returning(self, returning);
     }
 
-    fn visit_select(&mut self, select: &'a crate::clause::Select) {
-        visit_select(self, select);
+    fn visit_select_clause(&mut self, select: &'a crate::clause::Select) {
+        visit_select_clause(self, select);
     }
 
     fn visit_select_core(&mut self, select_core: &'a crate::clause::SelectCore) {

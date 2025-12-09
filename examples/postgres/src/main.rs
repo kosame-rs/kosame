@@ -204,7 +204,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // We can access `posts_with_content` from the higher up scope here.
                     post_id = posts_with_content.id
                 order by
-                    1 desc,
+                    upvotes desc,
                 limit
                     1
             ) as top_comment on true

@@ -275,7 +275,10 @@ impl<'a> From<&'a Command> for Scopes<'a> {
                             shadow.insert(name);
                         }
 
-                        if let FromItem::Subquery { command, .. } = from_item {
+                        // Avoid processing the subquery twice.
+                        if scoped.select_chain().is_none()
+                            && let FromItem::Subquery { command, .. } = from_item
+                        {
                             self.visit_command(command);
                         }
 

@@ -157,7 +157,16 @@ impl CommandType {
         match self {
             Self::Delete(delete) => delete.using.as_ref().map(|using| &using.chain),
             Self::Insert(..) => None,
-            Self::Select(..) => None,
+            Self::Select(select) => {
+                if select.chain.combinators.is_empty() {
+                    match &select.chain.start {
+                        SelectItem::Paren { .. } => None,
+                        SelectItem::Core(core) => core.from_chain(),
+                    }
+                } else {
+                    None
+                }
+            }
             Self::Update(update) => update.from.as_ref().map(|from| &from.chain),
         }
     }

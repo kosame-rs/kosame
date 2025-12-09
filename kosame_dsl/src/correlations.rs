@@ -331,9 +331,9 @@ impl<'a> From<&'a Command> for Correlations<'a> {
 
                 if let Some(select_chain) = command.select_chain() {
                     self.visit_select_chain(select_chain);
-                }
-
-                if let Some(from_chain) = command.from_chain() {
+                } else if let Some(from_chain) = command.from_chain() {
+                    // We would risk processing the from chain twice if we collected both the
+                    // select chain and the from chain of a select.
                     self.visit_from_chain(from_chain);
                 }
 
