@@ -25,6 +25,30 @@ Kosame requires no active database connection during development and has no buil
 
 **Kosame is currently a prototype and not recommended for production use.**
 
+- [Showcase](#showcase)
+- [Planned features](#planned-features)
+- [Declaring the schema](#declaring-the-schema)
+   * [Column renaming and type overrides](#column-renaming-and-type-overrides)
+   * [Relations](#relations)
+- [Queries](#queries)
+   * [Columns and relations](#columns-and-relations)
+   * [Aliases and type overrides](#aliases-and-type-overrides)
+   * [Attributes](#attributes)
+   * [Expressions](#expressions)
+   * [Bind parameters](#bind-parameters)
+   * [`where`, `order by`, `limit`, and `offset`](#where-order-by-limit-and-offset)
+   * [Named vs. anonymous queries](#named-vs-anonymous-queries)
+- [Statements](#statements)
+   * [`select`](#select)
+   * [`insert`](#insert)
+   * [`update`](#update)
+   * [`delete`](#delete)
+- [Kosame CLI](#kosame-cli)
+   * [Formatting Kosame macros](#formatting-kosame-macros)
+      + [Editor integration](#editor-integration)
+         - [Neovim with conform.nvim](#neovim-with-conformnvim)
+- [Can Kosame handle all use cases well?](#can-kosame-handle-all-use-cases-well)
+
 ## Showcase
 
 ```rust
