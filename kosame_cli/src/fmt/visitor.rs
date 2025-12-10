@@ -1,74 +1,23 @@
-use std::io::Read;
-
-use clap::Args;
 use kosame_dsl::pretty::{MARGIN, Macro, pretty_print_str};
 use proc_macro2::LineColumn;
 use syn::{spanned::Spanned, visit::Visit};
 
-#[derive(Args)]
-#[command(version, about = "Format the content of Kosame macro invocations in Rust source files", long_about = None)]
-pub struct Fmt {
-    #[arg(short, long)]
-    file: Option<std::path::PathBuf>,
-}
-
-impl Fmt {
-    pub fn run(&self) -> anyhow::Result<()> {
-        let input = if let Some(file) = &self.file {
-            std::fs::read_to_string(file)?
-        } else {
-            let mut buf = String::new();
-            std::io::stdin().read_to_string(&mut buf)?;
-            buf
-        };
-        let mut output = String::new();
-
-        let file = syn::parse_file(&input)?;
-        let mut visitor = Visitor::default();
-        visitor.visit_file(&file);
-
-        if !visitor.errors.is_empty() {
-            let error = visitor.errors.into_iter().next().unwrap();
-            let line = error.start.line;
-            let column = error.start.column;
-            let error = error.inner;
-            anyhow::bail!("syntax error at line {line} column {column}: {error}");
-        }
-
-        let mut current_index = 0;
-        for replacement in visitor.replacements {
-            output.push_str(&input[current_index..replacement.start]);
-            output.push_str(&replacement.replacement);
-            current_index = replacement.end;
-        }
-
-        output.push_str(&input[current_index..]);
-
-        match &self.file {
-            Some(file) => std::fs::write(file, output).unwrap(),
-            None => print!("{output}"),
-        }
-
-        Ok(())
-    }
-}
-
-struct Replace {
-    start: usize,
-    end: usize,
-    replacement: String,
+pub(super) struct Replace {
+    pub(super) start: usize,
+    pub(super) end: usize,
+    pub(super) replacement: String,
 }
 
 #[derive(Default)]
-struct Visitor {
-    indent: isize,
-    replacements: Vec<Replace>,
-    errors: Vec<Error>,
+pub(super) struct Visitor {
+    pub(super) indent: isize,
+    pub(super) replacements: Vec<Replace>,
+    pub(super) errors: Vec<Error>,
 }
 
-struct Error {
-    start: LineColumn,
-    inner: syn::Error,
+pub(super) struct Error {
+    pub(super) start: LineColumn,
+    pub(super) inner: syn::Error,
 }
 
 impl<'ast> Visit<'ast> for Visitor {

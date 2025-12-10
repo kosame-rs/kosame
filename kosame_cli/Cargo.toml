@@ -21,6 +21,7 @@ default = []
 [dependencies]
 anyhow = "1.0.100"
 clap = { version = "4.5.50", features = ["derive"] }
+glob = "0.3.3"
 kosame_dsl.workspace = true
 proc-macro2 = { version = "1.0.103", features = ["span-locations"] }
 regex = "1.12.2"

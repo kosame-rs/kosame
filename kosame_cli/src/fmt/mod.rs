@@ -1,0 +1,87 @@
+mod visitor;
+
+use std::{io::Read, path::PathBuf};
+
+use clap::Args;
+
+use syn::visit::Visit;
+use visitor::Visitor;
+
+#[derive(Args)]
+#[command(version, about = "Format the content of Kosame macro invocations in Rust source files.", long_about = None)]
+pub struct Fmt {
+    #[arg(long)]
+    /// If specified, reads the standard input and formats to standard output.
+    stdin: bool,
+
+    files: Vec<String>,
+}
+
+impl Fmt {
+    pub fn run(&self) -> anyhow::Result<()> {
+        let mut count = 0;
+
+        for pattern in &self.files {
+            for entry in glob::glob(pattern)? {
+                let entry = entry?;
+                if entry.is_dir() {
+                    let entry = entry
+                        .to_str()
+                        .expect("directory does not have a UTF-8 compatible name");
+                    for entry in glob::glob(&format!("{entry}/**/*.rs"))? {
+                        let entry = entry?;
+                        format_file(&entry)?;
+                        count += 1;
+                    }
+                } else {
+                    format_file(&entry)?;
+                    count += 1;
+                }
+            }
+        }
+
+        if self.stdin {
+            let mut buf = String::new();
+            std::io::stdin().read_to_string(&mut buf)?;
+            buf = format_str(&buf)?;
+            print!("{buf}");
+        } else {
+            println!("Formatted {count} files.");
+        }
+        Ok(())
+    }
+}
+
+fn format_file(path: &PathBuf) -> anyhow::Result<()> {
+    let input = std::fs::read_to_string(path)?;
+    let output = format_str(&input)?;
+    std::fs::write(path, output)?;
+    Ok(())
+}
+
+fn format_str(input: &str) -> anyhow::Result<String> {
+    let mut output = String::new();
+
+    let file = syn::parse_file(input)?;
+    let mut visitor = Visitor::default();
+    visitor.visit_file(&file);
+
+    if !visitor.errors.is_empty() {
+        let error = visitor.errors.into_iter().next().unwrap();
+        let line = error.start.line;
+        let column = error.start.column;
+        let error = error.inner;
+        anyhow::bail!("syntax error at line {line} column {column}: {error}");
+    }
+
+    let mut current_index = 0;
+    for replacement in visitor.replacements {
+        output.push_str(&input[current_index..replacement.start]);
+        output.push_str(&replacement.replacement);
+        current_index = replacement.end;
+    }
+
+    output.push_str(&input[current_index..]);
+
+    Ok(output)
+}
