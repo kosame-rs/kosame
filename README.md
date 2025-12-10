@@ -785,6 +785,37 @@ let rows = kosame::pg_statement! {
 .await?;
 ```
 
+Kosame also supports set operations for combining multiple `select` statements:
+```rust
+let rows = kosame::pg_statement! {
+    select
+        comments.content,
+    from
+        schema::comments
+    union all
+        select
+            posts.content,
+        from
+            schema::posts
+    order by
+        1 desc,
+    limit
+        20
+}
+.query_vec(&mut client)
+.await?;
+```
+
+The following set operations are supported:
+- `union` - Combines results from multiple queries, removing duplicates
+- `union all` - Combines results from multiple queries, keeping duplicates
+- `intersect` - Returns only rows that appear in both queries
+- `intersect all` - Returns rows that appear in both queries, keeping duplicates
+- `except` - Returns rows from the first query that don't appear in the second
+- `except all` - Returns rows from the first query that don't appear in the second, keeping duplicates
+
+The Rust type is inferred from the first set of `select` fields in the chain of operations.
+
 ### `insert`
 
 ```rust
