@@ -297,7 +297,6 @@ Kosame is an early prototype. There are many features and performance optimizati
 * Support for other database management systems. Currently, only PostgreSQL (using [`tokio_postgres`](https://docs.rs/tokio-postgres/latest/tokio_postgres/)) is supported.
 * CLI for generating database migrations based on changes in the Kosame schema.
 * CLI for generating a Kosame schema by introspecting a database.
-* Formatter for table, query and statement macros.
 * Support for more SQL expression syntax.
 * Alternative query runners, similar to the [`relationLoadStrategy` that Prisma offers](https://www.prisma.io/blog/prisma-orm-now-lets-you-choose-the-best-join-strategy-preview).
 * Type inference for bind parameters.
@@ -678,7 +677,7 @@ async fn fetch_row(
 
 Kosame also supports an SQL-like syntax for `SELECT`, `INSERT`, `UPDATE`, and `DELETE` queries which make database mutations possible and allow for greater oversight and flexibility over what exactly your database does.
 
-### `SELECT`
+### `select`
 
 A simple `select` statement works without a `from` clause.
 ```rust
@@ -762,7 +761,7 @@ let rows = kosame::pg_statement! {
 .await?;
 ```
 
-### `INSERT`
+### `insert`
 
 ```rust
 let new_post_ids = kosame::pg_statement! {
@@ -779,7 +778,7 @@ let new_post_ids = kosame::pg_statement! {
 .await?;
 ```
 
-### `UPDATE`
+### `update`
 
 ```rust
 let new_upvotes = kosame::pg_statement! {
@@ -796,7 +795,7 @@ let new_upvotes = kosame::pg_statement! {
 .await?;
 ```
 
-### `DELETE`
+### `delete`
 
 ```rust
 kosame::pg_statement! {
