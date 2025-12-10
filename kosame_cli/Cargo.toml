@@ -10,6 +10,8 @@ readme.workspace = true
 license.workspace = true
 keywords.workspace = true
 
+default-run = "kosame"
+
 [lints]
 workspace = true
 

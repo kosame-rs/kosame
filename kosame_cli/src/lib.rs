@@ -19,7 +19,7 @@ enum Root {
 struct Introspect {}
 
 pub fn run() {
-    let root = Root::parse_from(std::env::args().skip(1));
+    let root = Root::parse_from(std::env::args().skip_while(|a| a.ends_with("cargo-kosame")));
     let result = match root {
         Root::Fmt(inner) => inner.run(),
     };
