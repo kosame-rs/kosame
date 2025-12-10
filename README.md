@@ -810,6 +810,62 @@ kosame::pg_statement! {
 .await?;
 ```
 
+## Kosame CLI
+
+Kosame provides a command-line tool for code formatting. In the future, it will also be used for database migrations and introspection. Install the CLI tool using:
+
+```bash
+cargo install kosame_cli
+```
+
+And make sure your `PATH` environment variable is configured correctly (see https://rust-lang.org/tools/install/).
+Commands can be run either through the `kosame` binary or using `cargo kosame ...`.
+
+### Formatting Kosame macros
+
+The CLI includes a formatter that automatically reformats only the contents of `pg_table!`, `pg_query!`, and `pg_statement!` macros (and their non-`pg_` variants) with proper indentation and structure.
+
+```bash
+# Format a single file
+kosame fmt src/main.rs
+
+# Format multiple files
+kosame fmt src/main.rs src/lib.rs
+
+# Format all Rust files in a directory recursively
+kosame fmt src/
+
+# Use glob patterns
+kosame fmt "src/**/*.rs"
+
+# Read from stdin and write to stdout (useful for editor integrations)
+kosame fmt --stdin < src/main.rs
+```
+
+#### Editor integration
+
+##### Neovim with conform.nvim
+
+Create a `Kosame.toml` file at the root of your Rust project. Then add the following `conform.nvim` setup to your Neovim configuration:
+
+```lua
+require("conform").setup({
+    formatters = {
+        kosame = {
+            command = "kosame",
+            args = { "fmt", "--stdin" },
+            require_cwd = true,
+            cwd = function(self, ctx)
+                return require("conform.util").root_file({ "Kosame.toml" })(self, ctx)
+            end,
+        },
+    }
+    formatters_by_ft = {
+        rust = { "kosame", lsp_format = "first" },
+    },
+})
+```
+
 ## Can Kosame handle all use cases well?
 
 No. Writing raw SQL directly will always give you more flexibility and control over what your database does, which may also allow you to optimize performance beyond what the Kosame supports. But that's okay! You can combine Kosame with another method to access the database. Use Kosame for situations in which you benefit from the relational query syntax and type inference. In more demanding situations, consider using a crate like [`sqlx`](https://github.com/launchbadge/sqlx).
