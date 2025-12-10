@@ -10,10 +10,6 @@ readme.workspace = true
 license.workspace = true
 keywords.workspace = true
 
-[[bin]]
-name = "cargo-kosame"
-path = "src/main.rs"
-
 [lints]
 workspace = true
 

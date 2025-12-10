@@ -18,7 +18,7 @@ enum Root {
 #[command(version, about = "Introspects a database and generates a matching Kosame schema", long_about = None)]
 struct Introspect {}
 
-fn main() {
+pub fn run() {
     let root = Root::parse_from(std::env::args().skip(1));
     let result = match root {
         Root::Fmt(inner) => inner.run(),
