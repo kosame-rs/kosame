@@ -46,7 +46,7 @@ mod schema {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = postgres::Client::connect(
-        "postgres://postgres:postgres@localhost:5432/postgres",
+        "postgres://kosame:kosame@localhost:5432/kosame",
         postgres::NoTls,
     )
     .unwrap();

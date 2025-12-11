@@ -1,21 +1,30 @@
 name: kosame
 services:
-  postgres:
-    image: postgres:18rc1-alpine3.22
-    shm_size: 128mb
-    command: postgres -c shared_preload_libraries="pg_stat_statements, auto_explain" -c pg_stat_statements.track=all -c max_connections=256
+  mysql:
+    image: mysql:9
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      MYSQL_ROOT_PASSWORD: kosame
+      MYSQL_USER: kosame
+      MYSQL_PASSWORD: kosame
+      MYSQL_DATABASE: kosame
+    ports:
+      - "3306:3306"
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
-    ports:
-      - 127.0.0.1:5432:5432
-    volumes:
-      - postgres:/var/lib/postgresql/data
 
-volumes:
-  postgres:
+  postgresql:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: kosame
+      POSTGRES_PASSWORD: kosame
+      POSTGRES_DB: kosame
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "toasty"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

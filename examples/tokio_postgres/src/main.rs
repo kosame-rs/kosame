@@ -244,7 +244,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 // This function connects to a database using tokio-postgres.
 async fn connect() -> tokio_postgres::Client {
     let (client, connection) = tokio_postgres::connect(
-        "postgres://postgres:postgres@localhost:5432/postgres",
+        "postgres://kosame:kosame@localhost:5432/kosame",
         tokio_postgres::NoTls,
     )
     .await
