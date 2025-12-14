@@ -1,8 +1,6 @@
-mod connection;
-mod statement_cache;
+mod cached_client;
 
-pub use connection::*;
-pub use statement_cache::*;
+pub use cached_client::*;
 
 use crate::driver::Driver;
 
