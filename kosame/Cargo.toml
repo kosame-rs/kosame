@@ -37,6 +37,7 @@ serde-full = ["serde", "kosame_macro/serde-full"]
 
 [dependencies]
 fallible-iterator = "0.2.0"
+futures = "0.3.31"
 futures-core = "0.3.31"
 kosame_macro.workspace = true
 kosame_repr.workspace = true

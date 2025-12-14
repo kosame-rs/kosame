@@ -7,10 +7,12 @@ pub mod keyword;
 
 pub mod driver;
 mod error;
+mod exec;
 pub mod params;
 pub mod prelude;
 pub mod query;
 pub mod relation;
+mod row_stream;
 pub mod statement;
 
 pub use error::*;

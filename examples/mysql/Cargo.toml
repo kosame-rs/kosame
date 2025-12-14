@@ -1,0 +1,11 @@
+[package]
+name = "example_mysql"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+kosame = { workspace = true, features = ["postgres", "serde"] }
+mysql = "26.0.1"
+serde = { version = "1.0.226", features = ["derive"] }
+serde_json = "1.0.145"

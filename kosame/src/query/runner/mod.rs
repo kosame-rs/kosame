@@ -2,7 +2,7 @@ mod record_array;
 
 pub use record_array::*;
 
-use crate::{driver::Connection, params::Params};
+use crate::{driver::Driver, params::Params};
 
 use super::{Field, Node, Query};
 
@@ -13,7 +13,7 @@ pub trait Runner {
         query: &Q,
     ) -> impl Future<Output = crate::Result<Vec<Q::Row>>>
     where
-        C: Connection,
+        C: Driver,
         Q: Query + ?Sized,
         Q::Params: Params<C::Params<'a>>,
         for<'b> Q::Row: From<&'b C::Row>;

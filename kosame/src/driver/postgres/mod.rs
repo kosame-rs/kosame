@@ -1,6 +1,12 @@
-use crate::driver::Connection;
+mod connection;
+mod statement_cache;
 
-impl Connection for postgres::Client {
+pub use connection::*;
+pub use statement_cache::*;
+
+use crate::driver::Driver;
+
+impl Driver for postgres::Client {
     type Dialect = kosame_sql::postgres::Dialect;
     type Params<'a> = Vec<&'a (dyn postgres_types::ToSql + std::marker::Sync + 'a)>;
     type Row = postgres::Row;
@@ -19,7 +25,7 @@ impl Connection for postgres::Client {
     }
 }
 
-impl Connection for postgres::Transaction<'_> {
+impl Driver for postgres::Transaction<'_> {
     type Dialect = kosame_sql::postgres::Dialect;
     type Params<'a> = Vec<&'a (dyn postgres_types::ToSql + std::marker::Sync + 'a)>;
     type Row = postgres::Row;

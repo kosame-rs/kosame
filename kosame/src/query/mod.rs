@@ -3,7 +3,7 @@ mod runner;
 pub use kosame_repr::query::*;
 pub use runner::*;
 
-use crate::{Error, driver::Connection, params::Params};
+use crate::{Error, driver::Driver, params::Params};
 use pollster::FutureExt;
 
 pub trait Query {
@@ -23,7 +23,7 @@ pub trait Query {
         connection: &mut C,
     ) -> impl Future<Output = crate::Result<Vec<Self::Row>>>
     where
-        C: Connection,
+        C: Driver,
         Self::Params: Params<C::Params<'c>>,
         for<'b> Self::Row: From<&'b C::Row>,
     {
@@ -32,7 +32,7 @@ pub trait Query {
 
     fn query_one<'c, C>(&self, connection: &mut C) -> impl Future<Output = crate::Result<Self::Row>>
     where
-        C: Connection,
+        C: Driver,
         Self::Params: Params<C::Params<'c>>,
         for<'b> Self::Row: From<&'b C::Row>,
     {
@@ -48,7 +48,7 @@ pub trait Query {
         connection: &mut C,
     ) -> impl Future<Output = crate::Result<Option<Self::Row>>>
     where
-        C: Connection,
+        C: Driver,
         Self::Params: Params<C::Params<'c>>,
         for<'b> Self::Row: From<&'b C::Row>,
     {
@@ -66,7 +66,7 @@ pub trait Query {
 
     fn query_vec_sync<'c, C>(&self, connection: &mut C) -> crate::Result<Vec<Self::Row>>
     where
-        C: Connection,
+        C: Driver,
         Self::Params: Params<C::Params<'c>>,
         for<'b> Self::Row: From<&'b C::Row>,
     {
@@ -75,7 +75,7 @@ pub trait Query {
 
     fn query_one_sync<'c, C>(&self, connection: &mut C) -> crate::Result<Self::Row>
     where
-        C: Connection,
+        C: Driver,
         Self::Params: Params<C::Params<'c>>,
         for<'b> Self::Row: From<&'b C::Row>,
     {
@@ -84,7 +84,7 @@ pub trait Query {
 
     fn query_opt_sync<'c, C>(&self, connection: &mut C) -> crate::Result<Option<Self::Row>>
     where
-        C: Connection,
+        C: Driver,
         Self::Params: Params<C::Params<'c>>,
         for<'b> Self::Row: From<&'b C::Row>,
     {

@@ -1,6 +1,10 @@
-use crate::driver::Connection;
+mod statement_cache;
 
-impl Connection for tokio_postgres::Client {
+pub use statement_cache::*;
+
+use crate::driver::Driver;
+
+impl Driver for tokio_postgres::Client {
     type Dialect = kosame_sql::postgres::Dialect;
     type Params<'a> = Vec<&'a (dyn postgres_types::ToSql + std::marker::Sync + 'a)>;
     type Row = tokio_postgres::Row;
@@ -19,7 +23,7 @@ impl Connection for tokio_postgres::Client {
     }
 }
 
-impl Connection for tokio_postgres::Transaction<'_> {
+impl Driver for tokio_postgres::Transaction<'_> {
     type Dialect = kosame_sql::postgres::Dialect;
     type Params<'a> = Vec<&'a (dyn postgres_types::ToSql + std::marker::Sync + 'a)>;
     type Row = tokio_postgres::Row;

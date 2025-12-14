@@ -1,3 +1,9 @@
+mod row_count;
+mod statement_cache;
+
+pub use row_count::*;
+pub use statement_cache::*;
+
 use fallible_iterator::FallibleIterator;
 pub use postgres_protocol::types::int4_from_sql;
 pub use postgres_types::{FromSql, ToSql, Type};

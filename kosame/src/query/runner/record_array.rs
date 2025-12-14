@@ -3,7 +3,7 @@ use std::fmt::Write;
 use kosame_repr::schema::Relation;
 use kosame_sql::FmtSql;
 
-use crate::driver::Connection;
+use crate::driver::Driver;
 
 use super::{Field, Node, Params, Query, Runner};
 
@@ -24,7 +24,7 @@ impl RecordArrayRunner {
 impl Runner for RecordArrayRunner {
     async fn run<'a, C, Q>(&self, connection: &mut C, query: &Q) -> crate::Result<Vec<Q::Row>>
     where
-        C: Connection,
+        C: Driver,
         Q: Query + ?Sized,
         Q::Params: Params<C::Params<'a>>,
         for<'b> Q::Row: From<&'b C::Row>,
