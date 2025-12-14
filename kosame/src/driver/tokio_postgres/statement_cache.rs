@@ -1,36 +1,3 @@
-//! Statement cache for asynchronous PostgreSQL connections.
-//!
-//! This module provides a statement cache implementation for the asynchronous `tokio-postgres` crate.
-//! It implements the [`postgres_types::StatementCacheClient`] trait for [`tokio_postgres::Client`],
-//! allowing prepared statements to be cached and reused across multiple query executions.
-//!
-//! # Example
-//!
-//! ```rust,ignore
-//! use kosame::driver::tokio_postgres::StatementCache;
-//! use tokio_postgres::NoTls;
-//!
-//! let (client, connection) = tokio_postgres::connect(
-//!     "postgresql://user:pass@localhost/db",
-//!     NoTls
-//! ).await?;
-//!
-//! // Spawn the connection task
-//! tokio::spawn(async move {
-//!     if let Err(e) = connection.await {
-//!         eprintln!("connection error: {}", e);
-//!     }
-//! });
-//!
-//! let mut cache = StatementCache::new();
-//!
-//! // First call prepares the statement
-//! let stmt = cache.prepare(&mut client, "SELECT * FROM users WHERE id = $1").await?;
-//!
-//! // Second call reuses the cached statement
-//! let stmt2 = cache.prepare(&mut client, "SELECT * FROM users WHERE id = $1").await?;
-//! ```
-
 use tokio_postgres::{Client, Error, Statement};
 
 use crate::driver::postgres_types;

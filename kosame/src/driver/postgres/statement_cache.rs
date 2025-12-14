@@ -1,25 +1,3 @@
-//! Statement cache for synchronous PostgreSQL connections.
-//!
-//! This module provides a statement cache implementation for the synchronous `postgres` crate.
-//! It implements the [`postgres_types::StatementCacheClient`] trait for [`postgres::Client`],
-//! allowing prepared statements to be cached and reused across multiple query executions.
-//!
-//! # Example
-//!
-//! ```rust,ignore
-//! use kosame::driver::postgres::StatementCache;
-//! use postgres::Client;
-//!
-//! let mut client = Client::connect("postgresql://user:pass@localhost/db", NoTls)?;
-//! let mut cache = StatementCache::new();
-//!
-//! // First call prepares the statement
-//! let stmt = cache.prepare(&mut client, "SELECT * FROM users WHERE id = $1").await?;
-//!
-//! // Second call reuses the cached statement
-//! let stmt2 = cache.prepare(&mut client, "SELECT * FROM users WHERE id = $1").await?;
-//! ```
-
 use postgres::{Client, Error, Statement};
 
 use crate::driver::postgres_types;
