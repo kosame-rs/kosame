@@ -1,12 +1,7 @@
-use crate::driver::Driver;
-
-pub trait Exec<D>
-where
-    D: Driver,
-{
+pub trait Exec {
     type Response;
 
-    fn exec(&self, driver: &mut D) -> Self::Response;
+    fn exec(&self) -> Self::Response;
 }
 
 pub trait Response {}

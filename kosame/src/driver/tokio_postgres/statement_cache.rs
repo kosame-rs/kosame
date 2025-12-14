@@ -5,6 +5,7 @@ use tokio_postgres::{Client, Error, Statement};
 
 use crate::driver::postgres_types::StatementCache as GenericStatementCache;
 
+#[derive(Default)]
 pub struct StatementCache {
     inner: GenericStatementCache<Statement>,
 }
@@ -27,13 +28,12 @@ impl StatementCache {
         query: &str,
         types: &[Type],
     ) -> Result<Statement, Error> {
-        match self.get(query, types) {
-            Some(statement) => Ok(statement),
-            None => {
-                let stmt = client.prepare_typed(query, types).await?;
-                self.insert(query, types, stmt.clone());
-                Ok(stmt)
-            }
+        if let Some(statement) = self.get(query, types) {
+            Ok(statement)
+        } else {
+            let stmt = client.prepare_typed(query, types).await?;
+            self.insert(query, types, stmt.clone());
+            Ok(stmt)
         }
     }
 }

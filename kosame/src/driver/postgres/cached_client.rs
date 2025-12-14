@@ -33,10 +33,6 @@ impl CachedClient {
         })
     }
 
-    pub fn inner(&self) -> &Client {
-        &self.inner
-    }
-
     pub fn statement_cache(&self) -> &StatementCache {
         &self.statement_cache
     }

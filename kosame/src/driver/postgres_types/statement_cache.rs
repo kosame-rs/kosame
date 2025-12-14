@@ -2,15 +2,11 @@ use std::{borrow::Cow, collections::HashMap};
 
 use postgres_types::Type;
 
-#[derive(Default)]
 pub struct StatementCache<S> {
     map: HashMap<Key<'static>, S>,
 }
 
-impl<S> StatementCache<S>
-where
-    S: ToOwned<Owned = S>,
-{
+impl<S> StatementCache<S> {
     /// Creates a new empty statement cache.
     #[must_use]
     pub fn new() -> Self {
@@ -26,7 +22,12 @@ where
     pub fn clear(&mut self) {
         self.map.clear();
     }
+}
 
+impl<S> StatementCache<S>
+where
+    S: ToOwned<Owned = S>,
+{
     /// Retrieves a cached statement if available.
     ///
     /// # Returns
@@ -44,6 +45,12 @@ where
     pub fn insert(&mut self, query: &str, types: &[Type], statement: S) {
         self.map
             .insert(Key::new(query, types).into_owned(), statement);
+    }
+}
+
+impl<S> Default for StatementCache<S> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
