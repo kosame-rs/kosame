@@ -1,11 +1,7 @@
 use postgres_types::ToSql;
-use tokio_postgres::{Client, Error, RowStream, Statement, Transaction};
+use tokio_postgres::{Client, Error, RowStream, Transaction};
 
-/// Type alias for a statement cache using the asynchronous PostgreSQL client.
-///
-/// This is a convenience type that specializes [`StatementCache`] for use with
-/// [`tokio_postgres::Client`]. It provides all the same functionality as the generic cache.
-pub type StatementCache = crate::driver::postgres_types::StatementCache<Statement>;
+use crate::driver::tokio_postgres::StatementCache;
 
 pub struct CachedClient {
     inner: Client,
@@ -26,14 +22,7 @@ impl CachedClient {
         query: &str,
         params: &[&(dyn ToSql + Sync)],
     ) -> Result<RowStream, Error> {
-        let statement = match self.statement_cache.get(query, &[]) {
-            Some(statement) => statement,
-            None => {
-                let statement = self.inner.prepare(query).await?;
-                self.statement_cache.insert(query, &[], statement.clone());
-                statement
-            }
-        };
+        let statement = self.statement_cache.prepare(&self.inner, query).await?;
         self.inner
             .query_raw(&statement, params.iter().map(|v| *v))
             .await
@@ -44,10 +33,6 @@ impl CachedClient {
             inner: self.inner.transaction().await?,
             statement_cache: &mut self.statement_cache,
         })
-    }
-
-    pub fn inner(&self) -> &Client {
-        &self.inner
     }
 
     pub fn statement_cache(&self) -> &StatementCache {
@@ -70,21 +55,13 @@ impl CachedTransaction<'_> {
         query: &str,
         params: &[&(dyn ToSql + Sync)],
     ) -> Result<RowStream, Error> {
-        let statement = match self.statement_cache.get(query, &[]) {
-            Some(statement) => statement,
-            None => {
-                let statement = self.inner.prepare(query).await?;
-                self.statement_cache.insert(query, &[], statement.clone());
-                statement
-            }
-        };
+        let statement = self
+            .statement_cache
+            .prepare(&self.inner.client(), query)
+            .await?;
         self.inner
             .query_raw(&statement, params.iter().map(|v| *v))
             .await
-    }
-
-    pub fn inner(&self) -> &Transaction {
-        &self.inner
     }
 
     pub fn statement_cache(&self) -> &StatementCache {

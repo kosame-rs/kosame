@@ -7,7 +7,10 @@ pub struct StatementCache<S> {
     map: HashMap<Key<'static>, S>,
 }
 
-impl<S> StatementCache<S> {
+impl<S> StatementCache<S>
+where
+    S: ToOwned<Owned = S>,
+{
     /// Creates a new empty statement cache.
     #[must_use]
     pub fn new() -> Self {
@@ -26,11 +29,6 @@ impl<S> StatementCache<S> {
 
     /// Retrieves a cached statement if available.
     ///
-    /// # Arguments
-    ///
-    /// * `query` - The SQL query string
-    /// * `types` - The parameter types for the query
-    ///
     /// # Returns
     ///
     /// Returns `Some(statement)` if a matching statement is cached, or `None` if no cached
@@ -40,12 +38,6 @@ impl<S> StatementCache<S> {
     }
 
     /// Manually inserts a prepared statement into the cache.
-    ///
-    /// # Arguments
-    ///
-    /// * `query` - The SQL query string
-    /// * `types` - The parameter types for the query
-    /// * `statement` - The prepared statement to cache
     ///
     /// This method is rarely needed as [`prepare`](Self::prepare) and
     /// [`prepare_typed`](Self::prepare_typed) handle caching automatically.
@@ -73,11 +65,6 @@ struct Key<'a> {
 
 impl<'a> Key<'a> {
     /// Creates a new cache key from borrowed data.
-    ///
-    /// # Arguments
-    ///
-    /// * `query` - The SQL query string
-    /// * `types` - The parameter types for the query
     #[must_use]
     pub fn new(query: &'a str, types: &'a [Type]) -> Self {
         Self {
