@@ -54,12 +54,12 @@ where
 /// arrays match exactly.
 ///
 /// The lifetime parameter allows the key to borrow data temporarily during lookups while storing
-/// owned data in the cache HashMap.
+/// owned data in the cache [`HashMap`].
 #[derive(Debug, Eq, PartialEq, Hash)]
 struct Key<'a> {
     /// The SQL query string
     query: Cow<'a, str>,
-    /// The PostgreSQL parameter types for the query
+    /// The ``PostgreSQL`` parameter types for the query
     types: Cow<'a, [Type]>,
 }
 
@@ -75,7 +75,7 @@ impl<'a> Key<'a> {
 
     /// Converts this key into an owned version with a `'static` lifetime.
     ///
-    /// This is used when inserting keys into the cache's HashMap, which requires owned data.
+    /// This is used when inserting keys into the cache's [`HashMap`], which requires owned data.
     /// If the `Cow` fields are already owned, this is a zero-cost operation; otherwise, it
     /// allocates and copies the data.
     pub fn into_owned(self) -> Key<'static> {

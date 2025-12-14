@@ -17,16 +17,16 @@ impl CachedClient {
         }
     }
 
-    pub fn query_cached<T, P, I>(
-        &mut self,
+    pub fn query_cached<'a>(
+        &'a mut self,
         query: &str,
         params: &[&(dyn ToSql + Sync)],
-    ) -> Result<RowIter, Error> {
+    ) -> Result<RowIter<'a>, Error> {
         let statement = self.statement_cache.prepare(&mut self.inner, query)?;
-        self.inner.query_raw(&statement, params.iter().map(|v| *v))
+        self.inner.query_raw(&statement, params.iter().copied())
     }
 
-    pub async fn transaction(&mut self) -> Result<CachedTransaction<'_>, Error> {
+    pub fn transaction(&mut self) -> Result<CachedTransaction<'_>, Error> {
         Ok(CachedTransaction {
             inner: self.inner.transaction()?,
             statement_cache: &mut self.statement_cache,
@@ -52,24 +52,27 @@ pub struct CachedTransaction<'a> {
 }
 
 impl CachedTransaction<'_> {
-    pub fn query_cached<T, P, I>(
-        &mut self,
+    pub fn query_cached<'a>(
+        &'a mut self,
         query: &str,
         params: &[&(dyn ToSql + Sync)],
-    ) -> Result<RowIter, Error> {
+    ) -> Result<RowIter<'a>, Error> {
         let statement = self.statement_cache.prepare(&mut self.inner, query)?;
-        self.inner.query_raw(&statement, params.iter().map(|v| *v))
+        self.inner.query_raw(&statement, params.iter().copied())
     }
 
-    pub fn inner(&self) -> &Transaction {
+    #[must_use]
+    pub fn inner(&self) -> &Transaction<'_> {
         &self.inner
     }
 
+    #[must_use]
     pub fn statement_cache(&self) -> &StatementCache {
-        &self.statement_cache
+        self.statement_cache
     }
 
+    #[must_use]
     pub fn statement_cache_mut(&mut self) -> &mut StatementCache {
-        &mut self.statement_cache
+        self.statement_cache
     }
 }

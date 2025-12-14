@@ -24,7 +24,7 @@ impl CachedClient {
     ) -> Result<RowStream, Error> {
         let statement = self.statement_cache.prepare(&self.inner, query).await?;
         self.inner
-            .query_raw(&statement, params.iter().map(|v| *v))
+            .query_raw(&statement, params.iter().copied())
             .await
     }
 
@@ -35,10 +35,12 @@ impl CachedClient {
         })
     }
 
+    #[must_use]
     pub fn statement_cache(&self) -> &StatementCache {
         &self.statement_cache
     }
 
+    #[must_use]
     pub fn statement_cache_mut(&mut self) -> &mut StatementCache {
         &mut self.statement_cache
     }
@@ -57,18 +59,20 @@ impl CachedTransaction<'_> {
     ) -> Result<RowStream, Error> {
         let statement = self
             .statement_cache
-            .prepare(&self.inner.client(), query)
+            .prepare(self.inner.client(), query)
             .await?;
         self.inner
-            .query_raw(&statement, params.iter().map(|v| *v))
+            .query_raw(&statement, params.iter().copied())
             .await
     }
 
+    #[must_use]
     pub fn statement_cache(&self) -> &StatementCache {
-        &self.statement_cache
+        self.statement_cache
     }
 
+    #[must_use]
     pub fn statement_cache_mut(&mut self) -> &mut StatementCache {
-        &mut self.statement_cache
+        self.statement_cache
     }
 }
