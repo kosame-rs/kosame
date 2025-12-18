@@ -2,6 +2,7 @@ use std::{borrow::Cow, collections::HashMap};
 
 use postgres_types::Type;
 
+#[derive(Debug)]
 pub struct StatementCache<S> {
     map: HashMap<Key<'static>, S>,
 }

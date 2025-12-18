@@ -1,13 +1,22 @@
 use std::ops::{Deref, DerefMut};
 
-use postgres::{Error, RowIter, Transaction, TransactionBuilder};
-use postgres_types::ToSql;
+use postgres::{Error, Statement, Transaction, TransactionBuilder};
+use postgres_types::Type;
 
 use super::StatementCache;
 
 pub struct RawTransactionBuilder<'a> {
     pub(super) inner: TransactionBuilder<'a>,
     pub(super) statement_cache: &'a mut StatementCache,
+}
+
+impl<'a> RawTransactionBuilder<'a> {
+    pub fn start(self) -> Result<RawTransaction<'a>, postgres::Error> {
+        Ok(RawTransaction {
+            inner: self.inner.start()?,
+            statement_cache: self.statement_cache,
+        })
+    }
 }
 
 impl<'a> Deref for RawTransactionBuilder<'a> {
@@ -18,7 +27,7 @@ impl<'a> Deref for RawTransactionBuilder<'a> {
     }
 }
 
-impl<'a> DerefMut for RawTransactionBuilder<'a> {
+impl DerefMut for RawTransactionBuilder<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }
@@ -30,18 +39,25 @@ pub struct RawTransaction<'a> {
 }
 
 impl RawTransaction<'_> {
-    pub fn query_cached<'a>(
-        &'a mut self,
-        query: &str,
-        params: &[&(dyn ToSql + Sync)],
-    ) -> Result<RowIter<'a>, Error> {
-        let statement = self.statement_cache.prepare(&mut self.inner, query)?;
-        self.inner.query_raw(&statement, params.iter().copied())
+    pub fn prepare_cached(&mut self, query: &str) -> Result<Statement, Error> {
+        self.statement_cache.prepare(&mut self.inner, query)
     }
 
-    #[must_use]
-    pub fn inner(&self) -> &Transaction<'_> {
-        &self.inner
+    pub fn prepare_typed_cached(
+        &mut self,
+        query: &str,
+        types: &[Type],
+    ) -> Result<Statement, Error> {
+        self.statement_cache
+            .prepare_typed(&mut self.inner, query, types)
+    }
+
+    pub fn commit(self) -> Result<(), postgres::Error> {
+        self.inner.commit()
+    }
+
+    pub fn rollback(self) -> Result<(), postgres::Error> {
+        self.inner.rollback()
     }
 
     #[must_use]
@@ -63,7 +79,7 @@ impl<'a> Deref for RawTransaction<'a> {
     }
 }
 
-impl<'a> DerefMut for RawTransaction<'a> {
+impl DerefMut for RawTransaction<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }

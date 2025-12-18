@@ -1,5 +1,3 @@
-use crate::exec::Response;
-
 pub struct RowCount(u64);
 
 impl RowCount {
@@ -14,5 +12,3 @@ impl RowCount {
         self.0
     }
 }
-
-impl Response for RowCount {}

@@ -1,6 +1,38 @@
-use super::{Transaction, TransactionBuilder, raw::RawClient};
+use std::str::FromStr;
 
-pub type ConnectionConfig = postgres::Config;
+use super::{
+    Transaction, TransactionBuilder,
+    raw::{RawClient, RawConnectionConfig},
+};
+
+#[derive(Debug, Default)]
+pub struct ConnectionConfig {
+    inner: RawConnectionConfig,
+}
+
+impl ConnectionConfig {
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            inner: RawConnectionConfig::new(),
+        }
+    }
+
+    pub fn connect(&self) -> Result<Connection, postgres::Error> {
+        Ok(Connection {
+            // TODO: Support TLS
+            inner: RawClient::new(self.inner.connect(postgres::NoTls)?),
+        })
+    }
+}
+
+impl FromStr for ConnectionConfig {
+    type Err = <RawConnectionConfig as FromStr>::Err;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(ConnectionConfig { inner: s.parse()? })
+    }
+}
 
 pub struct Connection {
     inner: RawClient,

@@ -1,10 +1,20 @@
 use std::time::Duration;
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct StandardPoolConfig {
     pub max_size: usize,
     pub timeouts: StandardPoolTimeouts,
     pub queue_mode: StandardPoolQueueMode,
+}
+
+impl Default for StandardPoolConfig {
+    fn default() -> Self {
+        Self {
+            max_size: 8,
+            timeouts: StandardPoolTimeouts::default(),
+            queue_mode: StandardPoolQueueMode::default(),
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone, Copy)]

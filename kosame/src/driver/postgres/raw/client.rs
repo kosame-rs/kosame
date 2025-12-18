@@ -5,6 +5,8 @@ use postgres_types::Type;
 
 use super::{RawTransaction, RawTransactionBuilder, StatementCache};
 
+pub type RawConnectionConfig = postgres::Config;
+
 pub struct RawClient {
     inner: Client,
     statement_cache: StatementCache,

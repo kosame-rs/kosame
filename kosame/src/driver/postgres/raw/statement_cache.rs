@@ -5,7 +5,7 @@ use postgres_types::Type;
 
 use crate::driver::postgres_types::StatementCache as GenericStatementCache;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct StatementCache {
     inner: GenericStatementCache<Statement>,
 }
