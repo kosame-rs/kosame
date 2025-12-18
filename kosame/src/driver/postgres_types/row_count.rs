@@ -8,7 +8,7 @@ impl RowCount {
     }
 
     #[must_use]
-    const fn row_count(&self) -> u64 {
+    pub const fn row_count(&self) -> u64 {
         self.0
     }
 }

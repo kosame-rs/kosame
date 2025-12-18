@@ -39,7 +39,7 @@ pub struct Connection {
 }
 
 impl Connection {
-    pub fn transaction(&mut self) -> Result<Transaction, postgres::Error> {
+    pub fn transaction(&mut self) -> Result<Transaction<'_>, postgres::Error> {
         Ok(Transaction {
             inner: self.inner.transaction()?,
         })

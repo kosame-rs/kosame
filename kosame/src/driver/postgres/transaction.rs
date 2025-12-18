@@ -5,10 +5,12 @@ pub struct TransactionBuilder<'a> {
 }
 
 impl<'a> TransactionBuilder<'a> {
+    #[must_use]
     pub fn raw(&self) -> &RawTransactionBuilder<'a> {
         &self.inner
     }
 
+    #[must_use]
     pub fn raw_mut(&mut self) -> &mut RawTransactionBuilder<'a> {
         &mut self.inner
     }
@@ -19,10 +21,12 @@ pub struct Transaction<'a> {
 }
 
 impl<'a> Transaction<'a> {
+    #[must_use]
     pub fn raw(&self) -> &RawTransaction<'a> {
         &self.inner
     }
 
+    #[must_use]
     pub fn raw_mut(&mut self) -> &mut RawTransaction<'a> {
         &mut self.inner
     }
