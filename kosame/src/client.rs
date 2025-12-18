@@ -14,9 +14,9 @@ impl Pool {
 
 enum ConnectionInner {
     #[cfg(feature = "postgres")]
-    Postgres(crate::driver::postgres::CachedClient),
+    Postgres(crate::driver::postgres::RawClient),
     #[cfg(feature = "tokio-postgres")]
-    TokioPostgres(crate::driver::tokio_postgres::CachedClient),
+    TokioPostgres(crate::driver::tokio_postgres::RawClient),
 }
 
 pub struct Connection {

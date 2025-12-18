@@ -3,12 +3,12 @@ use tokio_postgres::{Client, Error, RowStream, Transaction};
 
 use crate::driver::tokio_postgres::StatementCache;
 
-pub struct CachedClient {
+pub struct RawClient {
     inner: Client,
     statement_cache: StatementCache,
 }
 
-impl CachedClient {
+impl RawClient {
     #[must_use]
     pub fn new(inner: Client) -> Self {
         Self {
@@ -28,8 +28,8 @@ impl CachedClient {
             .await
     }
 
-    pub async fn transaction(&mut self) -> Result<CachedTransaction<'_>, Error> {
-        Ok(CachedTransaction {
+    pub async fn transaction(&mut self) -> Result<RawTransaction<'_>, Error> {
+        Ok(RawTransaction {
             inner: self.inner.transaction().await?,
             statement_cache: &mut self.statement_cache,
         })
@@ -46,12 +46,12 @@ impl CachedClient {
     }
 }
 
-pub struct CachedTransaction<'a> {
+pub struct RawTransaction<'a> {
     inner: Transaction<'a>,
     statement_cache: &'a mut StatementCache,
 }
 
-impl CachedTransaction<'_> {
+impl RawTransaction<'_> {
     pub async fn query_cached<T, P, I>(
         &mut self,
         query: &str,

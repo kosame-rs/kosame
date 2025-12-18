@@ -1,4 +1,4 @@
-pub use kosame_macro::*;
+pub use kosame_macro::{Row, query, statement, table};
 pub use kosame_repr as repr;
 pub use kosame_sql as sql;
 

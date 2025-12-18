@@ -36,6 +36,7 @@ serde = ["dep:serde", "kosame_macro/serde"]
 serde-full = ["serde", "kosame_macro/serde-full"]
 
 [dependencies]
+deadpool = "0.12.3"
 fallible-iterator = "0.2.0"
 futures = "0.3.31"
 futures-core = "0.3.31"

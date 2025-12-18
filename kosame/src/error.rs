@@ -2,7 +2,7 @@
 pub enum Error {
     #[error("unexpected number of rows in result set")]
     RowCount,
-    #[error("SQL formatting failed")]
+    #[error("SQL formatting failed: {0}")]
     FmtSql(
         #[from]
         #[source]
@@ -16,4 +16,4 @@ pub enum Error {
     ),
 }
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T, E = Error> = std::result::Result<T, E>;
