@@ -16,7 +16,7 @@ workspace = true
 [features]
 default = []
 
-postgres = [
+driver-postgres = [
 	"kosame_macro/postgres",
 	"kosame_sql/postgres",
 	"dep:postgres",
@@ -24,7 +24,7 @@ postgres = [
 	"dep:postgres-types",
 	"dep:postgres-protocol",
 ]
-tokio-postgres = [
+driver-tokio-postgres = [
 	"kosame_macro/tokio-postgres",
 	"kosame_sql/postgres",
 	"dep:tokio-postgres",

@@ -5,7 +5,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
-kosame = { workspace = true, features = ["serde", "tokio-postgres"] }
+kosame = { workspace = true, features = ["driver-tokio-postgres", "serde"] }
 serde = { version = "1.0.226", features = ["derive"] }
 serde_json = "1.0.145"
 tokio = { version = "1.47.1", features = ["macros", "rt", "rt-multi-thread"] }

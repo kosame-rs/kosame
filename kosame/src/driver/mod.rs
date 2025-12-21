@@ -1,10 +1,10 @@
-#[cfg(feature = "postgres")]
+#[cfg(feature = "driver-postgres")]
 pub mod postgres;
 
-// #[cfg(feature = "tokio-postgres")]
+// #[cfg(feature = "driver-tokio-postgres")]
 // pub mod tokio_postgres;
 
-#[cfg(any(feature = "postgres", feature = "tokio-postgres"))]
+#[cfg(any(feature = "driver-postgres", feature = "driver-tokio-postgres"))]
 #[doc(hidden)]
 pub mod postgres_types;
 

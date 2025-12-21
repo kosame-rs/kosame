@@ -19,8 +19,8 @@ proc-macro = true
 [features]
 default = []
 
-postgres = ["kosame_dsl/postgres"]
-tokio-postgres = ["kosame_dsl/tokio-postgres"]
+driver-postgres = ["kosame_dsl/driver-postgres"]
+driver-tokio-postgres = ["kosame_dsl/driver-tokio-postgres"]
 
 serde = ["kosame_dsl/serde"]
 serde-full = ["kosame_dsl/serde-full"]

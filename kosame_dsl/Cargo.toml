@@ -16,8 +16,8 @@ workspace = true
 [features]
 default = []
 
-postgres = []
-tokio-postgres = []
+driver-postgres = []
+driver-tokio-postgres = []
 
 serde = []
 serde-full = []

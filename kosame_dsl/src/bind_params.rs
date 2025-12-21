@@ -93,7 +93,7 @@ impl ToTokens for BindParams<'_> {
         }
         .to_tokens(tokens);
 
-        #[cfg(any(feature = "postgres", feature = "tokio-postgres"))]
+        #[cfg(any(feature = "driver-postgres", feature = "driver-tokio-postgres"))]
         {
             let field_names = &self.params;
             quote! {
