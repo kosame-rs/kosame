@@ -1,4 +1,4 @@
-use kosame::driver::postgres::{ConnectionConfig, Pool};
+use kosame::driver::postgres::{Config, Pool};
 
 // Declare your database schema. You may split the schema into multiple Rust modules.
 mod schema {

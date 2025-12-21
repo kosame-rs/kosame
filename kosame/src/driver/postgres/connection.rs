@@ -2,35 +2,51 @@ use std::str::FromStr;
 
 use super::{
     Transaction, TransactionBuilder,
-    raw::{RawClient, RawConnectionConfig},
+    raw::{RawClient, RawConfig},
 };
 
+const DEFAULT_STATEMENT_CACHE_CAPACITY: usize = 64;
+
 #[derive(Debug, Default)]
-pub struct ConnectionConfig {
-    inner: RawConnectionConfig,
+pub struct Config {
+    inner: RawConfig,
+    statement_cache_capacity: usize,
 }
 
-impl ConnectionConfig {
+impl Config {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            inner: RawConnectionConfig::new(),
+            inner: RawConfig::new(),
+            statement_cache_capacity: DEFAULT_STATEMENT_CACHE_CAPACITY,
         }
+    }
+
+    #[must_use]
+    pub fn statement_cache_capacity(mut self, capacity: usize) -> Self {
+        self.statement_cache_capacity = capacity;
+        self
     }
 
     pub fn connect(&self) -> Result<Connection, postgres::Error> {
         Ok(Connection {
             // TODO: Support TLS
-            inner: RawClient::new(self.inner.connect(postgres::NoTls)?),
+            inner: RawClient::new(
+                self.inner.connect(postgres::NoTls)?,
+                self.statement_cache_capacity,
+            ),
         })
     }
 }
 
-impl FromStr for ConnectionConfig {
-    type Err = <RawConnectionConfig as FromStr>::Err;
+impl FromStr for Config {
+    type Err = <RawConfig as FromStr>::Err;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(ConnectionConfig { inner: s.parse()? })
+        Ok(Config {
+            inner: s.parse()?,
+            statement_cache_capacity: DEFAULT_STATEMENT_CACHE_CAPACITY,
+        })
     }
 }
 

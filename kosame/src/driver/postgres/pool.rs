@@ -2,7 +2,7 @@ use std::ops::{Deref, DerefMut};
 
 use crate::driver::StandardPoolConfig;
 
-use super::{Connection, ConnectionConfig};
+use super::{Config, Connection};
 
 pub type PoolConfig = StandardPoolConfig;
 
@@ -15,7 +15,7 @@ pub struct Pool {
 }
 
 impl Pool {
-    pub fn new(connection_config: ConnectionConfig) -> Result<Self, PoolBuildError> {
+    pub fn new(connection_config: Config) -> Result<Self, PoolBuildError> {
         Ok(Self {
             inner: deadpool::managed::Pool::builder(Manager { connection_config })
                 .config(StandardPoolConfig::default().into())
@@ -50,7 +50,7 @@ impl DerefMut for PoolConnection {
 
 #[derive(Debug)]
 struct Manager {
-    connection_config: ConnectionConfig,
+    connection_config: Config,
 }
 
 impl deadpool::managed::Manager for Manager {

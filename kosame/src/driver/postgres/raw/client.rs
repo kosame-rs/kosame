@@ -5,7 +5,7 @@ use postgres_types::Type;
 
 use super::{RawTransaction, RawTransactionBuilder, StatementCache};
 
-pub type RawConnectionConfig = postgres::Config;
+pub type RawConfig = postgres::Config;
 
 pub struct RawClient {
     inner: Client,
@@ -14,10 +14,10 @@ pub struct RawClient {
 
 impl RawClient {
     #[must_use]
-    pub fn new(inner: Client) -> Self {
+    pub fn new(inner: Client, statement_cache_capacity: usize) -> Self {
         Self {
             inner,
-            statement_cache: StatementCache::new(),
+            statement_cache: StatementCache::new(statement_cache_capacity),
         }
     }
 
