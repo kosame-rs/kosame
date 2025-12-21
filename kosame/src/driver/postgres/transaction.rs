@@ -1,3 +1,5 @@
+use crate::execute::Execute;
+
 use super::raw::{RawTransaction, RawTransactionBuilder};
 
 pub struct TransactionBuilder<'a> {
@@ -21,6 +23,10 @@ pub struct Transaction<'a> {
 }
 
 impl<'a> Transaction<'a> {
+    pub fn execute<E: Execute<Self>>(&mut self, execute: E) -> E::Result {
+        execute.execute(self)
+    }
+
     #[must_use]
     pub fn raw(&self) -> &RawTransaction<'a> {
         &self.inner

@@ -1,4 +1,3 @@
-use proc_macro_error::emit_error;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
@@ -15,6 +14,7 @@ use crate::{
     parse_option::ParseOption,
     part::{Alias, TypeOverride},
     pretty::{PrettyPrint, Printer},
+    proc_macro_error::emit_error,
     quote_option::QuoteOption,
     row::RowField,
     scopes::{ScopeId, Scopes},

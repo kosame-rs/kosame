@@ -6,7 +6,7 @@ use syn::{
     punctuated::Punctuated,
 };
 
-use crate::{driver::Driver, keyword, schema::Table};
+use crate::{driver::Driver, keyword, proc_macro_error::emit_call_site_error, schema::Table};
 
 #[derive(Default)]
 pub struct CustomMeta {
@@ -91,9 +91,9 @@ impl CustomMeta {
             MetaLocation::TableInner | MetaLocation::QueryInner | MetaLocation::StatementInner
                 if result.driver.is_none() =>
             {
-                // emit_call_site_error!(
-                //     "missing `driver` attribute, e.g. #[kosame(driver = \"tokio-postgres\")]"
-                // );
+                emit_call_site_error!(
+                    "missing `driver` attribute, e.g. #[kosame(driver = \"tokio-postgres\")]"
+                );
             }
             _ => {}
         }
@@ -127,7 +127,7 @@ impl Parse for MetaItem {
         } else if lookahead.peek(keyword::ty) {
             Ok(Self::TypeOverride(input.parse()?))
         } else {
-            keyword::group_attribute::error(input);
+            keyword::group_attribute::error(input)
         }
     }
 }

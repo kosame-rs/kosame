@@ -1,11 +1,13 @@
-use proc_macro_error::abort;
 use quote::{ToTokens, quote};
 use syn::{
     Ident,
     parse::{Parse, ParseStream},
 };
 
-use crate::pretty::{PrettyPrint, Printer};
+use crate::{
+    pretty::{PrettyPrint, Printer},
+    proc_macro_error::abort,
+};
 
 #[derive(Clone)]
 pub struct DataType {
@@ -48,6 +50,7 @@ impl ToTokens for DataType {
                     "cannot determine rust type for unrecognized database type {}, requires type override",
                     self.name,
                 );
+                return;
             }
         }
         .to_tokens(tokens);

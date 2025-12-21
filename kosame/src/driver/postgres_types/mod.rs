@@ -1,4 +1,3 @@
-mod macros;
 mod row_count;
 mod statement_cache;
 

@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use crate::driver::StandardPoolConfig;
+use crate::{driver::StandardPoolConfig, execute::Execute};
 
 use super::{Config, Connection};
 
@@ -27,6 +27,10 @@ impl Pool {
         Ok(PoolConnection {
             inner: pollster::block_on(self.inner.get())?,
         })
+    }
+
+    pub fn execute<E: Execute<Self>>(&mut self, execute: E) -> E::Result {
+        execute.execute(self)
     }
 }
 

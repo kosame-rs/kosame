@@ -1,11 +1,13 @@
 use std::str::FromStr;
 
+use crate::execute::Execute;
+
 use super::{
     Transaction, TransactionBuilder,
     raw::{RawClient, RawConfig},
 };
 
-const DEFAULT_STATEMENT_CACHE_CAPACITY: usize = 64;
+const DEFAULT_STATEMENT_CACHE_CAPACITY: usize = 16;
 
 #[derive(Debug, Default)]
 pub struct Config {
@@ -55,6 +57,10 @@ pub struct Connection {
 }
 
 impl Connection {
+    pub fn execute<E: Execute<Self>>(&mut self, execute: E) -> E::Result {
+        execute.execute(self)
+    }
+
     pub fn transaction(&mut self) -> Result<Transaction<'_>, postgres::Error> {
         Ok(Transaction {
             inner: self.inner.transaction()?,

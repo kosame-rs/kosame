@@ -13,6 +13,7 @@ pub mod parse_option;
 pub mod part;
 pub mod path_ext;
 pub mod pretty;
+pub mod proc_macro_error;
 pub mod query;
 pub mod quote_option;
 pub mod row;

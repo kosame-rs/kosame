@@ -14,10 +14,12 @@ macro_rules! custom_keyword {
                         let span = input.cursor().span();
                         let ident = input.parse::<::syn::Ident>().ok();
 
-                        ::proc_macro_error::dummy::set_dummy(::quote::quote! {
+                        $crate::proc_macro_error::dummy::set_dummy(::quote::quote! {
                             { use ::kosame::keyword::$kw::#ident; () }
                         });
-                        ::proc_macro_error::abort!(span, error.to_string());
+                        $crate::proc_macro_error::abort!(span, error.to_string());
+
+                        Err(error)
                     }
                 }
             }
@@ -42,7 +44,7 @@ macro_rules! keyword_group {
         pub struct $group {}
         impl $group {
             #[allow(unused)]
-            pub fn error(input: ::syn::parse::ParseStream) -> ! {
+            pub fn error<T>(input: ::syn::parse::ParseStream) -> syn::Result<T> {
                 let lookahead = input.lookahead1();
                 $(lookahead.peek($kw);)*
                 let error = lookahead.error();
@@ -50,10 +52,12 @@ macro_rules! keyword_group {
                 let span = input.cursor().span();
                 let ident = input.parse::<::syn::Ident>().ok();
 
-                ::proc_macro_error::dummy::set_dummy(::quote::quote! {
+                $crate::proc_macro_error::dummy::set_dummy(::quote::quote! {
                     { use ::kosame::keyword::$group::#ident; () }
                 });
-                ::proc_macro_error::abort!(span, error.to_string());
+                $crate::proc_macro_error::abort!(span, error.to_string());
+
+                Err(error)
             }
         }
     };

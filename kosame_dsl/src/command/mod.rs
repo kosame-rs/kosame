@@ -195,7 +195,7 @@ impl Parse for CommandType {
         } else if Update::peek(input) {
             Ok(Self::Update(input.parse()?))
         } else {
-            keyword::group_command::error(input);
+            keyword::group_command::error(input)
         }
     }
 }

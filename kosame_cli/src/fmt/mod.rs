@@ -21,6 +21,8 @@ impl Fmt {
     pub fn run(&self) -> anyhow::Result<()> {
         let mut count = 0;
 
+        kosame_dsl::proc_macro_error::set_enabled(false);
+
         for pattern in &self.files {
             for entry in glob::glob(pattern)? {
                 let entry = entry?;

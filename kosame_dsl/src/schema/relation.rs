@@ -1,4 +1,3 @@
-use proc_macro_error::emit_error;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
@@ -11,6 +10,7 @@ use syn::{
 use crate::{
     path_ext::PathExt,
     pretty::{BreakMode, Delim, PrettyPrint, Printer},
+    proc_macro_error::emit_error,
 };
 
 pub struct Relation {

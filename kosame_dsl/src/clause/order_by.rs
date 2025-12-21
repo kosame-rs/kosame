@@ -143,7 +143,7 @@ impl Parse for OrderByDir {
         } else if lookahead.peek(keyword::desc) {
             Ok(Self::Desc(input.parse()?))
         } else {
-            keyword::group_order_by_dir::error(input);
+            keyword::group_order_by_dir::error(input)
         }
     }
 }
@@ -184,7 +184,7 @@ impl Parse for OrderByNulls {
         } else if lookahead.peek(keyword::last) {
             Ok(Self::Last(nulls, input.parse()?))
         } else {
-            keyword::group_order_by_nulls::error(input);
+            keyword::group_order_by_nulls::error(input)
         }
     }
 }

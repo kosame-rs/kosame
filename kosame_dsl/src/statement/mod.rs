@@ -1,3 +1,5 @@
+mod driver;
+
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, quote};
 use syn::{
@@ -145,6 +147,11 @@ impl ToTokens for Statement {
 
         let lifetime = (!bind_params.is_empty()).then_some(quote! { <'a> });
 
+        let execute_impls = quote! {};
+
+        #[cfg(feature = "driver-postgres")]
+        {}
+
         let module_tokens = quote! {
             pub mod #module_name {
                 pub struct Statement #lifetime {
@@ -165,6 +172,8 @@ impl ToTokens for Statement {
                         &self.params
                     }
                 }
+
+                #execute_impls
 
                 #row
 
