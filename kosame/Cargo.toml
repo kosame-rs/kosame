@@ -17,7 +17,7 @@ workspace = true
 default = []
 
 driver-postgres = [
-	"kosame_macro/postgres",
+	"kosame_macro/driver-postgres",
 	"kosame_sql/postgres",
 	"dep:postgres",
 	"dep:tokio-postgres",
@@ -25,7 +25,7 @@ driver-postgres = [
 	"dep:postgres-protocol",
 ]
 driver-tokio-postgres = [
-	"kosame_macro/tokio-postgres",
+	"kosame_macro/driver-tokio-postgres",
 	"kosame_sql/postgres",
 	"dep:tokio-postgres",
 	"dep:postgres-types",
@@ -43,6 +43,7 @@ futures-core = "0.3.31"
 kosame_macro.workspace = true
 kosame_repr.workspace = true
 kosame_sql.workspace = true
+lru = "0.16.2"
 pollster = "0.4.0"
 postgres = { version = "0.19.12", optional = true }
 postgres-protocol = { version = "0.6.8", optional = true }

@@ -5,16 +5,16 @@ use postgres_types::Type;
 
 use crate::driver::postgres_types::StatementCache as GenericStatementCache;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct StatementCache {
     inner: GenericStatementCache<Statement>,
 }
 
 impl StatementCache {
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new(capacity: usize) -> Self {
         Self {
-            inner: GenericStatementCache::new(),
+            inner: GenericStatementCache::new(capacity),
         }
     }
 

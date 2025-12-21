@@ -1,18 +1,20 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::{borrow::Cow, num::NonZeroUsize};
 
+use lru::LruCache;
 use postgres_types::Type;
 
 #[derive(Debug)]
 pub struct StatementCache<S> {
-    map: HashMap<Key<'static>, S>,
+    /// An LRU cache, or `None` if the capacity is zero.
+    inner: Option<LruCache<Key<'static>, S>>,
 }
 
 impl<S> StatementCache<S> {
     /// Creates a new empty statement cache.
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new(capacity: usize) -> Self {
         Self {
-            map: HashMap::new(),
+            inner: NonZeroUsize::new(capacity).map(LruCache::new),
         }
     }
 
@@ -21,7 +23,9 @@ impl<S> StatementCache<S> {
     /// After calling this method, the cache will be empty and subsequent prepare calls
     /// will need to re-prepare statements with the database.
     pub fn clear(&mut self) {
-        self.map.clear();
+        if let Some(inner) = &mut self.inner {
+            inner.clear();
+        }
     }
 }
 
@@ -35,8 +39,12 @@ where
     ///
     /// Returns `Some(statement)` if a matching statement is cached, or `None` if no cached
     /// statement exists for this query and parameter type combination.
-    pub fn get(&self, query: &str, types: &[Type]) -> Option<S> {
-        self.map.get(&Key::new(query, types)).map(ToOwned::to_owned)
+    pub fn get(&mut self, query: &str, types: &[Type]) -> Option<S> {
+        self.inner.as_mut().and_then(|inner| {
+            inner
+                .get(&Key::new(query, types).into_owned())
+                .map(ToOwned::to_owned)
+        })
     }
 
     /// Manually inserts a prepared statement into the cache.
@@ -44,14 +52,9 @@ where
     /// This method is rarely needed as [`prepare`](Self::prepare) and
     /// [`prepare_typed`](Self::prepare_typed) handle caching automatically.
     pub fn insert(&mut self, query: &str, types: &[Type], statement: S) {
-        self.map
-            .insert(Key::new(query, types).into_owned(), statement);
-    }
-}
-
-impl<S> Default for StatementCache<S> {
-    fn default() -> Self {
-        Self::new()
+        self.inner
+            .as_mut()
+            .and_then(|inner| inner.put(Key::new(query, types).into_owned(), statement));
     }
 }
 
