@@ -38,10 +38,10 @@ impl CorrelationId {
     }
 
     #[must_use]
-    pub fn of_scope() -> CorrelationId {
-        CORRELATION_ID_CONTEXT
-            .get()
-            .expect("`ScopeId::of_scope` was called outside of a ScopeId scope")
+    pub fn of_scope() -> Self {
+        CORRELATION_ID_CONTEXT.get().expect(
+            "`CorrelationId::of_scope` was called outside of a call to `CorrelationId::scope`",
+        )
     }
 
     pub fn reset() {

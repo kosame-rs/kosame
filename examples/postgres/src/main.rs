@@ -41,7 +41,7 @@ mod schema {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let pool = Pool::new("postgres://kosame:kosame@localhost:5432/kosame".parse()?)?;
+    let mut pool = Pool::new("postgres://kosame:kosame@localhost:5432/kosame".parse()?)?;
 
     use kosame::driver::postgres::statement;
 

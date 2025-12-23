@@ -37,10 +37,10 @@ impl ScopeId {
     }
 
     #[must_use]
-    pub fn of_scope() -> ScopeId {
+    pub fn of_scope() -> Self {
         SCOPE_ID_CONTEXT
             .get()
-            .expect("`ScopeId::of_scope` was called outside of a ScopeId scope")
+            .expect("`ScopeId::of_scope` was called outside of a call to `ScopeId::scope`")
     }
 
     pub fn reset() {
