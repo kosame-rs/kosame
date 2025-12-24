@@ -3,6 +3,7 @@ resolver = "3"
 members = [
     "kosame",
     "kosame_cli",
+    "kosame_core",
     "kosame_dsl",
     "kosame_macro",
     "kosame_repr",
@@ -25,6 +26,7 @@ keywords = ["orm", "database", "query", "postgresql", "postgres"]
 publish = [
     "kosame",
     "kosame_cli",
+    "kosame_core",
     "kosame_dsl",
     "kosame_macro",
     "kosame_repr",
@@ -40,6 +42,7 @@ missing_panics_doc = "allow"
 
 [workspace.dependencies]
 kosame = { path = "kosame", version = "0.3.0" }
+kosame_core = { path = "kosame_core", version = "0.3.0" }
 kosame_dsl = { path = "kosame_dsl", version = "0.3.0" }
 kosame_macro = { path = "kosame_macro", version = "0.3.0" }
 kosame_repr = { path = "kosame_repr", version = "0.3.0" }

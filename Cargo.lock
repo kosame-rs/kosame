@@ -811,6 +811,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "kosame_core"
+version = "0.3.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "kosame_dsl"
 version = "0.3.0"
 dependencies = [

@@ -1,0 +1,22 @@
+[package]
+name = "kosame_core"
+
+version.workspace = true
+edition.workspace = true
+description.workspace = true
+repository.workspace = true
+documentation.workspace = true
+readme.workspace = true
+license.workspace = true
+keywords.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = []
+
+serde = ["dep:serde"]
+
+[dependencies]
+serde = { version = "1.0.226", optional = true }
