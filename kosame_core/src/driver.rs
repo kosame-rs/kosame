@@ -32,7 +32,8 @@ impl DriverKind {
     }
 
     /// Returns the asynchronous runtime this driver requires, or `None` if it is a synchronous
-    /// (blocking) driver. A driver counts as blocking even if it uses an asynchronous runtime internally.
+    /// (blocking) driver. A driver counts as blocking when it exposes an API without [`Future`]s
+    /// even if it uses an asynchronous runtime internally.
     #[must_use]
     pub fn runtime(self) -> Option<RuntimeKind> {
         match self {
@@ -43,6 +44,16 @@ impl DriverKind {
             Self::Rusqlite => None,
             Self::TokioRusqlite => Some(RuntimeKind::Tokio),
         }
+    }
+
+    #[must_use]
+    pub fn is_blocking(self) -> bool {
+        self.runtime().is_none()
+    }
+
+    #[must_use]
+    pub fn is_async(self) -> bool {
+        self.runtime().is_some()
     }
 }
 
