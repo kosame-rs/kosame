@@ -43,36 +43,36 @@ impl PrettyPrint for syn::Lit {
 }
 
 macro_rules! impl_token {
-    ($token:tt, $literal:literal) => {
+    ($token:tt) => {
         impl PrettyPrint for syn::Token![$token] {
             fn pretty_print(&self, printer: &mut Printer<'_>) {
                 printer.move_cursor(self.span().start());
-                printer.scan_text($literal.into(), TextMode::Always);
+                printer.scan_text(stringify!($token).into(), TextMode::Always);
                 printer.move_cursor(self.span().end());
             }
         }
     };
 }
 
-impl_token!(#, "#");
-impl_token!(!, "!");
-impl_token!(=, "=");
-impl_token!(., ".");
-impl_token!(,, ",");
-impl_token!(:, ":");
-impl_token!(;, ";");
-impl_token!(*, "*");
-impl_token!(/, "/");
-impl_token!(%, "%");
-impl_token!(+, "+");
-impl_token!(-, "-");
-impl_token!(>, ">");
-impl_token!(<, "<");
-impl_token!($, "$");
-impl_token!(as, "as");
-impl_token!(=>, "=>");
-impl_token!(<=, "<=");
-impl_token!(where, "where");
+impl_token!(#);
+impl_token!(!);
+impl_token!(=);
+impl_token!(.);
+impl_token!(,);
+impl_token!(:);
+impl_token!(;);
+impl_token!(*);
+impl_token!(/);
+impl_token!(%);
+impl_token!(+);
+impl_token!(-);
+impl_token!(>);
+impl_token!(<);
+impl_token!($);
+impl_token!(as);
+impl_token!(=>);
+impl_token!(<=);
+impl_token!(where);
 
 macro_rules! impl_has_token {
     ($($for:tt)*) => {
