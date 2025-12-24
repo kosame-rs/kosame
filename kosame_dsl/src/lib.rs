@@ -10,7 +10,6 @@ pub mod expr;
 pub mod inferred_type;
 pub mod keyword;
 pub mod macro_context;
-pub mod meta;
 pub mod parse_option;
 pub mod part;
 pub mod path_ext;

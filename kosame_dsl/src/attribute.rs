@@ -1,12 +1,15 @@
 use std::collections::HashMap;
 
 use syn::{
-    Ident, LitInt, LitStr, Path, Token, parenthesized,
+    AttrStyle, Ident, LitInt, LitStr, Path, Token, parenthesized,
     parse::{Parse, ParseStream},
     punctuated::Punctuated,
+    spanned::Spanned,
 };
 
 use crate::{driver::Driver, keyword, proc_macro_error::emit_call_site_error, schema::Table};
+
+pub trait CustomAttributes {}
 
 #[derive(Default)]
 pub struct CustomMeta {
@@ -14,22 +17,12 @@ pub struct CustomMeta {
     pub rename: Option<MetaRename>,
     pub type_override: Option<MetaTypeOverride>,
 
-    pub pass: u32,
-    pub tables: HashMap<Path, Table>,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub enum MetaLocation {
-    TableInner,
-    TableOuter,
-    Column,
-    QueryInner,
-    QueryOuter,
-    StatementInner,
+    pub pass: Option<MetaPass>,
+    pub tables: HashMap<Path, MetaTable>,
 }
 
 impl CustomMeta {
-    pub fn parse_attrs(attrs: &[syn::Attribute], location: MetaLocation) -> syn::Result<Self> {
+    pub fn parse_attrs(attrs: &[syn::Attribute]) -> syn::Result<Self> {
         let mut result = Self::default();
 
         for attr in attrs {
@@ -39,65 +32,152 @@ impl CustomMeta {
                     list.parse_args_with(Punctuated::<MetaItem, Token![,]>::parse_terminated)?;
 
                 for item in items {
-                    macro_rules! fill_or_error {
-                        ($name:ident, $str:literal, $location_allowed:expr) => {{
-                            if result.$name.is_some() {
-                                return Err(syn::Error::new(
-                                    $name.path.span,
-                                    format!("duplicate use of meta argument `{}`", $str),
-                                ));
-                            }
-                            if !($location_allowed) {
-                                return Err(syn::Error::new(
-                                    $name.path.span,
-                                    format!(
-                                        "meta argument `{}` not allowed in this location",
-                                        $str
-                                    ),
-                                ));
-                            }
-                            result.$name = Some($name);
-                        }};
-                    }
-
                     match item {
-                        MetaItem::Driver(driver) => {
-                            fill_or_error!(
-                                driver,
-                                "driver",
-                                location == MetaLocation::TableInner
-                                    || location == MetaLocation::QueryInner
-                                    || location == MetaLocation::StatementInner
-                            );
-                        }
-                        MetaItem::Rename(rename) => {
-                            fill_or_error!(rename, "rename", location == MetaLocation::Column);
-                        }
-                        MetaItem::TypeOverride(type_override) => {
-                            fill_or_error!(type_override, "ty", location == MetaLocation::Column);
-                        }
-                        MetaItem::Pass(pass) => {
-                            result.pass = pass.value.base10_parse()?;
-                        }
-                        MetaItem::Table(table) => {
-                            result.tables.insert(table.path, *table.value);
+                        MetaItem::Driver(inner) => result.driver = Some(inner),
+                        MetaItem::Rename(inner) => result.rename = Some(inner),
+                        MetaItem::TypeOverride(inner) => result.type_override = Some(inner),
+                        MetaItem::Pass(inner) => result.pass = Some(inner),
+                        MetaItem::Table(inner) => {
+                            result.tables.insert(inner.path.clone(), inner);
                         }
                     }
                 }
+            } else {
+                return Err(syn::Error::new(
+                    attr.span(),
+                    match attr.style {
+                        AttrStyle::Inner(_) => {
+                            "only `#![kosame(...)]` attributes allowed in this position"
+                        }
+                        AttrStyle::Outer => {
+                            "only `#[kosame(...)]` attributes allowed in this position"
+                        }
+                    },
+                ));
             }
-        }
-
-        match location {
-            MetaLocation::TableInner | MetaLocation::QueryInner | MetaLocation::StatementInner
-                if result.driver.is_none() =>
-            {
-                emit_call_site_error!(
-                    "missing `driver` attribute, e.g. #[kosame(driver = \"tokio-postgres\")]"
-                );
-            }
-            _ => {}
         }
 
         Ok(result)
+    }
+}
+
+pub enum MetaItem {
+    Driver(MetaDriver),
+    Rename(MetaRename),
+    TypeOverride(MetaTypeOverride),
+    Pass(MetaPass),
+    Table(MetaTable),
+}
+
+impl Parse for MetaItem {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        if input.peek(keyword::__pass) {
+            return Ok(Self::Pass(input.parse()?));
+        }
+        if input.peek(keyword::__table) {
+            return Ok(Self::Table(input.parse()?));
+        }
+
+        let lookahead = input.lookahead1();
+        if lookahead.peek(keyword::driver) {
+            Ok(Self::Driver(input.parse()?))
+        } else if lookahead.peek(keyword::rename) {
+            Ok(Self::Rename(input.parse()?))
+        } else if lookahead.peek(keyword::ty) {
+            Ok(Self::TypeOverride(input.parse()?))
+        } else {
+            keyword::group_attribute::error(input)
+        }
+    }
+}
+
+pub struct MetaDriver {
+    pub path: keyword::driver,
+    pub eq_token: Token![=],
+    pub value: LitStr,
+}
+
+impl Parse for MetaDriver {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        Ok(Self {
+            path: input.parse()?,
+            eq_token: input.parse()?,
+            value: {
+                let value: LitStr = input.parse()?;
+                if value.value().parse::<Driver>().is_err() {
+                    return Err(syn::Error::new(value.span(), "unknown driver value"));
+                }
+                value
+            },
+        })
+    }
+}
+
+pub struct MetaRename {
+    pub path: keyword::rename,
+    pub eq_token: Token![=],
+    pub value: Ident,
+}
+
+impl Parse for MetaRename {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        Ok(Self {
+            path: input.parse()?,
+            eq_token: input.parse()?,
+            value: input.parse()?,
+        })
+    }
+}
+
+pub struct MetaTypeOverride {
+    pub path: keyword::ty,
+    pub eq_token: Token![=],
+    pub value: Path,
+}
+
+impl Parse for MetaTypeOverride {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        Ok(Self {
+            path: input.parse()?,
+            eq_token: input.parse()?,
+            value: input.parse()?,
+        })
+    }
+}
+
+pub struct MetaPass {
+    pub pass_keyword: keyword::__pass,
+    pub eq_token: Token![=],
+    pub value: LitInt,
+}
+
+impl Parse for MetaPass {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        Ok(Self {
+            pass_keyword: input.parse()?,
+            eq_token: input.parse()?,
+            value: input.parse()?,
+        })
+    }
+}
+
+pub struct MetaTable {
+    pub table_keyword: keyword::__table,
+    pub paren_token: syn::token::Paren,
+    pub path: Path,
+    pub eq_token: Token![=],
+    pub value: Box<Table>,
+}
+
+impl Parse for MetaTable {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let content;
+        Ok(Self {
+            table_keyword: input.parse()?,
+            paren_token: parenthesized!(content in input),
+            path: content.parse()?,
+            eq_token: content.parse()?,
+            value: Box::new(content.parse()?),
+        })
     }
 }
