@@ -1,14 +1,16 @@
+mod attribute;
 mod driver;
+
+pub use attribute::*;
 
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Ident, parenthesized,
+    Ident, parenthesized,
     parse::{Parse, ParseStream},
 };
 
 use crate::{
-    attribute::{CustomMeta, MetaLocation},
     bind_params::{BindParams, BindParamsClosure},
     command::Command,
     correlations::{CorrelationId, Correlations},
@@ -21,18 +23,10 @@ use crate::{
 };
 
 pub struct Statement {
-    pub inner_attrs: Vec<Attribute>,
+    pub attrs: StatementAttributes,
     pub paren_token: Option<syn::token::Paren>,
     pub command: Command,
     pub alias: Option<Alias>,
-}
-
-impl Statement {
-    #[must_use]
-    pub fn _custom_meta(&self) -> CustomMeta {
-        CustomMeta::parse_attrs(&self.inner_attrs, MetaLocation::StatementInner)
-            .expect("custom meta should be checked during parsing")
-    }
 }
 
 pub fn visit_statement<'a>(visit: &mut (impl Visit<'a> + ?Sized), statement: &'a Statement) {
@@ -44,22 +38,18 @@ impl Parse for Statement {
         CorrelationId::reset();
         ScopeId::reset();
 
-        let inner_attrs = {
-            let attrs = input.call(Attribute::parse_inner)?;
-            CustomMeta::parse_attrs(&attrs, MetaLocation::StatementInner)?;
-            attrs
-        };
+        let attrs = input.parse()?;
         if input.peek(syn::token::Paren) {
             let content;
             Ok(Self {
-                inner_attrs,
+                attrs,
                 paren_token: Some(parenthesized!(content in input)),
                 command: content.parse()?,
                 alias: input.call(Alias::parse_option)?,
             })
         } else {
             Ok(Self {
-                inner_attrs,
+                attrs,
                 paren_token: None,
                 command: input.parse()?,
                 alias: input.call(Alias::parse_option)?,
@@ -201,7 +191,7 @@ impl ToTokens for Statement {
 
 impl PrettyPrint for Statement {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        self.inner_attrs.pretty_print(printer);
+        self.attrs.pretty_print(printer);
         match self.paren_token {
             Some(paren_token) => {
                 paren_token.pretty_print(printer, Some(BreakMode::Consistent), |printer| {

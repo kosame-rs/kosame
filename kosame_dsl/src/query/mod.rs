@@ -1,8 +1,10 @@
+mod attribute;
 mod field;
 mod node;
 mod node_path;
 mod star;
 
+pub use attribute::*;
 pub use field::*;
 pub use node::visit_node;
 pub use node::*;
@@ -11,12 +13,11 @@ pub use node_path::*;
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Ident,
+    Ident,
     parse::{Parse, ParseStream},
 };
 
 use crate::{
-    attribute::{CustomMeta, MetaLocation},
     bind_params::{BindParams, BindParamsClosure},
     correlations::{CorrelationId, Correlations},
     parse_option::ParseOption,
@@ -27,8 +28,7 @@ use crate::{
 };
 
 pub struct Query {
-    pub inner_attrs: Vec<Attribute>,
-    pub outer_attrs: Vec<Attribute>,
+    pub attrs: QueryAttributes,
     pub table: TablePath,
     pub body: Node,
     pub alias: Option<Alias>,
@@ -39,16 +39,7 @@ impl Parse for Query {
         ScopeId::reset();
         CorrelationId::reset();
         Ok(Self {
-            inner_attrs: {
-                let attrs = Attribute::parse_inner(input)?;
-                CustomMeta::parse_attrs(&attrs, MetaLocation::QueryInner)?;
-                attrs
-            },
-            outer_attrs: {
-                let attrs = Attribute::parse_outer(input)?;
-                CustomMeta::parse_attrs(&attrs, MetaLocation::QueryOuter)?;
-                attrs
-            },
+            attrs: input.parse()?,
             table: input.parse()?,
             body: input.parse()?,
             alias: input.call(Alias::parse_option)?,
@@ -132,8 +123,7 @@ impl ToTokens for Query {
 
 impl PrettyPrint for Query {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        self.inner_attrs.pretty_print(printer);
-        self.outer_attrs.pretty_print(printer);
+        self.attrs.pretty_print(printer);
         self.table.pretty_print(printer);
         " ".pretty_print(printer);
         self.body.pretty_print(printer);
