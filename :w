@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use proc_macro2::Span;
 use syn::{
     AttrStyle, Ident, LitInt, LitStr, Path, Token, parenthesized,
     parse::{Parse, ParseStream},
@@ -8,91 +7,49 @@ use syn::{
     spanned::Spanned,
 };
 
-use crate::{
-    driver::Driver, keyword, parse_option::ParseOption, proc_macro_error::emit_call_site_error,
-    schema::Table,
-};
+use crate::{driver::Driver, keyword, proc_macro_error::emit_call_site_error, schema::Table};
 
-// macro_rules! define_attribute {
-//     (
-//         $(#[$meta:meta])*
-//         $vis:vis struct $name:ident {
-//             $($field:ident: $ty:ty),* $(,)?
-//         }
-//     ) => {
-//         $(#[$meta])*
-//         $vis struct $name {
-//             $($field: $ty),*
-//         }
-//
-//         impl $name {
-//             pub fn parse_attrs(attrs: &[syn::Attribute]) -> syn::Result<Self> {
-//                 $(
-//                     let $field = define_attribute!(@initialize $ty);
-//                 )*
-//
-//                 for attr in attrs {
-//                     if attr.path().is_ident("kosame") {
-//                         let list = attr.meta.require_list()?;
-//                         let items =
-//                             list.parse_args_with(Punctuated::<MetaItem, Token![,]>::parse_terminated)?;
-//
-//                         for item in items {
-//                             match item {
-//                                 $(
-//                                     define_attribute!(@branch $field: $ty),
-//                                 )*
-//                                 _ => {
-//                                     return Err(syn::Error::new(attr.span(), "unexpected attribute meta"))
-//                                 }
-//                             }
-//                         }
-//                     } else {
-//                         return Err(syn::Error::new(
-//                             attr.span(),
-//                             match attr.style {
-//                                 AttrStyle::Inner(_) => {
-//                                     "only `#![kosame(...)]` attributes allowed in this position"
-//                                 }
-//                                 AttrStyle::Outer => {
-//                                     "only `#[kosame(...)]` attributes allowed in this position"
-//                                 }
-//                             },
-//                         ));
-//                     }
-//                 }
-//
-//                 Ok(Self {
-//                     $(
-//                         $field: define_attribute!(@required_error $field: $ty),
-//                     )*
-//                 })
-//             }
-//         }
-//     };
-//
-//     (@initialize Vec<$ty:ty>) => { vec![] };
-//     (@initialize $ty:ty) => { None };
-//
-//     (@branch $field:ident: Option<$ty:ty>) => { define_attribute!(@branch $field: $ty) };
-//     (@branch $field:ident: Vec<$ty:ty>) => { define_attribute!(@branch $field: $ty) };
-//     (@branch $field:ident: MetaRename) => { MetaItem::Rename(inner) => $field = inner };
-//
-//     (@required_error $field:ident: Option<$ty:ty>) => { $field };
-//     (@required_error $field:ident: Option<$ty:ty>) => { $field };
-//     (@required_error $field:ident: $ty:ty) => {
-//         $field.ok_or_else(|| syn::Error::new(
-//             Span::call_site(),
-//             "missing require attribute"
-//         ))?
-//     };
-// }
-//
-// define_attribute! {
-//     struct TableAttr {
-//         kek: MetaRename,
-//     }
-// }
+macro_rules! define_attribute {
+    (
+        $(#[$meta:meta])*
+        $vis:vis struct $name:ident {
+            $($field:ident: $ty:ty),* $(,)?
+        }
+    ) => {
+        $(#[$meta])*
+        $vis struct $name {
+            $($field: $ty),*
+        }
+
+        impl $name {
+            pub fn parse_attrs(attrs: &[syn::Attribute]) -> syn::Result<Self> {
+                $(
+                    let $field = None;
+                )*
+
+
+                Ok(Self {
+                    $(
+                        $field: define_attribute!(@required_error $field: $ty),
+                    )*
+                })
+            }
+        }
+    };
+
+    (@required_error $field:ident: Option<$ty:ty>) => { $field };
+    (@required_error $field:ident: $ty:ty) => {
+        $field.ok_or_else(|| syn::Error::new(
+
+        ))?
+    };
+}
+
+define_attribute! {
+    struct TableAttr {
+        kek: i32,
+    }
+}
 
 #[derive(Default)]
 pub struct CustomMeta {
@@ -202,12 +159,6 @@ pub struct MetaRename {
     pub value: Ident,
 }
 
-impl ParseOption for MetaRename {
-    fn peek(input: ParseStream) -> bool {
-        input.peek(keyword::rename)
-    }
-}
-
 impl Parse for MetaRename {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
@@ -222,12 +173,6 @@ pub struct MetaTypeOverride {
     pub path: keyword::ty,
     pub eq_token: Token![=],
     pub value: Path,
-}
-
-impl ParseOption for MetaTypeOverride {
-    fn peek(input: ParseStream) -> bool {
-        input.peek(keyword::ty)
-    }
 }
 
 impl Parse for MetaTypeOverride {
