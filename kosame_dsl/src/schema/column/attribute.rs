@@ -1,5 +1,5 @@
 use syn::{
-    AttrStyle, Attribute, Token,
+    Attribute, Token,
     parse::{Parse, ParseStream},
     punctuated::Punctuated,
     spanned::Spanned,
@@ -56,14 +56,7 @@ impl Parse for ColumnAttributes {
             } else {
                 return Err(syn::Error::new(
                     attr.span(),
-                    match attr.style {
-                        AttrStyle::Inner(_) => {
-                            "only `#![kosame(...)]` attributes allowed in this position"
-                        }
-                        AttrStyle::Outer => {
-                            "only `#[kosame(...)]` attributes allowed in this position"
-                        }
-                    },
+                    "only `#[kosame(...)]` attributes allowed in this position",
                 ));
             }
         }
@@ -88,7 +81,7 @@ impl Parse for ColumnMeta {
         if MetaRename::peek(input) {
             return Ok(Self::Rename(input.parse()?));
         }
-        if MetaRename::peek(input) {
+        if MetaTypeOverride::peek(input) {
             return Ok(Self::TypeOverride(input.parse()?));
         }
         Err(syn::Error::new(input.span(), "unexpected attribute meta"))

@@ -1,10 +1,13 @@
+mod attribute;
+
+pub use attribute::*;
+
 use std::{
     hash::{Hash, Hasher},
     sync::atomic::Ordering,
 };
 
 use crate::{
-    attribute::{CustomMeta, MetaLocation},
     keyword,
     pretty::{BreakMode, Delim, PrettyPrint, Printer},
     row::{Row, RowField},
@@ -16,7 +19,7 @@ use convert_case::{Case, Casing};
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, format_ident, quote};
 use syn::{
-    Attribute, Ident, Token,
+    Ident, Token,
     parse::{Parse, ParseStream},
     punctuated::Punctuated,
 };
@@ -24,8 +27,7 @@ use syn::{
 pub struct Table {
     token_stream: TokenStream,
 
-    pub inner_attrs: Vec<Attribute>,
-    pub outer_attrs: Vec<Attribute>,
+    pub attrs: TableAttributes,
 
     pub create_kw: keyword::create,
     pub table_kw: keyword::table,
@@ -45,16 +47,7 @@ impl Parse for Table {
         let content;
         Ok(Self {
             token_stream: input.fork().parse()?,
-            inner_attrs: {
-                let attrs = Attribute::parse_inner(input)?;
-                CustomMeta::parse_attrs(&attrs, MetaLocation::TableInner)?;
-                attrs
-            },
-            outer_attrs: {
-                let attrs = Attribute::parse_outer(input)?;
-                CustomMeta::parse_attrs(&attrs, MetaLocation::TableOuter)?;
-                attrs
-            },
+            attrs: input.parse()?,
             create_kw: input.call(keyword::create::parse_autocomplete)?,
             table_kw: input.call(keyword::table::parse_autocomplete)?,
             name: input.parse()?,
@@ -192,8 +185,7 @@ impl ToTokens for Table {
 
 impl PrettyPrint for Table {
     fn pretty_print(&self, printer: &mut Printer<'_>) {
-        self.inner_attrs.pretty_print(printer);
-        self.outer_attrs.pretty_print(printer);
+        self.attrs.pretty_print(printer);
         self.create_kw.pretty_print(printer);
         " ".pretty_print(printer);
         self.table_kw.pretty_print(printer);

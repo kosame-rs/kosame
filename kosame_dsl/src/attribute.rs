@@ -196,16 +196,16 @@ impl Parse for MetaDriver {
     }
 }
 
+impl ParseOption for MetaDriver {
+    fn peek(input: ParseStream) -> bool {
+        input.peek(keyword::driver)
+    }
+}
+
 pub struct MetaRename {
     pub path: keyword::rename,
     pub eq_token: Token![=],
     pub value: Ident,
-}
-
-impl ParseOption for MetaRename {
-    fn peek(input: ParseStream) -> bool {
-        input.peek(keyword::rename)
-    }
 }
 
 impl Parse for MetaRename {
@@ -218,16 +218,16 @@ impl Parse for MetaRename {
     }
 }
 
+impl ParseOption for MetaRename {
+    fn peek(input: ParseStream) -> bool {
+        input.peek(keyword::rename)
+    }
+}
+
 pub struct MetaTypeOverride {
     pub path: keyword::ty,
     pub eq_token: Token![=],
     pub value: Path,
-}
-
-impl ParseOption for MetaTypeOverride {
-    fn peek(input: ParseStream) -> bool {
-        input.peek(keyword::ty)
-    }
 }
 
 impl Parse for MetaTypeOverride {
@@ -237,6 +237,12 @@ impl Parse for MetaTypeOverride {
             eq_token: input.parse()?,
             value: input.parse()?,
         })
+    }
+}
+
+impl ParseOption for MetaTypeOverride {
+    fn peek(input: ParseStream) -> bool {
+        input.peek(keyword::ty)
     }
 }
 
